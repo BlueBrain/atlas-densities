@@ -1,0 +1,15 @@
+{
+    "region": {
+        "name": "CA1",
+        "query": "CA1",
+        "attribute": "acronym",
+        "with_descendants": true
+
+    },
+    "layers": {
+        "names": ["CA1so", "CA1sp", "CA1sr", "CA1slm"],
+        "queries": ["CA1so", "CA1sp", "CA1sr", "CA1slm"],
+        "attribute": "acronym",
+        "with_descendants": true
+    }
+}

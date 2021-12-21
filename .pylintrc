@@ -1,0 +1,27 @@
+[MESSAGES CONTROL]
+# C0330: Wrong hanging indentation before block (conflicts with black, see https://github.com/psf/black/issues/48)
+disable=bad-continuation
+
+[SIMILARITIES]
+# Minimum lines number of a similarity.
+min-similarity-lines=30
+
+# Ignore comments when computing similarities.
+ignore-comments=yes
+
+# Ignore docstrings when computing similarities.
+ignore-docstrings=yes
+
+# Ignore imports when computing similarities.
+ignore-imports=no
+
+[DESIGN]
+# Maximum number of arguments for function / method
+max-args=7
+
+[TYPECHECK]
+
+# List of classes names for which member attributes should not be checked
+# (useful for classes with attributes dynamically set). This supports can work
+# with qualified names.
+ignored-classes=open3d

@@ -1,0 +1,15 @@
+{
+    "region": {
+        "name": "Rat S1",
+        "query": "S1",
+        "attribute": "acronym",
+        "with_descendants": true
+
+    },
+    "layers": {
+        "names": ["layer_1", "layer_2", "layer_3", "layer_4", "layer_5", "layer_6"],
+        "queries": ["@.*;L1$", "@.*;L2$", "@.;L3*$", "@.*;L4$", "@.*;L5$", "@.*;L6$"],
+        "attribute": "acronym",
+        "with_descendants": true
+    }
+}

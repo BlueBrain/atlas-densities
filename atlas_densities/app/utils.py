@@ -1,0 +1,6 @@
+"""app utils"""
+
+from pathlib import Path
+
+DATA_PATH = Path(__file__).parent / "data"
+AD_PATH = Path(__file__).parent.parent.parent

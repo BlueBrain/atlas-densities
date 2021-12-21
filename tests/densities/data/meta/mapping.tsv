@@ -1,0 +1,7 @@
+mtype	sclass	layer	file
+L23_BP	INH	2,3	BP
+L2_IPC	EXC	2	L2_IPC
+L2_TPC:A	EXC	2	L2_TPC-A
+L3_TPC:A	EXC	3	L3_TPC-A
+L3_TPC:B	EXC	3	L3_TPC-B
+

@@ -1,0 +1,15 @@
+{
+    "region": {
+        "name": "Thalamus",
+        "query": "TH",
+        "attribute": "acronym",
+        "with_descendants": true
+
+    },
+    "layers": {
+        "names": ["RT", "THnotRT"],
+        "queries": ["RT", "@^\\bAD|AM|AMd|AMv|ATN|AV|CL|CM|DORpm|DORsm|EPI|Eth|GENd|GENv|IAD|IAM|IGL|ILM|IMD|IntG|LAT|LD|LGd|LGd-co|LGd-ip|LGd-sh|LGv|LGvl|LGvm|LH|LP|MD|MDc|MDl|MDm|MED|MG|MGd|MGm|MGv|MH|MTN|PCN|PF|PIL|PIN|PO|POL|PP|PR|PT|PVT|PoT|RE|REth|RH|SGN|SMT|SPA|SPF|SPFm|SPFp|SubG|TH|VAL|VENT|VM|VP|VPL|VPLpc|VPM|VPMpc|Xi\\b$"],
+        "attribute": "acronym",
+        "with_descendants": false
+    }
+}

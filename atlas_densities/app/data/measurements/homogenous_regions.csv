@@ -1,0 +1,61 @@
+brain_region,cell_type
+"Gustatory areas, layer 1",inhibitory
+"Frontal pole, layer 1",inhibitory
+"Temporal association areas, layer 1",inhibitory
+"Agranular insular area, posterior part, layer 1",inhibitory
+"Prelimbic area, layer 1",inhibitory
+"Anteromedial visual area, layer 1",inhibitory
+"Primary motor area, Layer 1",inhibitory
+"Lateral visual area, layer 1",inhibitory
+"Retrosplenial area, dorsal part, layer 1",inhibitory
+"Orbital area, lateral part, layer 1",inhibitory
+"Primary somatosensory area, upper limb, layer 1",inhibitory
+"Orbital area, medial part, layer 1",inhibitory
+"Dorsal auditory area, layer 1",inhibitory
+"Posterior parietal association areas, layer 1",inhibitory
+"Perirhinal area, layer 1",inhibitory
+"Retrosplenial area, ventral part, layer 1",inhibitory
+"Primary somatosensory area, nose, layer 1",inhibitory
+"Anterior cingulate area, ventral part, layer 1",inhibitory
+"Primary visual area, layer 1",inhibitory
+"Secondary motor area, layer 1",inhibitory
+"Retrosplenial area, lateral agranular part, layer 1",inhibitory
+"Posterior auditory area, layer 1",inhibitory
+"Agranular insular area, ventral part, layer 1",inhibitory
+"Infralimbic area, layer 1",inhibitory
+"Primary auditory area, layer 1",inhibitory
+"Posterolateral visual area, layer 1",inhibitory
+"posteromedial visual area, layer 1",inhibitory
+Ectorhinal area/Layer 1,inhibitory
+"Supplemental somatosensory area, layer 1",inhibitory
+"Primary somatosensory area, mouth, layer 1",inhibitory
+"Visceral area, layer 1",inhibitory
+"Anterior cingulate area, dorsal part, layer 1",inhibitory
+"Ventral auditory area, layer 1",inhibitory
+"Orbital area, ventrolateral part, layer 1",inhibitory
+"Primary somatosensory area, barrel field, layer 1",inhibitory
+"Agranular insular area, dorsal part, layer 1",inhibitory
+"Primary somatosensory area, trunk, layer 1",inhibitory
+"Primary somatosensory area, lower limb, layer 1",inhibitory
+"Anterolateral visual area, layer 1",inhibitory
+"Primary somatosensory area, unassigned, layer 1",inhibitory
+Reticular nucleus of the thalamus,inhibitory
+"Simple lobule, molecular layer",inhibitory
+"Crus 1, molecular layer",inhibitory
+"Crus 2, molecular layer",inhibitory
+"Paramedian lobule, molecular layer",inhibitory
+"Copula pyramidis, molecular layer",inhibitory
+"Paraflocculus, molecular layer",inhibitory
+"Flocculus, molecular layer",inhibitory
+"Lingula (I), molecular layer",inhibitory
+"Lobule II, molecular layer",inhibitory
+"Lobule III, molecular layer",inhibitory
+"Lobules IV-V, molecular layer",inhibitory
+"Declive (VI), molecular layer",inhibitory
+"Folium-tuber vermis (VII), molecular layer",inhibitory
+"Pyramus (VIII), molecular layer",inhibitory
+"Uvula (IX), molecular layer",inhibitory
+"Nodulus (X), molecular layer",inhibitory
+Posterior complex of the thalamus,excitatory
+Ventral posteromedial nucleus of the thalamus,excitatory
+"Ventral posteromedial nucleus of the thalamus, parvicellular part",excitatory
