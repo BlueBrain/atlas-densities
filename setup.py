@@ -26,7 +26,9 @@ setup(
         "openpyxl>=3.0.3",
         "pandas>=1.0.3",
         "PyYAML>=5.3.1",
-        "scipy>=1.4.1",
+        # Since version 1.6.0, scipy.optimize.linprog has fast, new methods for large, sparse problems
+        # from the HiGHS library. We use the "highs" method in the densities module.
+        "scipy>=1.6.0",
         "tqdm>=4.44.1",
         "voxcell>=3.0.0",
     ],
