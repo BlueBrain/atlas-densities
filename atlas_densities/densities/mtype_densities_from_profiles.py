@@ -24,7 +24,8 @@ if TYPE_CHECKING:  # pragma: no cover
     from voxcell import RegionMap, VoxelData  # type: ignore
 
 
-VoxelIndices = Tuple[NDArray[int], NDArray[int], NDArray[int]]
+VoxelIndices = Tuple[NDArray[int], ...]
+
 logging.basicConfig(level=logging.INFO)
 logging.captureWarnings(True)
 L = logging.getLogger(__name__)
@@ -264,7 +265,7 @@ class DensityProfileCollection:
         # Get a list of profile names without duplicates
         density_profile_filenames = list(dict.fromkeys(mtype_to_profile_map["profile_name"]))
         density_profiles = {
-            filename: np.loadtxt(Path(density_profiles_dirpath, filename + ".dat"))
+            filename: list(np.loadtxt(Path(density_profiles_dirpath, filename + ".dat")))
             for filename in density_profile_filenames
         }
 
@@ -369,6 +370,7 @@ class DensityProfileCollection:
         }
 
         L.info("Computing the voxel indices of each layer slice ...")
+
         layer_slice_voxel_indices: Dict[int, VoxelIndices] = {}
         vector_field = np.asarray(direction_vectors, dtype=np.float32)
         for layer_name, range_ in tqdm(self.layer_slices_map.items()):

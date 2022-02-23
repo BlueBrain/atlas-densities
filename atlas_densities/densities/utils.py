@@ -282,7 +282,7 @@ def constrain_cell_counts_per_voxel(  # pylint: disable=too-many-arguments, too-
     if complement is None:
         complement = tuple([slice(0, None)] * 3)
     else:
-        complement = ~complement  # pylint: disable=invalid-unary-operand-type
+        complement = np.invert(complement)
 
     line_direction_vector = cell_counts[complement]
     upper_bound = cell_counts_upper_bound[complement]
@@ -577,7 +577,7 @@ def compute_region_cell_counts(
     if with_descendants:
         counts = []
         for id_set in tqdm(hierarchy_info["descendant_id_set"]):
-            count = result.loc[id_set, "cell_count"].sum()
+            count = result.loc[list(id_set), "cell_count"].sum()
             counts.append(count)
         result["cell_count"] = counts
 

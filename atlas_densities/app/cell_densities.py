@@ -783,8 +783,8 @@ def fit_average_densities(
     L.info("Loading hierarchy ...")
     region_map = RegionMap.load_json(hierarchy_path)
     L.info("Loading gene config ...")
-    with open(gene_config_path, "r", encoding="utf-8") as file_:
-        config = yaml.load(file_, Loader=yaml.FullLoader)
+    with open(gene_config_path, "r", encoding="utf-8") as input_file:
+        config = yaml.load(input_file, Loader=yaml.FullLoader)
 
     gene_voxeldata = {
         gene: VoxelData.load_nrrd(path) for (gene, path) in config["inputGeneVolumePath"].items()
