@@ -4,7 +4,7 @@
 from typing import Dict
 
 import numpy as np
-from nptyping import NDArray  # type: ignore
+from atlas_commons.typing import AnnotationT, BoolArray, FloatArray
 from voxcell import RegionMap  # type: ignore
 
 from atlas_densities.densities.cell_counts import cell_counts
@@ -13,9 +13,9 @@ from atlas_densities.densities.utils import compensate_cell_overlap, get_group_i
 
 def fix_purkinje_layer_intensity(
     region_map: "RegionMap",
-    annotation: NDArray[int],
-    region_masks: Dict[str, NDArray[bool]],
-    cell_intensity: NDArray[float],
+    annotation: AnnotationT,
+    region_masks: Dict[str, BoolArray],
+    cell_intensity: FloatArray,
 ) -> None:
     """
     Assign a constant number of cells to the voxels sitting both in Cerebellum and the
@@ -56,10 +56,10 @@ def fix_purkinje_layer_intensity(
 
 def compute_cell_density(
     region_map: RegionMap,
-    annotation: NDArray[int],
+    annotation: AnnotationT,
     voxel_volume: float,
-    nissl: NDArray[float],
-) -> NDArray[float]:
+    nissl: FloatArray,
+) -> FloatArray:
     """
     Compute the overall cell density based on Nissl staining and cell counts from literature.
 

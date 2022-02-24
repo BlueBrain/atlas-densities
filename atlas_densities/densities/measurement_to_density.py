@@ -15,7 +15,7 @@ from typing import Set, Tuple, Union
 
 import numpy as np
 import pandas as pd
-from nptyping import NDArray  # type: ignore
+from atlas_commons.typing import AnnotationT, FloatArray
 from voxcell import RegionMap  # type: ignore
 
 from atlas_densities.densities.utils import compute_region_volumes, get_hierarchy_info
@@ -43,8 +43,8 @@ def get_parent_region(region_name: str, region_map: RegionMap) -> Union[str, Non
 
 
 def compute_region_densities(
-    annotation: NDArray[int],
-    cell_density: NDArray[float],
+    annotation: AnnotationT,
+    cell_density: FloatArray,
     hierarchy_info: "pd.DataFrame",
 ) -> "pd.DataFrame":
     """
@@ -179,7 +179,7 @@ def cell_proportion_to_density(
 
 
 def get_average_voxel_count_per_slice(
-    id_set: Set[int], annotation: NDArray[int], thickness: int
+    id_set: Set[int], annotation: AnnotationT, thickness: int
 ) -> float:
     """
     Returns the average number of voxels with an id in `id_set` over the x-slices of `annotation`.
@@ -208,7 +208,7 @@ def get_average_voxel_count_per_slice(
 
 def cell_count_per_slice_to_density(
     measurements: "pd.DataFrame",
-    annotation: NDArray[int],
+    annotation: AnnotationT,
     voxel_dimensions: Tuple[float, float, float],
     voxel_volume: float,
     hierarchy_info: "pd.DataFrame",
@@ -255,11 +255,11 @@ def cell_count_per_slice_to_density(
 
 def measurement_to_average_density(
     region_map: RegionMap,
-    annotation: NDArray[int],
+    annotation: AnnotationT,
     voxel_dimensions: Tuple[float, float, float],
     voxel_volume: float,
-    cell_density: NDArray[float],
-    neuron_density: NDArray[float],
+    cell_density: FloatArray,
+    neuron_density: FloatArray,
     measurements: "pd.DataFrame",
 ) -> "pd.DataFrame":
     """

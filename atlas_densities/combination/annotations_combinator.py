@@ -15,26 +15,23 @@ Annotations combination was introduced when AIBS released their CCF v3 Mouse Atl
 whose annotation file has missing regions with respect to the CCF v2 Mouse Atlas of 2011.
 So far, annotations combination handles only to this use case.
 """
+
 import itertools
 import logging
-from typing import TYPE_CHECKING
 
-import numpy as np  # type: ignore
-from nptyping import NDArray  # type: ignore
-
-if TYPE_CHECKING:  # pragma: no cover
-    import voxcell  # type: ignore
-
+import numpy as np
+import voxcell
+from atlas_commons.typing import AnnotationT, BoolArray
 
 logging.basicConfig(level=logging.INFO)
 L = logging.getLogger(__name__)
 
 
 def is_ancestor(
-    region_map: "voxcell.RegionMap",
-    annotation_1: NDArray[int],
-    annotation_2: NDArray[int],
-) -> NDArray[bool]:
+    region_map: voxcell.RegionMap,
+    annotation_1: AnnotationT,
+    annotation_2: AnnotationT,
+) -> BoolArray:
     """
     Returns a binary mask encoding the is-ancestor relationship between two annotated arrays.
 
@@ -61,10 +58,10 @@ def is_ancestor(
 
 
 def combine_annotations(
-    region_map: "voxcell.RegionMap",
-    brain_annotation_ccfv2: "voxcell.VoxelData",
-    fiber_annotation_ccfv2: "voxcell.VoxelData",
-    brain_annotation_ccfv3: "voxcell.VoxelData",
+    region_map: voxcell.RegionMap,
+    brain_annotation_ccfv2: voxcell.VoxelData,
+    fiber_annotation_ccfv2: voxcell.VoxelData,
+    brain_annotation_ccfv3: voxcell.VoxelData,
 ):
     """Combine `brain_annotation_ccfv2` with `brain_annotation_ccfv3` to reinstate missing regions.
 

@@ -62,7 +62,7 @@ def test_glia_cell_counts_per_voxel_input():
 def get_glia_input_data(glia_cell_count):
     shape = (20, 20, 20)
     cell_density = np.random.random_sample(shape)
-    voxel_volume = (25 ** 3) / 1e9
+    voxel_volume = (25**3) / 1e9
     cell_density = (2 * glia_cell_count * cell_density / np.sum(cell_density)) / voxel_volume
     glia_proportions = {
         "astrocyte": "0.3",
@@ -78,7 +78,7 @@ def get_glia_input_data(glia_cell_count):
     return {
         "region_map": RegionMap.load_json(Path(TESTS_PATH, "1.json")),
         "annotation": np.arange(8000).reshape(shape),
-        "voxel_volume": (25 ** 3) / 1e9,
+        "voxel_volume": (25**3) / 1e9,
         "glia_densities": glia_densities,
         "cell_density": cell_density,
         "glia_proportions": glia_proportions,

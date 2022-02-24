@@ -17,23 +17,18 @@ Note: the output glia intensities will be further constrained to derive the fina
 in a subsequent step, see cell_density module.
 
 """
-
-from typing import TYPE_CHECKING
-
-import numpy as np  # type: ignore
-import pandas as pd  # type: ignore
-from nptyping import NDArray  # type: ignore
-
-if TYPE_CHECKING:
-    from voxcell import RegionMap, VoxelData  # type: ignore
+import numpy as np
+import pandas as pd
+import voxcell
+from atlas_commons.typing import AnnotationT
 
 
 def combine(
-    region_map: "RegionMap",
-    annotation_raw: NDArray[int],
-    glia_celltype_densities: "pd.DataFrame",
-    combination_data: "pd.DataFrame",
-) -> "pd.DataFrame":
+    region_map: voxcell.RegionMap,
+    annotation_raw: AnnotationT,
+    glia_celltype_densities: pd.DataFrame,
+    combination_data: pd.DataFrame,
+) -> pd.DataFrame:
     """
     Average the glia marker intensities based on ratios from the scientific literature.
 

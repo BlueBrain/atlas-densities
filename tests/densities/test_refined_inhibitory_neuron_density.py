@@ -20,7 +20,7 @@ def density_helper_1():
     neuron_density = np.array([[[0.1, 0.2, 0.3]]], dtype=float)
     return tested.VolumetricDensityHelper(
         annotation,
-        (25 ** 3) * 1e-9,  # voxel volume in mm^3
+        (25**3) * 1e-9,  # voxel volume in mm^3
         neuron_density,
         pd.DataFrame(
             {
@@ -61,10 +61,10 @@ def test_get_zero_counts(density_helper_1):
 
 def test_get_neuron_count(density_helper_1):
     assert np.isclose(
-        density_helper_1.get_neuron_count(np.array([[[True, False, False]]])), (25 ** 3) * 1e-10
+        density_helper_1.get_neuron_count(np.array([[[True, False, False]]])), (25**3) * 1e-10
     )
     assert np.isclose(
-        density_helper_1.get_neuron_count(np.array([[[True, True, False]]])), (25 ** 3) * 3e-10
+        density_helper_1.get_neuron_count(np.array([[[True, True, False]]])), (25**3) * 3e-10
     )
 
 
@@ -75,7 +75,7 @@ def test_fill_volumetric_densities(density_helper_1):
     )
     mask = density_helper_1.annotation == 1
     actual_counts = {
-        cell_type: np.sum(density_helper_1.volumetric_densities[cell_type][mask]) * (25 ** 3) * 1e-9
+        cell_type: np.sum(density_helper_1.volumetric_densities[cell_type][mask]) * (25**3) * 1e-9
         for cell_type in ["gad67+", "pv+", "sst+", "vip+"]
     }
     assert actual_counts == {"gad67+": 1.0, "pv+": 2.0, "sst+": 3.0, "vip+": 4.0}

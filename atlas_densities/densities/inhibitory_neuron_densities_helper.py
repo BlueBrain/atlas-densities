@@ -6,17 +6,18 @@ from typing import List, Optional, Set, Tuple
 
 import numpy as np
 import pandas as pd
-from nptyping import NDArray
+from atlas_commons.typing import FloatArray
 
 from atlas_densities.exceptions import AtlasDensitiesError
 
 L = logging.getLogger(__name__)
+MinMaxPair = Tuple[float, Optional[float]]
 
 
 def average_densities_to_cell_counts(
-    average_densities: "pd.DataFrame",
-    region_volumes: "pd.DataFrame",
-) -> "pd.DataFrame":
+    average_densities: pd.DataFrame,
+    region_volumes: pd.DataFrame,
+) -> pd.DataFrame:
     """
     Create a data frame with the same index as `average_densities` (region names) and with two
     columns for each cell type, one column for the cell count, one column for the associated
@@ -54,8 +55,8 @@ def average_densities_to_cell_counts(
 
 
 def resize_average_densities(
-    average_densities: "pd.DataFrame", hierarchy_info: "pd.DataFrame"
-) -> "pd.DataFrame":
+    average_densities: pd.DataFrame, hierarchy_info: pd.DataFrame
+) -> pd.DataFrame:
     """
     Resize the `average_densities` data frame in such a way that the resized index coincides with
     `hierarchy_info["brain_region"]`.
@@ -82,7 +83,7 @@ def resize_average_densities(
     return resized
 
 
-def get_cell_types(data_frame: "pd.DataFrame") -> List[str]:
+def get_cell_types(data_frame: pd.DataFrame) -> List[str]:
     """
     Extract cell types from column labels.
 
@@ -98,7 +99,7 @@ def get_cell_types(data_frame: "pd.DataFrame") -> List[str]:
 
 
 def check_region_counts_consistency(
-    region_counts: "pd.DataFrame", hierarchy_info: "pd.DataFrame", tolerance: float = 0.0
+    region_counts: pd.DataFrame, hierarchy_info: pd.DataFrame, tolerance: float = 0.0
 ) -> None:
     """
     Check that cell counts considered as certain are consistent across the brain regions hierarchy.
@@ -165,10 +166,7 @@ def check_region_counts_consistency(
             )
 
 
-MinMaxPair = Tuple[float, Optional[float]]
-
-
-def replace_inf_with_none(bounds: NDArray[float]) -> List[MinMaxPair]:
+def replace_inf_with_none(bounds: FloatArray) -> List[MinMaxPair]:
     """
     Replace the upper bounds equal to ``np.inf`` by None so as to comply with
     the `bounds` interface of scipy.optimize.linprog.

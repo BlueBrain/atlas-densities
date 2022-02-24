@@ -18,7 +18,7 @@ import logging
 from typing import TYPE_CHECKING, Dict, List
 
 import numpy as np
-from nptyping import NDArray
+from atlas_commons.typing import AnnotationT, BoolArray, FloatArray
 from tqdm import tqdm
 from voxcell import RegionMap
 
@@ -42,9 +42,9 @@ class VolumetricDensityHelper:
     # pylint: disable=too-many-instance-attributes
     def __init__(
         self,
-        annotation: NDArray[int],
+        annotation: AnnotationT,
         voxel_volume: float,
-        neuron_density: NDArray[float],
+        neuron_density: FloatArray,
         region_counts: "pd.DataFrame",
         cell_type: str,
         cell_subtypes: List[str],
@@ -77,7 +77,7 @@ class VolumetricDensityHelper:
         self.cell_type = cell_type
         self.cell_subtypes = cell_subtypes
         self.cell_types = [cell_type] + cell_subtypes
-        self.volumetric_densities: Dict[str, NDArray[float]] = {}
+        self.volumetric_densities: Dict[str, FloatArray] = {}
 
     def initialize_volumetric_densities(self) -> None:
         """
@@ -95,7 +95,7 @@ class VolumetricDensityHelper:
         """
         return {cell_type: 0.0 for cell_type in self.cell_types}
 
-    def get_neuron_count(self, region_mask: NDArray[bool]) -> float:
+    def get_neuron_count(self, region_mask: BoolArray) -> float:
         """
         Returns the neuron count of the region in `self.annotation` defined by `region_mask`.
 
@@ -365,11 +365,11 @@ class VolumetricDensityHelper:
 
 def create_inhibitory_neuron_densities(  # pylint: disable=too-many-locals
     hierarchy: dict,
-    annotation: NDArray[int],
+    annotation: AnnotationT,
     voxel_volume: float,
-    neuron_density: NDArray[float],
+    neuron_density: FloatArray,
     average_densities: "pd.DataFrame",
-) -> Dict[str, NDArray[float]]:
+) -> Dict[str, FloatArray]:
     """
     Create a 3D float array for each cell type labelling the columns of `average_densities`.
 

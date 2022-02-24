@@ -2,11 +2,11 @@
 
 from typing import TYPE_CHECKING, Dict, Set
 
-import numpy as np  # type: ignore
+import numpy as np
 import pandas as pd
 import scipy.misc
 import scipy.ndimage
-from nptyping import NDArray  # type: ignore
+from atlas_commons.typing import AnnotationT, BoolArray, FloatArray
 from tqdm import tqdm
 
 from atlas_densities.exceptions import AtlasDensitiesError
@@ -33,12 +33,12 @@ MEASUREMENT_UNITS = {
 
 
 def normalize_intensity(
-    marker_intensity: NDArray[float],
-    annotation: NDArray[int],
+    marker_intensity: FloatArray,
+    annotation: AnnotationT,
     threshold_scale_factor: float = 3.0,
     region_id: int = 0,
     copy: bool = True,
-) -> NDArray[float]:
+) -> FloatArray:
     """
     Subtract a positive constant from the marker intensity and constraint intensity in [0, 1].
 
@@ -81,11 +81,11 @@ def normalize_intensity(
 
 
 def compensate_cell_overlap(
-    marker_intensity: NDArray[float],
-    annotation: NDArray[float],
+    marker_intensity: FloatArray,
+    annotation: AnnotationT,
     copy: bool = True,
     gaussian_filter_stdv: float = 0.0,
-) -> NDArray[float]:
+) -> FloatArray:
     """
     Transform, in place, the marker intensity I into - A * log(1 - I) to compensate cell overlap.
 
@@ -138,13 +138,13 @@ def compensate_cell_overlap(
 # TODO: Re-assess and underline each density validation criterion. Design an actual optimization
 # strategy if appropriate.
 def optimize_distance_to_line(  # pylint: disable=too-many-arguments
-    line_direction_vector: NDArray[float],
-    upper_bounds: NDArray[float],
+    line_direction_vector: FloatArray,
+    upper_bounds: FloatArray,
     sum_constraint: float,
     threshold: float = 1e-7,
     max_iter: int = 45,
     copy: bool = True,
-) -> NDArray[float]:
+) -> FloatArray:
     """
     Find inside a box the closest point to a line with prescribed coordinate sum.
 
@@ -194,10 +194,10 @@ def optimize_distance_to_line(  # pylint: disable=too-many-arguments
 
 def constrain_cell_counts_per_voxel(  # pylint: disable=too-many-arguments, too-many-branches
     target_sum: float,
-    cell_counts: NDArray[float],
-    cell_counts_upper_bound: NDArray[float],
-    max_cell_counts_mask: NDArray[bool] = None,
-    zero_cell_counts_mask: NDArray[bool] = None,
+    cell_counts: FloatArray,
+    cell_counts_upper_bound: FloatArray,
+    max_cell_counts_mask: FloatArray = None,
+    zero_cell_counts_mask: FloatArray = None,
     epsilon: float = 1e-3,
     copy: bool = True,
 ):
@@ -392,8 +392,8 @@ def get_group_names(region_map: "RegionMap", cleanup_rest: bool = False) -> Dict
 
 
 def get_region_masks(
-    group_ids: Dict[str, Set[int]], annotation: NDArray[float]
-) -> Dict[str, NDArray[bool]]:
+    group_ids: Dict[str, Set[int]], annotation: FloatArray
+) -> Dict[str, BoolArray]:
     """
     Get the boolean masks of several region groups of interest.
 
@@ -480,7 +480,7 @@ def get_hierarchy_info(
 
 
 def compute_region_volumes(
-    annotation: NDArray[int],
+    annotation: AnnotationT,
     voxel_volume: float,
     hierarchy_info: "pd.DataFrame",
 ) -> "pd.DataFrame":
@@ -531,8 +531,8 @@ def compute_region_volumes(
 
 
 def compute_region_cell_counts(
-    annotation: NDArray[int],
-    density: NDArray[float],
+    annotation: AnnotationT,
+    density: FloatArray,
     voxel_volume: float,
     hierarchy_info: "pd.DataFrame",
     with_descendants: bool = True,
@@ -584,7 +584,7 @@ def compute_region_cell_counts(
     return result
 
 
-def zero_negative_values(array: NDArray[float]) -> None:
+def zero_negative_values(array: FloatArray) -> None:
     """
     Zero negative values resulting from round-off errors.
 

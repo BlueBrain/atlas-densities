@@ -7,6 +7,8 @@ Volumetric density nrrd files are created for each mtype listed in either `mappi
 This module re-uses the overall excitatory and inhibitory neuron densities computed in
 mod:`app/cell_densities`.
 """
+from __future__ import annotations
+
 import logging
 import warnings
 from pathlib import Path
@@ -14,17 +16,15 @@ from typing import TYPE_CHECKING, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import pandas as pd
+import voxcell
+from atlas_commons.typing import BoolArray, FloatArray, NDArray
 from cgal_pybind import slice_volume
-from nptyping import NDArray  # type: ignore
 from tqdm import tqdm
 
 from atlas_densities.exceptions import AtlasDensitiesError
 
-if TYPE_CHECKING:  # pragma: no cover
-    from voxcell import RegionMap, VoxelData  # type: ignore
-
-
-VoxelIndices = Tuple[NDArray[int], ...]
+if TYPE_CHECKING:
+    VoxelIndices = Tuple[NDArray[np.signedinteger], ...]
 
 logging.basicConfig(level=logging.INFO)
 logging.captureWarnings(True)
@@ -280,11 +280,11 @@ class DensityProfileCollection:
 
     @staticmethod
     def slice_layer(
-        layer_mask: NDArray[bool],
-        annotation: "VoxelData",
-        vector_field: NDArray[float],
+        layer_mask: BoolArray,
+        annotation: voxcell.VoxelData,
+        vector_field: FloatArray,
         slice_count: int,
-    ) -> NDArray[int]:
+    ) -> NDArray[np.integer]:
         """
         Split `layer_mask` into `slice_count` slices of approximately equal thickness.
 
@@ -320,8 +320,8 @@ class DensityProfileCollection:
 
     def compute_layer_slice_voxel_indices(
         self,
-        annotation: "VoxelData",
-        region_map: "RegionMap",
+        annotation: voxcell.VoxelData,
+        region_map: voxcell.RegionMap,
         metadata: Dict,
         direction_vectors: NDArray[np.float32],
     ) -> Dict[int, VoxelIndices]:
@@ -394,7 +394,7 @@ class DensityProfileCollection:
         self,
         mtype: str,
         synapse_class: str,
-        synapse_class_density: NDArray[float],
+        synapse_class_density: voxcell.VoxelData,
         layer_slice_voxel_indices: Dict[int, VoxelIndices],
         output_dirpath: Union[str, Path],
     ) -> None:
@@ -432,13 +432,13 @@ class DensityProfileCollection:
 
     def create_mtype_densities(  # pylint: disable=too-many-arguments
         self,
-        annotation: "VoxelData",
-        region_map: "RegionMap",
+        annotation: voxcell.VoxelData,
+        region_map: voxcell.RegionMap,
         metadata: Dict,
         direction_vectors: NDArray[np.float32],
         output_dirpath: Union[str, Path],
-        excitatory_neuron_density: Optional["VoxelData"] = None,
-        inhibitory_neuron_density: Optional["VoxelData"] = None,
+        excitatory_neuron_density: Optional[voxcell.VoxelData] = None,
+        inhibitory_neuron_density: Optional[voxcell.VoxelData] = None,
     ) -> None:
         """
         Create and save to file a density field for each specified mtype.

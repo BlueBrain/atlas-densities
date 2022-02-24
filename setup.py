@@ -17,11 +17,9 @@ setup(
     license="BBP-internal-confidential",
     python_requires=">=3.6.0",
     install_requires=[
-        "atlas-commons>=0.1.1",
-        "cached-property>=1.5.2",
+        "atlas-commons>=0.1.3.dev0",
         "click>=7.0",
         "cgal_pybind>=0.1.1",
-        "nptyping>=1.0.1",
         "numpy>=1.15.0",
         "openpyxl>=3.0.3",
         "pandas>=1.0.3",
@@ -33,7 +31,9 @@ setup(
         "voxcell>=3.0.0",
     ],
     extras_require={
-        "tests": ["pytest>=4.4.0", "mock>=2.0.0"],
+        "tests": [
+            "pytest>=4.4.0",
+        ],
     },
     packages=find_packages(),
     include_package_data=True,

@@ -2,17 +2,13 @@
 
 from typing import Dict, Tuple, Union
 
-import numpy as np  # type: ignore
-from nptyping import NDArray  # type: ignore
-from scipy.ndimage.morphology import generate_binary_structure  # type: ignore
-from scipy.signal import correlate  # type: ignore
+import numpy as np
+from atlas_commons.typing import AnnotationT, BoolArray, NDArray, NumericArray
+from scipy.ndimage.morphology import generate_binary_structure
+from scipy.signal import correlate
 from voxcell import RegionMap  # type: ignore
 
 from atlas_densities.exceptions import AtlasDensitiesError
-
-# pylint: disable=invalid-name
-FloatArray = Union[NDArray[float], NDArray[np.float16], NDArray[np.float32], NDArray[np.float64]]
-NumericArray = Union[NDArray[bool], NDArray[int], NDArray[float]]
 
 
 def load_region_map(region_map: Union[str, dict, RegionMap]) -> RegionMap:
@@ -37,8 +33,8 @@ def load_region_map(region_map: Union[str, dict, RegionMap]) -> RegionMap:
 
 
 def query_region_mask(
-    region: dict, annotation: NDArray[int], region_map: Union[str, dict, "RegionMap"]
-) -> NDArray[bool]:
+    region: dict, annotation: AnnotationT, region_map: Union[str, dict, "RegionMap"]
+) -> BoolArray:
     """
     Create a mask for the region defined by `query`.
 
@@ -66,8 +62,8 @@ def query_region_mask(
 
 
 def get_region_mask(
-    acronym: str, annotation: NDArray[int], region_map: Union[str, dict, "RegionMap"]
-) -> NDArray[bool]:
+    acronym: str, annotation: AnnotationT, region_map: Union[str, dict, "RegionMap"]
+) -> BoolArray:
     """
     Create a mask for the region defined by `acronym`.
 
@@ -111,7 +107,7 @@ def split_into_halves(
     return left_volume, right_volume
 
 
-def is_obtuse_angle(vector_field_1: NumericArray, vector_field_2: NumericArray) -> NDArray[bool]:
+def is_obtuse_angle(vector_field_1: NumericArray, vector_field_2: NumericArray) -> BoolArray:
     """
     Returns a mask indicating which vector pairs form an obtuse angle.
 
@@ -234,7 +230,7 @@ def assert_metadata_content(metadata: dict) -> None:
 
 
 def create_layered_volume(
-    annotated_volume: NDArray[int],
+    annotated_volume: AnnotationT,
     region_map: "RegionMap",
     metadata: dict,
 ):
@@ -278,10 +274,10 @@ def create_layered_volume(
 
 
 def get_layer_masks(
-    annotated_volume: NDArray[int],
+    annotated_volume: AnnotationT,
     region_map: "RegionMap",
     metadata: dict,
-) -> Dict[str, NDArray[bool]]:
+) -> Dict[str, BoolArray]:
     """
     Create a 3D boolean mask of each layer in `metadata`.
 

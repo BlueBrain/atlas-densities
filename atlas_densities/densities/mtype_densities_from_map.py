@@ -13,7 +13,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Dict, List, Set
 
 import numpy as np
-from nptyping import NDArray  # type: ignore
+from atlas_commons.typing import FloatArray
 
 from atlas_densities.exceptions import AtlasDensitiesError
 from atlas_densities.utils import get_layer_masks
@@ -151,7 +151,7 @@ def create_from_probability_map(
     annotation: "VoxelData",
     region_map: "RegionMap",
     metadata: Dict,
-    molecular_type_densities: Dict[str, NDArray[float]],
+    molecular_type_densities: Dict[str, FloatArray],
     probability_map: "pd.DataFrame",
     output_dirpath: str,
 ) -> None:

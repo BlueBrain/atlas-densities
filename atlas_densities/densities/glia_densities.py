@@ -1,9 +1,10 @@
 """Functions to compute glia cell densities."""
 import logging
-from typing import TYPE_CHECKING, Dict, Set
+from typing import Dict, Set
 
 import numpy as np
-from nptyping import NDArray  # type: ignore
+import voxcell
+from atlas_commons.typing import AnnotationT, FloatArray
 
 from atlas_densities.densities.utils import (
     compensate_cell_overlap,
@@ -11,20 +12,17 @@ from atlas_densities.densities.utils import (
     get_group_ids,
 )
 
-if TYPE_CHECKING:  # pragma: no cover
-    from voxcell import RegionMap, VoxelData  # type: ignore
-
 L = logging.getLogger(__name__)
 
 
 def compute_glia_cell_counts_per_voxel(  # pylint: disable=too-many-arguments
     glia_cell_count: int,
     group_ids: Dict[str, Set[int]],
-    annotation: NDArray[int],
-    glia_intensity: NDArray[float],
-    cell_counts_per_voxel: NDArray[float],
+    annotation: AnnotationT,
+    glia_intensity: FloatArray,
+    cell_counts_per_voxel: FloatArray,
     copy: bool = True,
-) -> NDArray[float]:
+) -> FloatArray:
     """
     Compute the overall glia cell counts per voxel using a prescribed total glia cell count and
     the overall cell counts per voxel as an upper bound.
@@ -71,15 +69,15 @@ def compute_glia_cell_counts_per_voxel(  # pylint: disable=too-many-arguments
 
 
 def compute_glia_densities(  # pylint: disable=too-many-arguments
-    region_map: "RegionMap",
-    annotation: NDArray[int],
+    region_map: voxcell.RegionMap,
+    annotation: AnnotationT,
     voxel_volume: float,
     glia_cell_count: int,
-    glia_intensities: Dict[str, NDArray[float]],
-    cell_density: NDArray[float],
+    glia_intensities: Dict[str, FloatArray],
+    cell_density: FloatArray,
     glia_proportions: Dict[str, str],
     copy: bool = False,
-) -> Dict[str, NDArray[float]]:
+) -> Dict[str, FloatArray]:
     """
     Compute the overall glia cell density as well as astrocyte, olgidendrocyte and microglia
     densities.

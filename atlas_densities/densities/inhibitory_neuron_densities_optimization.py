@@ -43,7 +43,7 @@ from typing import Dict, List, Tuple
 
 import numpy as np
 import pandas as pd
-from nptyping import NDArray
+from atlas_commons.typing import AnnotationT, FloatArray
 from scipy.optimize import linprog
 from tqdm import tqdm
 from voxcell import RegionMap
@@ -69,10 +69,10 @@ KEEP = np.nan  # Used to signify that a delta variable should be added to the li
 
 
 def set_known_values(
-    region_counts: "pd.DataFrame",
-    id_counts: "pd.DataFrame",
-    hierarchy_info: "pd.DataFrame",
-) -> Tuple["pd.DataFrame", "pd.DataFrame"]:
+    region_counts: pd.DataFrame,
+    id_counts: pd.DataFrame,
+    hierarchy_info: pd.DataFrame,
+) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """
     Create the linear program variables `x_result` (cell counts) and `delta`
     (distances to initial estimates) and set the cell counts in `x_result` when those are known with
@@ -183,10 +183,10 @@ def set_known_values(
 
 
 def create_bounds(
-    x_result: "pd.DataFrame",
-    deltas: "pd.DataFrame",
-    neuron_counts: "pd.DataFrame",
-) -> Tuple[NDArray[float], Dict[Tuple[int, str], int], Dict[Tuple[str, str], int]]:
+    x_result: pd.DataFrame,
+    deltas: pd.DataFrame,
+    neuron_counts: pd.DataFrame,
+) -> Tuple[FloatArray, Dict[Tuple[int, str], int], Dict[Tuple[str, str], int]]:
     """
     Create the `bounds` array of shape (N, 2) where N is the number of variables
     of the linear program.
@@ -235,12 +235,12 @@ def create_bounds(
 
 def create_aub_and_bub(
     # pylint: disable=too-many-locals
-    x_result: "pd.DataFrame",
-    region_counts: "pd.DataFrame",
+    x_result: pd.DataFrame,
+    region_counts: pd.DataFrame,
     x_map: Dict[Tuple[int, str], int],
     deltas_map: Dict[Tuple[str, str], int],
-    hierarchy_info: "pd.DataFrame",
-) -> Tuple[NDArray[float], NDArray[float]]:
+    hierarchy_info: pd.DataFrame,
+) -> Tuple[FloatArray, FloatArray]:
     """
     Create the matrix and the right-hand side vector of the linear inequality constraints.
 
@@ -287,7 +287,7 @@ def create_aub_and_bub(
             )
 
     def check_constraint_3e(
-        constraint: NDArray[float], b_value: float, region_name: str, id_: int
+        constraint: FloatArray, b_value: float, region_name: str, id_: int
     ) -> bool:
         """
         Check if `contraint` is a valid inequality constraint of type (3e).
@@ -360,12 +360,12 @@ def create_aub_and_bub(
 
 
 def create_volumetric_densities(
-    x_result: "pd.DataFrame",
-    annotation: NDArray[int],
-    neuron_density: NDArray[float],
-    neuron_counts: "pd.DataFrame",
+    x_result: pd.DataFrame,
+    annotation: AnnotationT,
+    neuron_density: FloatArray,
+    neuron_counts: pd.DataFrame,
     cell_types: List[str],
-) -> Dict[str, NDArray[float]]:
+) -> Dict[str, FloatArray]:
     """
     Create volumetric densities for each cell type in `cell_types` based on the `x_result`cell
     counts.
@@ -402,11 +402,11 @@ def create_volumetric_densities(
 
 
 def _compute_initial_cell_counts(
-    annotation: NDArray[int],
+    annotation: AnnotationT,
     voxel_volume: float,
-    average_densities: "pd.DataFrame",
-    hierarchy_info: "pd.DataFrame",
-) -> Tuple["pd.DataFrame", "pd.DataFrame"]:
+    average_densities: pd.DataFrame,
+    hierarchy_info: pd.DataFrame,
+) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """
     Compute initial cell counts for various cell types based on `average_densities`.
 
@@ -454,11 +454,11 @@ def _compute_initial_cell_counts(
 
 
 def _check_variables_consistency(
-    x_result: "pd.DataFrame",
-    deltas: "pd.DataFrame",
+    x_result: pd.DataFrame,
+    deltas: pd.DataFrame,
     cell_types: List[str],
-    neuron_counts: "pd.DataFrame",
-    hierarchy_info: "pd.DataFrame",
+    neuron_counts: pd.DataFrame,
+    hierarchy_info: pd.DataFrame,
 ) -> None:
     """
     Raises an error if a delta variable indexed by (region_name, cell_type) is set with a non-NaN
@@ -511,9 +511,7 @@ def _check_variables_consistency(
                     )
 
 
-def _check_linprog_consistency(
-    a_ub: NDArray[float], b_ub: NDArray[float], bounds: NDArray[float]
-) -> None:
+def _check_linprog_consistency(a_ub: FloatArray, b_ub: FloatArray, bounds: FloatArray) -> None:
     """
     Check some basic expectations on the linear program providing the cell count estimates.
 
@@ -550,11 +548,11 @@ def _check_linprog_consistency(
 
 def create_inhibitory_neuron_densities(  # pylint: disable=too-many-locals
     hierarchy: dict,
-    annotation: NDArray[int],
+    annotation: AnnotationT,
     voxel_volume: float,
-    neuron_density: NDArray[float],
-    average_densities: "pd.DataFrame",
-) -> Dict[str, NDArray[float]]:
+    neuron_density: FloatArray,
+    average_densities: pd.DataFrame,
+) -> Dict[str, FloatArray]:
     """
     Create a 3D float array for each cell type that labels a column of `average_densities`.
 

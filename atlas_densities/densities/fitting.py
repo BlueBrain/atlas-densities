@@ -23,7 +23,7 @@ from typing import TYPE_CHECKING, Dict, List, Optional, Set, Union
 
 import numpy as np
 import pandas as pd
-from nptyping import NDArray
+from atlas_commons.typing import AnnotationT, BoolArray, FloatArray
 from scipy.optimize import curve_fit
 from tqdm import tqdm
 
@@ -35,13 +35,13 @@ if TYPE_CHECKING:  # pragma: no cover
 
 L = logging.getLogger(__name__)
 
-MarkerVolumes = Dict[str, Dict[str, Union[NDArray[float], List[int]]]]
+MarkerVolumes = Dict[str, Dict[str, Union[FloatArray, List[int]]]]
 
 
 def create_dataframe_from_known_densities(
     region_names: List[str],
-    average_densities: "pd.DataFrame",
-) -> "pd.DataFrame":
+    average_densities: pd.DataFrame,
+) -> pd.DataFrame:
     """
     Create a data frame with `region_names` as index and with two columns for each cell type in
     `average_densities["cell_type"]`.
@@ -102,11 +102,11 @@ def create_dataframe_from_known_densities(
 
 
 def fill_in_homogenous_regions(
-    homogenous_regions: "pd.DataFrame",
-    annotation: NDArray[int],
-    neuron_density: NDArray[float],
-    densities: "pd.DataFrame",
-    hierarchy_info: "pd.DataFrame",
+    homogenous_regions: pd.DataFrame,
+    annotation: AnnotationT,
+    neuron_density: FloatArray,
+    densities: pd.DataFrame,
+    hierarchy_info: pd.DataFrame,
     cell_density_stddevs: Optional[Dict[str, float]] = None,
 ) -> None:
     """
@@ -171,7 +171,7 @@ def fill_in_homogenous_regions(
 
 
 def compute_average_intensity(
-    intensity: NDArray[float], volume_mask: NDArray[bool], slices: Optional[List[int]] = None
+    intensity: FloatArray, volume_mask: BoolArray, slices: Optional[List[int]] = None
 ) -> float:
     """
     Compute the average of `intensity` within the volume defined by `volume_mask`.
@@ -206,10 +206,10 @@ def compute_average_intensity(
 
 
 def compute_average_intensities(
-    annotation: NDArray[int],
+    annotation: AnnotationT,
     gene_marker_volumes: MarkerVolumes,
-    hierarchy_info: "pd.DataFrame",
-) -> "pd.DataFrame":
+    hierarchy_info: pd.DataFrame,
+) -> pd.DataFrame:
     """
     Compute the average marker intensity of every region in `hierarchy_info` for every marker
     of `gene_marker_volumes`.
@@ -265,7 +265,7 @@ def compute_average_intensities(
 
 
 def linear_fitting_xy(
-    xdata: List[float], ydata: List[float], sigma: Union[List[float], NDArray[float]]
+    xdata: List[float], ydata: List[float], sigma: Union[List[float], FloatArray]
 ) -> Dict[str, float]:
     """
     Compute the coefficient of the linear least-squares regression of the point cloud
@@ -321,7 +321,7 @@ FittingData = Dict[str, Dict[str, Dict[str, float]]]
 
 
 def compute_fitting_coefficients(
-    groups: Dict[str, Set[str]], average_intensities: "pd.DataFrame", densities: "pd.DataFrame"
+    groups: Dict[str, Set[str]], average_intensities: pd.DataFrame, densities: pd.DataFrame
 ) -> FittingData:
     """
     Compute the linear fitting coefficient of the cloud of 2D points (average marker intensity,
@@ -438,8 +438,8 @@ def compute_fitting_coefficients(
 
 def fit_unknown_densities(
     groups: Dict[str, Set[str]],
-    average_intensities: "pd.DataFrame",
-    densities: "pd.DataFrame",
+    average_intensities: pd.DataFrame,
+    densities: pd.DataFrame,
     fitting_coefficients: FittingData,
 ) -> None:
     """
@@ -481,7 +481,7 @@ def fit_unknown_densities(
                     ] = standard_deviation
 
 
-def _check_homogenous_regions_sanity(homogenous_regions: "pd.DataFrame") -> None:
+def _check_homogenous_regions_sanity(homogenous_regions: pd.DataFrame) -> None:
     """
     Raise an error if `homogenous_regions` has unexpected entries.
     """
@@ -493,7 +493,7 @@ def _check_homogenous_regions_sanity(homogenous_regions: "pd.DataFrame") -> None
         raise AtlasDensitiesError(f"`homogenous_regions` has unexpected cell types: {diff}")
 
 
-def _check_average_densities_sanity(average_densities: "pd.DataFrame") -> None:
+def _check_average_densities_sanity(average_densities: pd.DataFrame) -> None:
     """
     Raise an error if `average_densities` has NaN or negative entries.
     """
@@ -525,13 +525,13 @@ def _check_average_densities_sanity(average_densities: "pd.DataFrame") -> None:
 
 def linear_fitting(
     region_map: "RegionMap",
-    annotation: NDArray[int],
-    neuron_density: NDArray[float],
+    annotation: AnnotationT,
+    neuron_density: FloatArray,
     gene_marker_volumes: MarkerVolumes,
-    average_densities: "pd.DataFrame",
-    homogenous_regions: "pd.DataFrame",
+    average_densities: pd.DataFrame,
+    homogenous_regions: pd.DataFrame,
     cell_density_stddevs: Optional[Dict[str, float]] = None,
-) -> "pd.DataFrame":
+) -> pd.DataFrame:
     """
     Estimate the average densities of every region in `region_map` using a linear fitting
     of the 2D points (average marker intensity, average cell density) for the markers in

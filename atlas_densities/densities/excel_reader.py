@@ -64,7 +64,7 @@ L = logging.getLogger(__name__)
 
 def compute_kim_et_al_neuron_densities(
     inhibitory_neuron_densities_path: Union[str, "Path"]
-) -> "pd.DataFrame":
+) -> pd.DataFrame:
     """
     Extract from excel file and average over gender the densities of the cells reacting to
     PV, SST and VIP in every AIBS region of the mouse brain.
@@ -177,9 +177,9 @@ def compute_kim_et_al_neuron_densities(
 
 
 def _set_metadata_columns(
-    dataframe: "pd.DataFrame",
-    bibliography: "pd.DataFrame",
-    comments: "pd.DataFrame",
+    dataframe: pd.DataFrame,
+    bibliography: pd.DataFrame,
+    comments: pd.DataFrame,
 ) -> None:
     """
     Add a source title a comment to every measurement in `dataframe`
@@ -206,7 +206,7 @@ def _set_metadata_columns(
     """
 
     def _fill_in_the_gaps(
-        dataframe: "pd.DataFrame", collapsed_blocks: "pd.DataFrame", header: str
+        dataframe: pd.DataFrame, collapsed_blocks: pd.DataFrame, header: str
     ) -> None:
         """
         Assign to each line block represented in `collapsed_blocks` the value of the first line
@@ -242,7 +242,7 @@ def _set_metadata_columns(
 
 
 def _set_measurement_type_and_unit_columns(
-    dataframe: "pd.DataFrame", code_filter: Optional[List[int]] = None
+    dataframe: pd.DataFrame, code_filter: Optional[List[int]] = None
 ) -> None:
     """
     Set the values of the 'measurement_type' and 'measurement_unit' columns.
@@ -271,7 +271,7 @@ def _set_measurement_type_and_unit_columns(
     ]
 
 
-def _create_bibliography(dataframe: "pd.DataFrame") -> "pd.DataFrame":
+def _create_bibliography(dataframe: pd.DataFrame) -> pd.DataFrame:
     """
     Create a helper bibliograph dataframe.
 
@@ -290,7 +290,7 @@ def _create_bibliography(dataframe: "pd.DataFrame") -> "pd.DataFrame":
     return pd.DataFrame({"source_title": dataframe["source_title"]}).dropna()
 
 
-def _create_collapsed_comments(dataframe: "pd.DataFrame") -> "pd.DataFrame":
+def _create_collapsed_comments(dataframe: pd.DataFrame) -> pd.DataFrame:
     """
     Create a helper comments dataframe.
 
@@ -347,7 +347,7 @@ def _enforce_column_types(dataframe: "pd.Dataframe", has_source: bool = True) ->
 
 def read_inhibitory_neuron_measurement_compilation(
     measurements_path: Union[str, "Path"]
-) -> Tuple["pd.DataFrame", Set[str]]:
+) -> Tuple[pd.DataFrame, Set[str]]:
     """
     Read the neuron densities of the worksheet 'GAD67 densities' in gaba_papers.xlsx
 
@@ -395,7 +395,7 @@ def read_inhibitory_neuron_measurement_compilation(
     return inhibitory_neurons_worksheet
 
 
-def _stack_pv_sst_vip_measurements(dataframe: "pd.DataFrame") -> "pd.DataFrame":
+def _stack_pv_sst_vip_measurements(dataframe: pd.DataFrame) -> pd.DataFrame:
     """
     Turns measurements stored into columns with labels PV, SST or VIP into the uniform
     flat format described at the top of the module.
@@ -429,9 +429,7 @@ def _stack_pv_sst_vip_measurements(dataframe: "pd.DataFrame") -> "pd.DataFrame":
     return result
 
 
-def read_pv_sst_vip_measurement_compilation(
-    measurements_path: Union[str, "Path"]
-) -> "pd.DataFrame":
+def read_pv_sst_vip_measurement_compilation(measurements_path: Union[str, "Path"]) -> pd.DataFrame:
     """
     Read the neuron densities of the worksheet 'PV-SST-VIP' in gaba_papers.xlsx
 
@@ -476,7 +474,7 @@ def read_pv_sst_vip_measurement_compilation(
     return pv_sst_vip_neurons_worksheet
 
 
-def read_homogenous_neuron_type_regions(measurements_path: Union[str, "Path"]) -> "pd.DataFrame":
+def read_homogenous_neuron_type_regions(measurements_path: Union[str, "Path"]) -> pd.DataFrame:
     """
     Read the region list of the worksheet 'Full inhibexc regions' in gaba_papers.xlsx
 
@@ -505,9 +503,7 @@ def read_homogenous_neuron_type_regions(measurements_path: Union[str, "Path"]) -
     return homogenous_regions_worksheet
 
 
-def _enforce_aibs_nomenclature(
-    region_map: "RegionMap", dataframe: "pd.DataFrame"
-) -> "pd.DataFrame":
+def _enforce_aibs_nomenclature(region_map: "RegionMap", dataframe: pd.DataFrame) -> pd.DataFrame:
     """
     Make region names appearing in mmc3.xlsx AIBS compliant whenever possible.
 
@@ -575,7 +571,7 @@ def _enforce_aibs_nomenclature(
 
 def read_kim_et_al_neuron_densities(
     region_map: "RegionMap", inhibitory_neuron_densities_path: Union[str, "Path"]
-) -> "pd.DataFrame":
+) -> pd.DataFrame:
     """
     Read the neuron densities of the worksheet 'Sheet 1' in mmc3.xlsx
 
@@ -619,7 +615,7 @@ def read_measurements(
     mmc3_path: Union[str, "Path"],
     gaba_papers_path: Union[str, "Path"],
     non_density_measurements_path: Union[str, "Path"],
-) -> "pd.DataFrame":
+) -> pd.DataFrame:
     """
     Read all cell density related measurements from file and returns a unique DataFrame
     containing them.

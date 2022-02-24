@@ -11,8 +11,7 @@ import pandas as pd
 from atlas_densities.utils import get_layer_masks
 
 if TYPE_CHECKING:  # pragma: no cover
-    from voxcell import RegionMap  # type: ignore
-    from voxcell import VoxelData  # type: ignore
+    from voxcell import RegionMap, VoxelData  # type: ignore
 
 
 def create_from_composition(

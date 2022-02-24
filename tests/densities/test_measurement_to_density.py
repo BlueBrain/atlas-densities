@@ -159,7 +159,7 @@ def test_cell_count_per_slice_to_density():
             "source_title": ["Article 1", "Article 2"],
         }
     )
-    voxel_volume = (25 ** 3) * 1e-9
+    voxel_volume = (25**3) * 1e-9
     expected = pd.DataFrame(
         {
             "brain_region": [
@@ -247,7 +247,7 @@ def get_input_data():
         "cell_density": cell_density,
         "neuron_density": neuron_density,
         "voxel_dimensions": (25.0, 25.0, 25.0),
-        "voxel_volume": (25 ** 3) * 1e-9,
+        "voxel_volume": (25**3) * 1e-9,
         "hierarchy": hierarchy,
         "region_map": RegionMap.from_dict(hierarchy),
         "measurements": measurements,

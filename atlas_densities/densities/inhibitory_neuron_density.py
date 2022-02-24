@@ -3,7 +3,7 @@
 from typing import TYPE_CHECKING, Dict, Optional, Tuple, Union
 
 import numpy as np
-from nptyping import NDArray
+from atlas_commons.typing import AnnotationT, BoolArray, FloatArray
 
 from atlas_densities.densities.utils import (
     compensate_cell_overlap,
@@ -18,10 +18,10 @@ if TYPE_CHECKING:
 
 
 def compute_inhibitory_neuron_intensity(
-    gad1: NDArray[float],
-    nrn1: NDArray[float],
-    inhibitory_data: Dict[str, Union[int, Dict[str, float], Dict[str, NDArray[bool]]]],
-) -> Tuple[NDArray[float], int]:
+    gad1: FloatArray,
+    nrn1: FloatArray,
+    inhibitory_data: Dict[str, Union[int, Dict[str, float], Dict[str, BoolArray]]],
+) -> Tuple[FloatArray, int]:
     """
     Compute a first approximation of the inhibitory neuron density based on gene markers.
 
@@ -82,14 +82,14 @@ InhibitoryData = Dict[str, Union[int, Dict[str, float]]]
 
 def compute_inhibitory_neuron_density(  # pylint: disable=too-many-arguments
     region_map: "RegionMap",
-    annotation: NDArray[int],
+    annotation: AnnotationT,
     voxel_volume: float,
-    gad1: NDArray[float],
-    nrn1: NDArray[float],
-    neuron_density: NDArray[float],
+    gad1: FloatArray,
+    nrn1: FloatArray,
+    neuron_density: FloatArray,
     inhibitory_proportion: Optional[float] = None,
     inhibitory_data: Optional[InhibitoryData] = None,
-) -> NDArray[float]:
+) -> FloatArray:
     """
     Compute the inhibitory neuron density using a prescribed neuron count and the overall neuron
     density as an upper bound.

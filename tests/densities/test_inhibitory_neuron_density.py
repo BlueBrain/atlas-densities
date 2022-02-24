@@ -2,11 +2,11 @@
 Unit tests for inhibitory cell density computation
 """
 from pathlib import Path
+from unittest.mock import patch
 
 import numpy as np
 import numpy.testing as npt
 import pytest
-from mock import patch
 from voxcell import RegionMap
 
 import atlas_densities.densities.inhibitory_neuron_density as tested
@@ -64,7 +64,7 @@ def test_compute_inhibitory_neuron_intensity():
 
 def test_compute_inhibitory_neuron_density():
     annotation = np.array([[[1, 2, 6, 3, 4]]], dtype=np.uint32)
-    voxel_volume = (25 ** 3) / 1e9  # mm^3
+    voxel_volume = (25**3) / 1e9  # mm^3
     neuron_density = np.array([[[0.0, 0.0, 4.0, 4.0, 2.0]]]) / voxel_volume
     group_ids = {
         "Purkinje layer": set({1, 2}),
@@ -117,7 +117,7 @@ def test_compute_inhibitory_neuron_density_exception():
 def get_inhibitory_neuron_input_data(neuron_count):
     shape = (20, 20, 20)
     annotation = np.arange(8000).reshape(shape)
-    voxel_volume = (25 ** 3) / 1e9
+    voxel_volume = (25**3) / 1e9
     neuron_density = np.random.random_sample(annotation.shape)
     neuron_density = (2.5 * neuron_count * neuron_density / np.sum(neuron_density)) / voxel_volume
     inhibitory_data = {

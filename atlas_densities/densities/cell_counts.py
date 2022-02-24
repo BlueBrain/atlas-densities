@@ -108,7 +108,7 @@ def glia_cell_counts() -> Dict[str, int]:
 
 
 def inhibitory_neuron_counts(
-    inhibitory_neurons_dataframe: "pd.DataFrame",
+    inhibitory_neurons_dataframe: pd.DataFrame,
 ) -> Dict[str, int]:
     """Number of inhibitory neurons in the whole mouse brain.
 
@@ -144,7 +144,7 @@ def inhibitory_neuron_counts(
 
 
 def inhibitory_data(
-    inhibitory_neurons_dataframe: "pd.DataFrame",
+    inhibitory_neurons_dataframe: pd.DataFrame,
 ) -> Dict[str, Union[int, Dict[str, float]]]:
     """
     Number of inhibitory cells for different region groups of the mouse brain.
@@ -205,7 +205,7 @@ def inhibitory_data(
 
 def extract_inhibitory_neurons_dataframe(
     inhibitory_neuron_counts_path: Union[str, "Path"]
-) -> "pd.DataFrame":
+) -> pd.DataFrame:
     """
     Extract from excel file a pandas.DataFrame containing the counts of the cells reacting to
     PV, SST and VIP in every AIBS region of the mouse brain.
