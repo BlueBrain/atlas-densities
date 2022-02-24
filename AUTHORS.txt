@@ -1,0 +1,17 @@
+Maintainer
+----------
+* BBP/NSE
+
+Authors
+-------
+* Csaba Eroe
+* Dimitri Rodarie
+* Huanxiang Lu
+* Hugo Dictus
+* Jonathan Lurie
+* Luc Guyot
+* Mike Gevaert
+* Zisis Eleftherios
+
+Contributors
+------------
