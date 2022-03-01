@@ -21,6 +21,7 @@ The tools allow to:
 Tools can be used through a command line interface.
 
 After installation, you can display the available command lines with the following ``bash`` command:
+
 .. code-block:: bash
 
     atlas-densities --help
@@ -60,7 +61,7 @@ The development of this software was supported by funding to the Blue Brain Proj
 
 For license and authors, see LICENSE.txt and AUTHORS.md respectively.
 
-Copyright © 2021 Blue Brain Project/EPFL
+Copyright © 2022 Blue Brain Project/EPFL
 
 .. _`Allen Institute for Brain Science (AIBS)`: https://alleninstitute.org/what-we-do/brain-science/
 .. _`A Cell Atlas for the Mouse Brain`: https://www.frontiersin.org/articles/10.3389/fninf.2018.00084/full
