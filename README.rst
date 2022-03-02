@@ -21,6 +21,7 @@ The tools allow to:
 Tools can be used through a command line interface.
 
 After installation, you can display the available command lines with the following ``bash`` command:
+
 .. code-block:: bash
 
     atlas-densities --help
@@ -56,14 +57,14 @@ These formatting operations will help you pass the linting check `testenv:lint` 
 
 Acknowledgements
 ================
+
 The development of this software was supported by funding to the Blue Brain Project, a research center of the École polytechnique fédérale de Lausanne (EPFL), from the Swiss government’s ETH Board of the Swiss Federal Institutes of Technology.
 
-For license and authors, see LICENSE.txt and AUTHORS.md respectively.
+For license and authors, see LICENSE.txt and AUTHORS.txt respectively.
 
-Copyright © 2021 Blue Brain Project/EPFL
+Copyright © 2022 Blue Brain Project/EPFL
 
 .. _`Allen Institute for Brain Science (AIBS)`: https://alleninstitute.org/what-we-do/brain-science/
 .. _`A Cell Atlas for the Mouse Brain`: https://www.frontiersin.org/articles/10.3389/fninf.2018.00084/full
 .. _`BBP Cell Atlas`: https://portal.bluebrain.epfl.ch/resources/models/cell-atlas/
-.. _cgal-pybind: TODO
-.. _CGAL: https://www.cgal.org/
+.. _cgal-pybind: https://github.com/BlueBrain/cgal-pybind

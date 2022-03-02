@@ -13,7 +13,7 @@ setup(
     install_requires=[
         "atlas-commons>=0.1.3.dev0",
         "click>=7.0",
-        "cgal_pybind>=0.1.1",
+        "cgal-pybind>=0.1.1",
         "numpy>=1.15.0",
         "openpyxl>=3.0.3",
         "pandas>=1.0.3",
