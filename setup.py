@@ -11,7 +11,7 @@ setup(
     license="Apache-2",
     python_requires=">=3.7.0",
     install_requires=[
-        "atlas-commons>=0.1.3",
+        "atlas-commons>=0.1.4",
         "click>=7.0",
         "cgal-pybind>=0.1.1",
         "numpy>=1.15.0",
