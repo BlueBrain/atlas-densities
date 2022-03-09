@@ -39,7 +39,7 @@ Installation
 cgal-pybind
 -----------
 This project depends on the BBP python project cgal-pybind_.
-The python project cgal-pybind_ needs to be installed prior to the above intructions.
+The python project cgal-pybind_ needs to be installed prior to the above instructions.
 
 
 Instructions for developers
