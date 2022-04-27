@@ -62,7 +62,7 @@ The development of this software was supported by funding to the Blue Brain Proj
 
 For license and authors, see LICENSE.txt and AUTHORS.txt respectively.
 
-Copyright © 2022 Blue Brain Project/EPFL
+Copyright © 2022-2022 Blue Brain Project/EPFL
 
 .. _`Allen Institute for Brain Science (AIBS)`: https://alleninstitute.org/what-we-do/brain-science/
 .. _`A Cell Atlas for the Mouse Brain`: https://www.frontiersin.org/articles/10.3389/fninf.2018.00084/full
