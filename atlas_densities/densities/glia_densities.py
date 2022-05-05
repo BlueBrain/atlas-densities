@@ -10,6 +10,7 @@ from atlas_densities.densities.utils import (
     compensate_cell_overlap,
     constrain_cell_counts_per_voxel,
     get_group_ids,
+    normalize_intensity,
 )
 
 L = logging.getLogger(__name__)
@@ -131,7 +132,7 @@ def compute_glia_densities(  # pylint: disable=too-many-arguments
     cell_density = np.asarray(cell_density, dtype=float)
 
     glia_densities["glia"] = compensate_cell_overlap(
-        glia_densities["glia"], annotation, gaussian_filter_stdv=1.0, copy=False
+        glia_densities["glia"], annotation, gaussian_filter_stdv=-1.0, copy=False
     )
     L.info(
         "Computing overall glia density field with a target cell count of %d ...",
@@ -145,12 +146,18 @@ def compute_glia_densities(  # pylint: disable=too-many-arguments
         glia_densities["glia"],
         cell_density * voxel_volume,
     )
+    placed_cells = np.zeros_like(glia_densities["glia"])
     for glia_type in ["astrocyte", "oligodendrocyte"]:
+        glia_densities[glia_type] = normalize_intensity(
+            glia_densities[glia_type],
+            annotation,
+            copy=copy,
+        )
         glia_densities[glia_type] = compensate_cell_overlap(
             glia_densities[glia_type],
             annotation,
-            gaussian_filter_stdv=1.0,
-            copy=copy,
+            gaussian_filter_stdv=2.0,
+            copy=False,
         )
         cell_count = glia_cell_count * float(glia_proportions[glia_type])
         L.info(
@@ -161,12 +168,11 @@ def compute_glia_densities(  # pylint: disable=too-many-arguments
         glia_densities[glia_type] = constrain_cell_counts_per_voxel(
             cell_count,
             glia_densities[glia_type],
-            glia_densities["glia"],
+            glia_densities["glia"] - placed_cells,
             copy=copy,
         )
+        placed_cells += glia_densities[glia_type]
 
-    # pylint: disable=fixme
-    # FIXME(Luc): The microglia density can be negative.
     glia_densities["microglia"] = (
         glia_densities["glia"] - glia_densities["astrocyte"] - glia_densities["oligodendrocyte"]
     )

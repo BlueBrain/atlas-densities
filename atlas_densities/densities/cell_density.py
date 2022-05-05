@@ -8,7 +8,12 @@ from atlas_commons.typing import AnnotationT, BoolArray, FloatArray
 from voxcell import RegionMap  # type: ignore
 
 from atlas_densities.densities.cell_counts import cell_counts
-from atlas_densities.densities.utils import compensate_cell_overlap, get_group_ids, get_region_masks
+from atlas_densities.densities.utils import (
+    compensate_cell_overlap,
+    get_group_ids,
+    get_region_masks,
+    normalize_intensity,
+)
 
 
 def fix_purkinje_layer_intensity(
@@ -95,7 +100,8 @@ def compute_cell_density(
         layer constraint of a constant number of cells per voxel.
     """
 
-    nissl = compensate_cell_overlap(nissl, annotation, gaussian_filter_stdv=1.0, copy=False)
+    nissl = normalize_intensity(nissl, annotation, threshold_scale_factor=1.0, copy=False)
+    nissl = compensate_cell_overlap(nissl, annotation, gaussian_filter_stdv=-1.0, copy=False)
 
     group_ids = get_group_ids(region_map)
     region_masks = get_region_masks(group_ids, annotation)
