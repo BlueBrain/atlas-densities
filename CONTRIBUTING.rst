@@ -7,7 +7,7 @@ Found a bug?
 ------------
 
 If you find a bug in the source code or in using the theme, you can `open an issue <https://github.com/BlueBrain/atlas-densities/issues>`__ on GitHub.
-Even better, you can `submit a pull request <https://github.com/BlueBrainatlas-densities/pulls>`__ with a fix.
+Even better, you can `submit a pull request <https://github.com/BlueBrain/atlas-densities/pulls>`__ with a fix.
 
 Submitting an issue
 ~~~~~~~~~~~~~~~~~~~
