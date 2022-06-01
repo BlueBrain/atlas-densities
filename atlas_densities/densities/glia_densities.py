@@ -120,7 +120,7 @@ def compute_glia_densities(  # pylint: disable=too-many-arguments
         The overall glia density field is bounded by the `cell_density` field.
         It sums up to `glia_cell_count` after multiplication by the voxel volume. In
         addition, it respects some region-specific hints (fiber tracts and Purkinje layer).
-        For every glia cell type, the correspondging output density field is bounded by the overall
+        For every glia cell type, the corresponding output density field is bounded by the overall
         glia density field and sums up to its prescribed cell count when multiplied with by the
         voxel volume.
 
@@ -129,10 +129,11 @@ def compute_glia_densities(  # pylint: disable=too-many-arguments
     # The algorithm constraining cell counts per voxel requires double precision
     for glia_type in glia_densities:
         glia_densities[glia_type] = np.asarray(glia_densities[glia_type], dtype=float)
-    cell_density = np.asarray(cell_density, dtype=float)
+    cell_density = np.asarray(cell_density, dtype=np.float64)
 
     glia_densities["glia"] = compensate_cell_overlap(
-        glia_densities["glia"], annotation, gaussian_filter_stdv=-1.0, copy=False
+        np.asarray(glia_densities["glia"], dtype=np.float64),
+        annotation, gaussian_filter_stdv=-1.0, copy=copy
     )
     L.info(
         "Computing overall glia density field with a target cell count of %d ...",
@@ -149,7 +150,7 @@ def compute_glia_densities(  # pylint: disable=too-many-arguments
     placed_cells = np.zeros_like(glia_densities["glia"])
     for glia_type in ["astrocyte", "oligodendrocyte"]:
         glia_densities[glia_type] = normalize_intensity(
-            glia_densities[glia_type],
+            np.asarray(glia_densities[glia_type], dtype=np.float64),
             annotation,
             copy=copy,
         )
@@ -157,7 +158,7 @@ def compute_glia_densities(  # pylint: disable=too-many-arguments
             glia_densities[glia_type],
             annotation,
             gaussian_filter_stdv=2.0,
-            copy=False,
+            copy=copy,
         )
         cell_count = glia_cell_count * float(glia_proportions[glia_type])
         L.info(
@@ -172,11 +173,13 @@ def compute_glia_densities(  # pylint: disable=too-many-arguments
             copy=copy,
         )
         placed_cells += glia_densities[glia_type]
-
+    L.info(
+        "Computing microglia density field with a target cell count of %d ...",
+        np.sum(glia_densities["glia"] - placed_cells),
+    )
     glia_densities["microglia"] = (
-        glia_densities["glia"] - glia_densities["astrocyte"] - glia_densities["oligodendrocyte"]
+        glia_densities["glia"] - placed_cells
     )
     for glia_type, cell_counts_per_voxel in glia_densities.items():
-        glia_densities[glia_type] = cell_counts_per_voxel / voxel_volume
-
+        glia_densities[glia_type] = np.asarray(cell_counts_per_voxel / voxel_volume, dtype=np.float32)
     return glia_densities

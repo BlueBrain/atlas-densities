@@ -100,6 +100,7 @@ def compute_cell_density(
         layer constraint of a constant number of cells per voxel.
     """
 
+    nissl = np.asarray(nissl, dtype=np.float64)
     nissl = normalize_intensity(nissl, annotation, threshold_scale_factor=1.0, copy=False)
     nissl = compensate_cell_overlap(nissl, annotation, gaussian_filter_stdv=-1.0, copy=False)
 
@@ -109,4 +110,4 @@ def compute_cell_density(
     for group, mask in region_masks.items():
         nissl[mask] = nissl[mask] * (cell_counts()[group] / np.sum(nissl[mask]))
 
-    return nissl / voxel_volume
+    return np.asarray(nissl / voxel_volume, dtype=np.float32)
