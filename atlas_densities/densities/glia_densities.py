@@ -128,7 +128,7 @@ def compute_glia_densities(  # pylint: disable=too-many-arguments
     glia_densities = glia_intensities.copy()
     # The algorithm constraining cell counts per voxel requires double precision
     for glia_type in glia_densities:
-        glia_densities[glia_type] = np.asarray(glia_densities[glia_type], dtype=float)
+        glia_densities[glia_type] = np.asarray(glia_densities[glia_type], dtype=np.float64)
     cell_density = np.asarray(cell_density, dtype=np.float64)
 
     glia_densities["glia"] = compensate_cell_overlap(
@@ -181,5 +181,5 @@ def compute_glia_densities(  # pylint: disable=too-many-arguments
         glia_densities["glia"] - placed_cells
     )
     for glia_type, cell_counts_per_voxel in glia_densities.items():
-        glia_densities[glia_type] = np.asarray(cell_counts_per_voxel / voxel_volume, dtype=np.float32)
+        glia_densities[glia_type] = cell_counts_per_voxel / voxel_volume
     return glia_densities

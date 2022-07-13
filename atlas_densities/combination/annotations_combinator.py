@@ -112,7 +112,8 @@ def combine_annotations(
     Returns:
         VoxelData object holding the combined annotation 3D array.
     """
-    brain_annotation_ccfv2 = combine_ccfv2_annotations(brain_annotation_ccfv2, fiber_annotation_ccfv2)
+    brain_annotation_ccfv2 = combine_ccfv2_annotations(brain_annotation_ccfv2,
+                                                       fiber_annotation_ccfv2)
     brain_annotation_ccfv3_mask = brain_annotation_ccfv3.raw > 0
     ccfv3_ids = np.unique(brain_annotation_ccfv3.raw[brain_annotation_ccfv3_mask])
     missing_ids = np.isin(brain_annotation_ccfv2.raw, ccfv3_ids, invert=True)

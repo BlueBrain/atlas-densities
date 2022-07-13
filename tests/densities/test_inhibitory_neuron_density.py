@@ -85,7 +85,7 @@ def test_compute_inhibitory_neuron_density():
                 "atlas_densities.densities.inhibitory_neuron_density.compensate_cell_overlap",
                 side_effect=[data["gad1"], data["nrn1"]],
             ):
-                region_map = {}  # Fake
+                region_map = RegionMap.load_json(str(Path(TESTS_PATH, "1.json")))
                 inhibitory_neuron_density = tested.compute_inhibitory_neuron_density(
                     region_map,
                     annotation,
