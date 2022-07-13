@@ -125,7 +125,7 @@ def check_region_counts_consistency(
     ):
         if region_counts.at[region_name, f"{cell_type}_standard_deviation"] == 0.0:
             count = region_counts.at[region_name, cell_type]
-            descendants_names = hierarchy_info.loc[id_set, "brain_region"]
+            descendants_names = hierarchy_info.loc[list(id_set), "brain_region"]
             zero_std_mask = (
                 region_counts.loc[descendants_names, f"{cell_type}_standard_deviation"] == 0.0
             )
