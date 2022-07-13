@@ -121,7 +121,7 @@ def compensate_cell_overlap(
     """
     marker_intensity = marker_intensity.copy() if copy else marker_intensity
     if gaussian_filter_stdv > 0.0:
-        marker_intensity = scipy.ndimage.filters.gaussian_filter(
+        marker_intensity = scipy.ndimage.gaussian_filter(
             marker_intensity, sigma=gaussian_filter_stdv, output=marker_intensity
         )
     marker_intensity[annotation == 0] = 0.0

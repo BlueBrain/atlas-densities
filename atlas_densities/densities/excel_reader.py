@@ -409,7 +409,7 @@ def _stack_pv_sst_vip_measurements(dataframe: pd.DataFrame) -> pd.DataFrame:
     Returns:
         DataFrame with the columns listed at the top of this module.
     """
-    result = pd.DataFrame()
+    frames = []
     marker_columns = {"PV", "SST", "VIP", "PV_stddev", "SST_stddev", "VIP_stddev"}
     for marker in ["PV", "SST", "VIP"]:
         to_drop = list(marker_columns - {marker, marker + "_stddev"})
@@ -419,8 +419,9 @@ def _stack_pv_sst_vip_measurements(dataframe: pd.DataFrame) -> pd.DataFrame:
             inplace=True,
         )
         marker_dataframe["cell_type"] = marker + "+"
-        result = result.append(marker_dataframe)
+        frames.append(marker_dataframe)
 
+    result = pd.concat(frames)
     result.reset_index(drop=True, inplace=True)
     na_measurement_mask = result["measurement"].isna()
     result.drop(result.index[na_measurement_mask], inplace=True)
@@ -529,7 +530,7 @@ def _enforce_aibs_nomenclature(region_map: "RegionMap", dataframe: pd.DataFrame)
     dataframe.loc[dataframe["full_name"] == acav6, "full_name"] = acav6 + "a"
     copied_row = dataframe[dataframe["full_name"] == acav6 + "a"].copy()
     copied_row["full_name"] = acav6 + "b"
-    dataframe = dataframe.append(copied_row)
+    dataframe = pd.concat((dataframe, copied_row))
 
     # Fixing accents
     dataframe["full_name"] = [_replace_accents(name) for name in dataframe["full_name"]]
@@ -560,7 +561,7 @@ def _enforce_aibs_nomenclature(region_map: "RegionMap", dataframe: pd.DataFrame)
                 row = dataframe.loc[indices[0]]
                 new_row = pd.DataFrame({column: [row[column]] for column in dataframe.columns})
                 new_row["full_name"] = region_name
-                dataframe = dataframe.append(new_row)
+                dataframe = pd.concat((dataframe, new_row))
 
     # Remove the invalid region names which have been fixed
     indices = dataframe.index[dataframe["full_name"].isin(list(handled_invalid_names))]
@@ -636,10 +637,14 @@ def read_measurements(
         format described at the top of this module.
 
     """
-    dataframe = read_kim_et_al_neuron_densities(region_map, mmc3_path)
-    dataframe = dataframe.append(read_inhibitory_neuron_measurement_compilation(gaba_papers_path))
-    dataframe = dataframe.append(read_pv_sst_vip_measurement_compilation(gaba_papers_path))
-    dataframe = dataframe.append(pd.read_csv(non_density_measurements_path))
+    dataframe = pd.concat(
+        (
+            read_kim_et_al_neuron_densities(region_map, mmc3_path),
+            read_inhibitory_neuron_measurement_compilation(gaba_papers_path),
+            read_pv_sst_vip_measurement_compilation(gaba_papers_path),
+            pd.read_csv(non_density_measurements_path),
+        )
+    )
     dataframe.reset_index(drop=True, inplace=True)
 
     return dataframe

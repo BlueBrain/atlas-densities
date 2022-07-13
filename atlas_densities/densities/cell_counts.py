@@ -126,10 +126,8 @@ def inhibitory_neuron_counts(
     """
     cerebellum_group_count = np.sum(inhibitory_neurons_dataframe.loc["CB"][1:])
     isocortex_group_count = sum(
-        [
-            np.sum(inhibitory_neurons_dataframe.loc[acronym][1:])
-            for acronym in ["Isocortex", "ENT", "PIR"]
-        ]
+        np.sum(inhibitory_neurons_dataframe.loc[acronym][1:])
+        for acronym in ["Isocortex", "ENT", "PIR"]
     )
     rest_count = (
         np.sum(inhibitory_neurons_dataframe.loc["grey"][1:])
