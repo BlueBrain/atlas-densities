@@ -177,8 +177,9 @@ def compute_inhibitory_neuron_density(  # pylint: disable=too-many-arguments
         inhibitory_neurons_mask,
         np.isin(
             annotation,
-            region_map.find("Reticular nucleus of the thalamus",
-                            attr="name", with_descendants=True),
+            region_map.find(
+                "Reticular nucleus of the thalamus", attr="name", with_descendants=True
+            ),
         ),
     )
     # Cortical L1 regions
@@ -186,8 +187,10 @@ def compute_inhibitory_neuron_density(  # pylint: disable=too-many-arguments
         inhibitory_neurons_mask,
         np.isin(
             annotation,
-            (region_map.find("Isocortex", attr="name", with_descendants=True)
-             & region_map.find("@.*1[ab]?$", attr="acronym", with_descendants=True)),
+            (
+                region_map.find("Isocortex", attr="name", with_descendants=True)
+                & region_map.find("@.*1[ab]?$", attr="acronym", with_descendants=True)
+            ),
         ),
     )
 

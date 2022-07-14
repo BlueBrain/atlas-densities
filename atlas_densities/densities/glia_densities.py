@@ -133,7 +133,9 @@ def compute_glia_densities(  # pylint: disable=too-many-arguments
 
     glia_densities["glia"] = compensate_cell_overlap(
         np.asarray(glia_densities["glia"], dtype=np.float64),
-        annotation, gaussian_filter_stdv=-1.0, copy=copy
+        annotation,
+        gaussian_filter_stdv=-1.0,
+        copy=copy,
     )
     L.info(
         "Computing overall glia density field with a target cell count of %d ...",
@@ -177,9 +179,7 @@ def compute_glia_densities(  # pylint: disable=too-many-arguments
         "Computing microglia density field with a target cell count of %d ...",
         np.sum(glia_densities["glia"] - placed_cells),
     )
-    glia_densities["microglia"] = (
-        glia_densities["glia"] - placed_cells
-    )
+    glia_densities["microglia"] = glia_densities["glia"] - placed_cells
     for glia_type, cell_counts_per_voxel in glia_densities.items():
         glia_densities[glia_type] = cell_counts_per_voxel / voxel_volume
     return glia_densities
