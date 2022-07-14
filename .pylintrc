@@ -1,6 +1,5 @@
 [MESSAGES CONTROL]
-# C0330: Wrong hanging indentation before block (conflicts with black, see https://github.com/psf/black/issues/48)
-disable=bad-continuation
+disable=
 
 [SIMILARITIES]
 # Minimum lines number of a similarity.

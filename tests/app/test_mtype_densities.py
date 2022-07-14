@@ -403,7 +403,7 @@ class Test_mtype_densities_from_probability_map:
             tested._validate_neuronal_mtype_composition(composition)
 
             wrong_composition = composition.copy(deep=True)
-            wrong_composition["density"][2] = -1.0
+            wrong_composition[["density", 2]] = -1.0
             with pytest.raises(AtlasDensitiesError):
                 tested._validate_neuronal_mtype_composition(wrong_composition)
 
