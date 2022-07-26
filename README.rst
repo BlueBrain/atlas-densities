@@ -87,7 +87,7 @@ Using the `markers_config.yaml` as a guide, and using the DeepAtlas_ toolkit to 
 
     atlas-densities combination combine-markers       \
         --hierarchy-path=data/1.json                  \
-        --annotation-path=data/annotation_25.nrrd     \
+        --annotation-path=data/ccfv2/annotation_25.nrrd     \
         --config=markers_config.yaml
 
 
@@ -116,22 +116,21 @@ glia-cell-densities
 -------------------
 
 Compute and save the glia cell densities, based on overall cell densities.
-
-TODO: relative_marker_volumes come from ...
-
+The files `oligodendrocyte.nrrd`, `microglia.nrrd` `glia.nrrd` `astrocyte.nrrd` and `glia_proportions.json` come from the output of the `cell-density` step.
 
 .. code-block:: bash
 
-    atlas-densities cell-densities glia-cell-densities                                                \
-        --hierarchy-path=data/1.json                                                                  \
-        --annotation-path=data/ccfv2/annotation_25.nrrd                                               \
-        --cell-density-path=data/ccfv2/density_volumes/cell_density.nrrd                              \
-        --glia-density-path=data/ccfv2/relative_marker_volumes/glia_ccfv2.nrrd                        \
-        --astrocyte-density-path=data/ccfv2/relative_marker_volumes/astrocyte_ccfv2.nrrd              \
-        --microglia-density-path=data/ccfv2/relative_marker_volumes/microglia_ccfv2.nrrd              \
-        --oligodendrocyte-density-path=data/ccfv2/relative_marker_volumes/oligodendrocyte_ccfv2.nrrd  \
-        --glia-proportions-path=data/ccfv2/relative_marker_volumes/glia_proportions_ccfv2.json        \
+    atlas-densities cell-densities glia-cell-densities                   \
+        --hierarchy-path=data/1.json                                     \
+        --annotation-path=data/ccfv2/annotation_25.nrrd                  \
+        --cell-density-path=data/ccfv2/density_volumes/cell_density.nrrd \
+        --glia-density-path=data/ccfv2//glia.nrrd                        \
+        --astrocyte-density-path=data/ccfv2/astrocyte.nrrd               \
+        --microglia-density-path=data/ccfv2/microglia.nrrd               \
+        --oligodendrocyte-density-path=data/ccfv2/oligodendrocyte.nrrd   \
+        --glia-proportions-path=data/ccfv2/glia_proportions.json         \
         --output-dir=data/ccfv2/density_volumes
+
 
 compile-measurements
 --------------------
@@ -141,9 +140,12 @@ See `--help` for more explanation.
 
 .. code-block:: bash
 
+    mkdir -p data/ccfv2/measurements
+
     atlas-densities cell-densities compile-measurements                                  \
         --measurements-output-path=data/ccfv2/measurements/measurements.csv              \
         --homogenous-regions-output-path=data/ccfv2/measurements/homogeneous_regions.csv
+
 
 measurements-to-average-densities
 ---------------------------------
@@ -160,16 +162,14 @@ Compute and save average cell densities based on measurements and AIBS region vo
         --measurements-path=data/ccfv2/measurements/measurements.csv         \
         --output-path=data/ccfv2/measurements/lit_densities.csv
 
+
 fit-average-densities
 ---------------------
-Estimate average cell densities of brain regions in hierarchy for the cell types with markers listed in gene-config`.
+Estimate average cell densities of brain regions in hierarchy for the cell types with markers listed in `gene-config`.
 
-need?
-first_estimates.csv
-data/ccfv2/measurements/lit_densities.csv
-measurements/homogeneous_regions.csv
-
-check if default homogenous-regions-path is ok
+TODO:
+* check if default homogenous-regions-path is ok
+* where to get fit_average_densities_config.yaml
 
 .. code-block:: bash
 
@@ -188,9 +188,6 @@ inhibitory-neuron-densities
 ---------------------------
 
 Create volumetric cell densities of brain regions in hierarchy for the cell types labelling the columns of the data frame stored in `average-densities-path`.
-
-need?
-first_estimates.csv
 
 .. code-block:: bash
 
