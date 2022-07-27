@@ -52,7 +52,7 @@ def app(verbose):
 )
 @click.option("--output-path", required=True, help="Path of the nrrd file to write")
 @log_args(L)
-def combine_annotations(
+def combine_v2_v3_annotations(
     hierarchy,
     brain_annotation_ccfv2,
     fiber_annotation_ccfv2,
@@ -60,7 +60,7 @@ def combine_annotations(
     output_path,
 ):
     # pylint: disable=line-too-long
-    """Generate and save the combined annotation file.
+    """Generate and save the v2-v3 combined annotation file.
 
     The annotation file `brain_annotation_ccfv3` is the annotation file containing
     the least complete annotation. There are two use cases: a resolution of 10 or 25 um.
@@ -98,6 +98,57 @@ def combine_annotations(
         brain_annotation_ccfv2,
         fiber_annotation_ccfv2,
         brain_annotation_ccfv3,
+    )
+    combined_annotation.save_nrrd(output_path)
+
+
+@app.command()
+@click.option(
+    "--brain-annotation-ccfv2",
+    type=EXISTING_FILE_PATH,
+    required=True,
+    help=("This brain annotation file contains the most complete annotation."),
+)
+@click.option(
+    "--fiber-annotation-ccfv2",
+    type=EXISTING_FILE_PATH,
+    required=True,
+    help="Fiber annotation is not included in the CCF-v2 2011 annotation files.",
+)
+@click.option("--output-path", required=True, help="Path of the nrrd file to write")
+@log_args(L)
+def combine_ccfv2_annotations(
+    brain_annotation_ccfv2,
+    fiber_annotation_ccfv2,
+    output_path,
+):
+    # pylint: disable=line-too-long
+    """Generate and save the ccfv2 combined annotation file.
+
+    The ccfv2 annotations are split into two volumes. `fiber_annotation_ccfv2` describes solely the
+    fibers and ventricular related regions while `brain_annotation_ccfv2` contains all other brain
+    regions. There are two use cases: a resolution of 10 or 25 um.
+
+    For a resolution of 10 um, the path arguments should be the following:
+
+    \b
+    - `brain_annotation_ccfv2` is the path to a copy of
+    ``AIBS_ANNOTATION_URL``/mouse_2011/annotation_10.nrrd
+
+    \b
+    - `fiber_annotation` is the path to a copy of
+    ``AIBS_ANNOTATION_URL``/mouse_2011/annotationFiber_10_2011.nrrd
+
+    where ``AIBS_ANNOTATION_URL`` is
+    http://download.alleninstitute.org/informatics-archive/current-release/mouse_ccf/annotation.
+    """
+
+    brain_annotation_ccfv2 = voxcell.VoxelData.load_nrrd(brain_annotation_ccfv2)
+    fiber_annotation_ccfv2 = voxcell.VoxelData.load_nrrd(fiber_annotation_ccfv2)
+
+    combined_annotation = annotations_combinator.combine_ccfv2_annotations(
+        brain_annotation_ccfv2,
+        fiber_annotation_ccfv2
     )
     combined_annotation.save_nrrd(output_path)
 
