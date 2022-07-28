@@ -2,7 +2,7 @@
 Unit tests for inhibitory cell density computation
 """
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 import numpy as np
 import numpy.testing as npt
@@ -85,7 +85,10 @@ def test_compute_inhibitory_neuron_density():
                 "atlas_densities.densities.inhibitory_neuron_density.compensate_cell_overlap",
                 side_effect=[data["gad1"], data["nrn1"]],
             ):
-                region_map = {}  # Fake
+                # have any empty region map
+                region_map = Mock()
+                region_map.find = lambda name, attr, with_descendants: set()
+
                 inhibitory_neuron_density = tested.compute_inhibitory_neuron_density(
                     region_map,
                     annotation,

@@ -1,0 +1,61 @@
+cellType:
+- oligodendrocyte
+- astrocyte
+- microglia
+brainRegion:
+- cerebellum
+- striatum
+gene:
+- cnp
+- mbp
+- gfap
+- s100b
+- aldh1l1
+- tmem119
+inputGeneVolumePath:
+  cnp: data/ccfv2/marker_volumes/CNP.nrrd
+  mbp: data/ccfv2/marker_volumes/MBP.nrrd
+  gfap: data/ccfv2/marker_volumes/GFAP.nrrd
+  s100b: data/ccfv2/marker_volumes/S100b.nrrd
+  aldh1l1: data/ccfv2/marker_volumes/ALDH1L1.nrrd
+  tmem119: data/ccfv2/marker_volumes/TMEM119.nrrd
+outputCellTypeVolumePath:
+  oligodendrocyte: data/ccfv2/relative_marker_volumes/oligodendrocyte.nrrd
+  astrocyte: data/ccfv2/relative_marker_volumes/astrocyte.nrrd
+  microglia: data/ccfv2/relative_marker_volumes/microglia.nrrd
+# Overall glia intensity volume
+outputOverallGliaVolumePath: data/ccfv2/relative_marker_volumes/glia.nrrd
+# The so-called global celltype scaling factors S_celltype of
+# "A Cell Atlas for the Mouse Brain", C. Eroe et al, 2018.
+# These factors are simply the proportions of the different glia cell types
+# in the mouse brain.
+outputCellTypeProportionsPath: data/ccfv2/relative_marker_volumes/glia_proportions.json
+# Cell densities in number of cells per mm^3
+cellDensity:
+  cerebellum:
+    oligodendrocyte: 13750
+    astrocyte: 1512
+    microglia: 8624
+  striatum:
+    oligodendrocyte: 9950
+    astrocyte: 9867
+    microglia: 12100
+combination:
+- cellType: oligodendrocyte
+  gene: cnp
+  averageExpressionIntensity: 35.962800
+- cellType: oligodendrocyte
+  gene: mbp
+  averageExpressionIntensity: 3.304965
+- cellType: astrocyte
+  gene: gfap
+  averageExpressionIntensity: 3.2097903
+- cellType: astrocyte
+  gene: s100b
+  averageExpressionIntensity: 4.174825
+- cellType: astrocyte
+  gene: aldh1l1
+  averageExpressionIntensity: 1.326080
+- cellType: microglia
+  gene: tmem119
+  averageExpressionIntensity: 0.654761

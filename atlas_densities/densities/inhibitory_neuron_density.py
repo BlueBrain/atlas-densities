@@ -166,6 +166,33 @@ def compute_inhibitory_neuron_density(  # pylint: disable=too-many-arguments
             list(group_ids["Cerebellar cortex"] & group_ids["Molecular layer"]),
         ),
     )
+    inhibitory_neurons_mask = np.logical_or(
+        inhibitory_neurons_mask,
+        np.isin(
+            annotation,
+            region_map.find("Striatum", attr="name", with_descendants=True),
+        ),
+    )
+    inhibitory_neurons_mask = np.logical_or(
+        inhibitory_neurons_mask,
+        np.isin(
+            annotation,
+            region_map.find(
+                "Reticular nucleus of the thalamus", attr="name", with_descendants=True
+            ),
+        ),
+    )
+    # Cortical L1 regions
+    inhibitory_neurons_mask = np.logical_or(
+        inhibitory_neurons_mask,
+        np.isin(
+            annotation,
+            (
+                region_map.find("Isocortex", attr="name", with_descendants=True)
+                & region_map.find("@.*1[ab]?$", attr="acronym", with_descendants=True)
+            ),
+        ),
+    )
 
     assert isinstance(inhibitory_data["neuron_count"], int)
 

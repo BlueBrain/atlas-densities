@@ -75,7 +75,9 @@ def normalize_intensity(
     output_intensity = copy_array(marker_intensity, copy=copy)
     output_intensity -= outside_mean * threshold_scale_factor
     output_intensity[output_intensity < 0.0] = 0.0
-    output_intensity /= np.max(output_intensity)
+    max_intensity = np.max(output_intensity)
+    if max_intensity > 0:
+        output_intensity /= max_intensity
 
     return output_intensity
 
@@ -343,8 +345,10 @@ def get_group_ids(region_map: "RegionMap", cleanup_rest: bool = False) -> Dict[s
         | region_map.find("Basic cell groups and regions", attr="name")
         | region_map.find("Cerebellum", attr="name")
     )
-    molecular_layer_ids = region_map.find("@.*molecular layer", attr="name", with_descendants=True)
     cerebellar_cortex_ids = region_map.find("Cerebellar cortex", attr="name", with_descendants=True)
+    molecular_layer_ids = cerebellar_cortex_ids & region_map.find(
+        "@.*molecular layer", attr="name", with_descendants=True
+    )
     rest_ids = region_map.find("root", attr="name", with_descendants=True)
     rest_ids -= cerebellum_group_ids | isocortex_group_ids
 
