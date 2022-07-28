@@ -71,7 +71,7 @@ expects a path to a yaml file of the following form:
     cellDensityStandardDeviationsPath: "std_cells.json"
 
 The sectionDataSetID values are AIBS dataset identifiers recorded in `realigned_slices_XXX.json`.
-An example of this configuration file (`fit_average_densities_config.yaml`) is provided for the
+An example of this configuration file (`fit_average_densities_ccfv2_config.yaml`) is provided for the
 CCFv2 reference volumes.
 
 .. _`Gene Search`: https://mouse.brain-map.org/
