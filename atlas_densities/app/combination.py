@@ -4,6 +4,7 @@ Combination operates on two or more volumetric files with nrrd format.
 """
 import json
 import logging
+from pathlib import Path
 
 import click
 import pandas as pd
@@ -27,7 +28,7 @@ def app(verbose):
 # pylint: disable=too-many-locals
 @app.command()
 @click.option(
-    "--hierarchy",
+    "--hierarchy-path",
     type=EXISTING_FILE_PATH,
     required=True,
     help="Path to AIBS 1.json file or an equivalent BBP hierarchy.json file.",
@@ -53,7 +54,7 @@ def app(verbose):
 @click.option("--output-path", required=True, help="Path of the nrrd file to write")
 @log_args(L)
 def combine_v2_v3_annotations(
-    hierarchy,
+    hierarchy_path,
     brain_annotation_ccfv2,
     fiber_annotation_ccfv2,
     brain_annotation_ccfv3,
@@ -68,7 +69,7 @@ def combine_v2_v3_annotations(
     For a resolution of 10 um, the path arguments should be the following:
 
     \b
-    - `hierarchy` is the path to a copy of
+    - `hierarchy_path` is the path to a copy of
     http://api.brain-map.org/api/v2/structure_graph_download/1.json
 
     \b
@@ -87,7 +88,7 @@ def combine_v2_v3_annotations(
     http://download.alleninstitute.org/informatics-archive/current-release/mouse_ccf/annotation.
     """
 
-    region_map = voxcell.RegionMap.load_json(hierarchy)
+    region_map = voxcell.RegionMap.load_json(hierarchy_path)
 
     brain_annotation_ccfv2 = voxcell.VoxelData.load_nrrd(brain_annotation_ccfv2)
     fiber_annotation_ccfv2 = voxcell.VoxelData.load_nrrd(fiber_annotation_ccfv2)
@@ -209,6 +210,7 @@ def combine_markers(annotation_path, hierarchy_path, config):
     )
 
     for type_, output_path in config["outputCellTypeVolumePath"].items():
+        Path(output_path).parent.mkdir(parents=True, exist_ok=True)
         annotation.with_data(glia_intensities.intensity[type_]).save_nrrd(output_path)
 
     annotation.with_data(glia_intensities.intensity["glia"]).save_nrrd(

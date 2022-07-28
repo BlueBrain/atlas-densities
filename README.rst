@@ -49,7 +49,7 @@ Examples
 ========
 
 Reference atlases
----------
+-----------------
 
 Most the pipeline steps rely on the following AIBS reference datasets (see `Rodarie et al. (2021)`_ for more
 details on the different versions of these datasets):
@@ -57,6 +57,7 @@ details on the different versions of these datasets):
 * A Nissl volume
 * An annotation volume
 * A brain region hierarchy file
+
 The AIBS Nissl reference volume is derived from high resolution image stacks of Nissl-stained
 coronal brain slices. These images are realigned and arranged to form a 3D brain volume. Nissl
 stains each cell somas. The intensity of each voxel of the Nissl volume correlates with the number
@@ -67,7 +68,7 @@ with leaves representing the finest parcellation.
 These datasets are publicly available on the AIBS website.
 
 Download reference atlases
-<<<<<<<
+~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Make `data` directory, and download needed annotation volumes, Nissl volume and hierarchy file:
 
@@ -81,7 +82,7 @@ Make `data` directory, and download needed annotation volumes, Nissl volume and 
 
    # CCFv2 annotation volumes:
    curl -o data/ccfv2/annotation_25.nrrd http://download.alleninstitute.org/informatics-archive/current-release/mouse_ccf/annotation/mouse_2011/annotation_25.nrrd
-   curl -o data/ccfv2/annotation_fibers_25.nrrd http://download.alleninstitute.org/informatics-archive/current-release/mouse_ccf/annotation/mouse_2011/annotation_fibers_25.nrrd
+   curl -o data/ccfv2/annotation_fibers_25.nrrd http://download.alleninstitute.org/informatics-archive/current-release/mouse_ccf/annotation/mouse_2011/annotationFiber_25.nrrd
 
    # CCFv3 annotation volume:
    curl -o data/ccfv3/annotation_25.nrrd http://download.alleninstitute.org/informatics-archive/current-release/mouse_ccf/annotation/ccf_2017/annotation_25.nrrd
@@ -90,7 +91,7 @@ Make `data` directory, and download needed annotation volumes, Nissl volume and 
    curl -O data/ccfv2/ara_nissl_25.nrrd http://download.alleninstitute.org/informatics-archive/current-release/mouse_ccf/ara_nissl/ara_nissl_25.nrrd
 
 Preparation of the annotation volume
-<<<<<<<
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Depending on the chosen version for the reference volumes pairs, some additional preparation
 are needed.
@@ -102,33 +103,32 @@ If you choose the ccfv2 version to estimate cell densities, then you should comb
 .. code-block:: bash
 
     # Here we override the ccfv2 annotation_25.nrrd file
-    atlas-building-tools combination combine_ccfv2_annotations  \
-        --brain-annotation-ccfv2=data/ccfv2/annotation_25.nrrd  \
-        --fiber-annotation-ccfv2=data/ccfv2/annotation_fibers_25.nrrd  \
+    atlas-densities combination combine-ccfv2-annotations             \
+        --brain-annotation-ccfv2=data/ccfv2/annotation_25.nrrd        \
+        --fiber-annotation-ccfv2=data/ccfv2/annotation_fibers_25.nrrd \
         --output-path=data/ccfv2/annotation_25.nrrd
 
 The ccfv3 annotation volume is more smooth but lacks a few brain parcellations that were present in
 the ccfv2 counterpart. If you choose the ccfv3 version to estimate cell densities, you can extend
 the ccfv3 annotation atlas with annotations of ccfv2.
 
-
 .. code-block:: bash
 
     # Here we override the ccfv3 annotation_25.nrrd file
-    atlas-building-tools combination combine_v2_v3_annotations  \
-        --hierarchy-path=data/1.json                            \
-        --brain-annotation-ccfv2=data/ccfv2/annotation_25.nrrd  \
-        --fiber-annotation-ccfv2=data/ccfv2/annotation_fibers_25.nrrd  \
-        --brain-annotation-ccfv3=data/ccfv3/annotation_25.nrrd  \
+    atlas-densities combination combine-v2-v3-annotations             \
+        --hierarchy-path=data/1.json                                  \
+        --brain-annotation-ccfv2=data/ccfv2/annotation_25.nrrd        \
+        --fiber-annotation-ccfv2=data/ccfv2/annotation_fibers_25.nrrd \
+        --brain-annotation-ccfv3=data/ccfv3/annotation_25.nrrd        \
         --output-path=data/ccfv3/annotation_25.nrrd
 
 In the following examples, we will use the ccfv2 reference atlases.
 
 `In situ` hybridization datasets
----------------
+--------------------------------
 
 Download, realign and interpolate AIBS ISH datasets
-<<<<<<<
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The BBP Cell Atlas pipeline leverages `in situ` hybridization (ISH) volumetric datasets from the AIBS
 to estimate cell type densities in all regions of the mouse brain. These ISH datasets have to be
@@ -138,33 +138,33 @@ The DeepAtlas_ toolkit allows you to download AIBS ISH image stacks, align these
 volume, and interpolate between them to create volumetric ISH datasets for each gene of your interest.
 
 Combine ISH datasets for glia cells
-<<<<<<<
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Glial cells express many genetic markers but none is expressed by every glial cells.
 We combine here `in situ` hybridization (ISH) volumetric datasets for glia markers and compute the
 glia subtypes global scaling factors, as described in `Eroe et al. (2018)`_.
 The list of required genes to combine for the generic glia marker can be found at
-`atlas_densities/app/data/markers/combine_markers_ccfv2_config.yaml`.
+`combine_markers_ccfv2_config.yaml`_.
 
 .. code-block:: bash
 
-    atlas-densities combination combine-markers       \
-        --hierarchy-path=data/1.json                  \
-        --annotation-path=data/ccfv2/annotation_25.nrrd     \
-        --config=atlas_densities/app/data/markers/markers_config.yaml
+    atlas-densities combination combine-markers         \
+        --hierarchy-path=data/1.json                    \
+        --annotation-path=data/ccfv2/annotation_25.nrrd \
+        --config=data/combine_markers_ccfv2_config.yaml
 
 ISH datasets for inhibitory/excitatory neurons
-<<<<<<<
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 In `Eroe et al. (2018)`_ (i.e., BBP Cell Atlas version 1), the excitatory neurons are distinguished
 from the inhibitory neurons using the Nrn1 and GAD67 (or GAD1) genetic marker.
 
 In `Rodarie et al. (2021)`_ (i.e., BBP Cell Atlas version 2), the authors used parvalbumin (Pvalb),
 somatostatin (SST), vasoactive intestinal peptide (VIP) and gabaergic (GAD1) markers (see also
-`atlas_densities/app/data/fitting/fit_average_densities_config.yaml`).
+`fit_average_densities_config.yaml`_).
 
 Cell density estimation
-------------
+-----------------------
 
 Compute and save the overall mouse brain cell density based on Nissl stained AIBS data.
 
@@ -181,29 +181,29 @@ Compute and save the overall mouse brain cell density based on Nissl stained AIB
 
 
 Distinguish neurons from glia cells
--------------------
+-----------------------------------
 
 Compute and save the glial cell and neuron densities, based on overall cell densities from previous
-section and the combined ISH glia datasets (see `In situ` hibridization datasets section).
+section and the combined ISH glia datasets (see `In situ` hybridization datasets section).
 The files `glia.nrrd`, `oligodendrocyte.nrrd`, `microglia.nrrd`, `astrocyte.nrrd` and
-`glia_proportions.json` come from the output of the ish dataset combination step.
+`glia_proportions.json` come from the output of the ISH dataset combination step.
 
 .. code-block:: bash
 
-    atlas-densities cell-densities glia-cell-densities                   \
-        --hierarchy-path=data/1.json                                     \
-        --annotation-path=data/ccfv2/annotation_25.nrrd                  \
-        --cell-density-path=data/ccfv2/density_volumes/cell_density.nrrd \
-        --glia-density-path=data/ccfv2//glia.nrrd                        \
-        --astrocyte-density-path=data/ccfv2/astrocyte.nrrd               \
-        --microglia-density-path=data/ccfv2/microglia.nrrd               \
-        --oligodendrocyte-density-path=data/ccfv2/oligodendrocyte.nrrd   \
-        --glia-proportions-path=data/ccfv2/glia_proportions.json         \
+    atlas-densities cell-densities glia-cell-densities                                         \
+        --hierarchy-path=data/1.json                                                           \
+        --annotation-path=data/ccfv2/annotation_25.nrrd                                        \
+        --cell-density-path=data/ccfv2/density_volumes/cell_density.nrrd                       \
+        --glia-density-path=data/ccfv2/relative_marker_volumes/glia.nrrd                       \
+        --astrocyte-density-path=data/ccfv2/relative_marker_volumes/astrocyte.nrrd             \
+        --microglia-density-path=data/ccfv2/relative_marker_volumes/microglia.nrrd             \
+        --oligodendrocyte-density-path=data/ccfv2/relative_marker_volumes/oligodendrocyte.nrrd \
+        --glia-proportions-path=data/ccfv2/relative_marker_volumes/glia_proportions.json       \
         --output-dir=data/ccfv2/density_volumes
 
 
 Extract literature neuron type densities estimates
---------------------
+--------------------------------------------------
 
 In `Rodarie et al. (2021)`_, the authors collected density estimates from the literature for
 inhibitory neurons. Some estimates are in a format that can not be directly used by the pipeline
@@ -211,7 +211,7 @@ inhibitory neurons. Some estimates are in a format that can not be directly used
 csv files, that will be used later on for the fitting.
 
 Format literature review files
-<<<<<<<
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 We compile here the cell density estimates related to measurements of `Kim et al. (2017)`_ density
 file (`atlas_densities/app/data/measurements/mmc3.xlsx`) and `Rodarie et al. (2021)`_ literature
@@ -229,7 +229,7 @@ in a separate CSV file.
 
 
 Convert literature measurements into average densities
-<<<<<<<
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Compute and save average cell densities based on literature measurements and Cell Atlas data (e.g.,
 region volumes).
@@ -251,7 +251,7 @@ Fitting of transfer functions from mean region intensity to neuron density
 We fit here transfer functions that describe the relation between mean ISH expression in regions of
 the mouse brain and literature regional density estimates (see `Rodarie et al. (2021)`_ for more
 details). This step leverages AIBS ISH marker datasets (in their expression form, see also
-`atlas_densities/app/data/fitting/fit_average_densities_config.yaml`) and the previously computed
+`fit_average_densities_config.yaml`) and the previously computed
 literature density values.
 These transfer functions are used to obtain first estimates of neuron densities in regions not
 covered by literature.
@@ -266,20 +266,20 @@ for each region of the annotation volume.
         --neuron-density-path=data/ccfv2/density_volumes/neuron_density.nrrd          \
         --average-densities-path=data/ccfv2/measurements/lit_densities.csv            \
         --homogenous-regions-path=data/ccfv2/measurements/homogeneous_regions.csv     \
-        --gene-config-path=atlas_densities/app/data/fitting/fit_average_densities_config.yaml \
+        --gene-config-path=data/ccfv2/fit_average_densities_config.yaml               \
         --fitted-densities-output-path=data/ccfv2/first_estimates/first_estimates.csv \
         --fitting-maps-output-path=data/ccfv2/first_estimates/fitting.json
 
 
 Compute inhibitory/excitatory neuron densities
----------------------------
+----------------------------------------------
 
 The neuron subtypes are here distinguished from each other using either the pipeline from
 `Eroe et al. (2018)`_ (BBP Cell Atlas version 1) or `Rodarie et al. (2021)`_ (BBP Cell Atlas version
 2).
 
 BBP Cell Atlas version 1
-<<<<<<<
+~~~~~~~~~~~~~~~~~~~~~~~~
 
 Estimate excitatory and inhibitory neuron densities from the Nrn1 and GAD1 (or GAD67) AIBS ISH markers
 and whole brain estimates from `Kim et al. (2017)`_ (located at
@@ -287,7 +287,7 @@ and whole brain estimates from `Kim et al. (2017)`_ (located at
 
 .. code-block:: bash
 
-    atlas-densities cell-densities inhibitory_and_excitatory_neuron_densities           \
+    atlas-densities cell-densities inhibitory-and-excitatory-neuron-densities           \
         --hierarchy-path=data/1.json                                                    \
         --annotation-path=data/ccfv2/annotation_25.nrrd                                 \
         --gad1-path=data/ccfv2/marker_volumes/gad1.nrrd                                 \
@@ -297,7 +297,7 @@ and whole brain estimates from `Kim et al. (2017)`_ (located at
         --output-dir=data/ccfv2/densities/
 
 BBP Cell Atlas version 2
-<<<<<<<
+~~~~~~~~~~~~~~~~~~~~~~~~
 
 Estimate excitatory, GAD67, Pvalb, SST, and VIP neuron densities from the literature and the
 transfer functions computed previously (first density estimates).
@@ -341,3 +341,5 @@ Copyright © 2022 Blue Brain Project/EPFL
 .. _cgal-pybind: https://github.com/BlueBrain/cgal-pybind
 .. _`DeepAtlas`: https://github.com/BlueBrain/Deep-Atlas
 .. _`Kim et al. (2017)`: https://www.sciencedirect.com/science/article/pii/S0092867417310693
+.. _`fit_average_densities_config.yaml`: https://github.com/BlueBrain/atlas-densities/blob/main/atlas_densities/app/data/markers/fit_average_densities_ccfv2_config.yaml
+.. _`combine_markers_ccfv2_config.yaml`: https://github.com/BlueBrain/atlas-densities/blob/main/atlas_densities/app/data/markers/combine_markers_ccfv2_config.yaml
