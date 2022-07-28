@@ -58,7 +58,7 @@ from atlas_densities.exceptions import AtlasDensitiesError
 MTYPES_PROFILES_REL_PATH = (DATA_PATH / "mtypes" / "density_profiles").relative_to(AD_PATH)
 MTYPES_PROBABILITY_MAP_REL_PATH = (DATA_PATH / "mtypes" / "probability_map").relative_to(AD_PATH)
 MTYPES_COMPOSITION_REL_PATH = (DATA_PATH / "mtypes" / "composition").relative_to(AD_PATH)
-METADATA_PATH = DATA_PATH / "data" / "metadata"
+METADATA_PATH = DATA_PATH / "metadata"
 METADATA_REL_PATH = METADATA_PATH.relative_to(AD_PATH)
 
 L = logging.getLogger(__name__)

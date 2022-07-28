@@ -57,6 +57,30 @@ def is_ancestor(
     return np.vectorize(is_ancestor_, otypes=[bool])(annotation_1, annotation_2)
 
 
+def combine_ccfv2_annotations(
+    brain_annotation_ccfv2: "voxcell.VoxelData",
+    fiber_annotation_ccfv2: "voxcell.VoxelData",
+):
+    """Combine the ccfv2 annotation main file with its fibers
+    The ccfv2 fiber annotation file is required because fiber tracts
+    are missing from the ccfv2 brain annotation file,
+    These assumptions are based on the use case
+    annotation 2011 (Mouse CCF v2)
+
+    Each annotation file has a resolution, either 10 um or 25 um.
+    The input files and the output file should all have the same resolution.
+    Args:
+        brain_annotation_ccfv2: reference annotation file.
+        fiber_annotation_ccfv2: fiber annotation.
+
+    Returns:
+        VoxelData object holding the combined annotation 3D array.
+    """
+    fiber_mask = fiber_annotation_ccfv2.raw > 0
+    brain_annotation_ccfv2.raw[fiber_mask] = fiber_annotation_ccfv2.raw[fiber_mask]
+    return brain_annotation_ccfv2
+
+
 def combine_annotations(
     region_map: voxcell.RegionMap,
     brain_annotation_ccfv2: voxcell.VoxelData,
@@ -88,8 +112,9 @@ def combine_annotations(
     Returns:
         VoxelData object holding the combined annotation 3D array.
     """
-    fiber_mask = fiber_annotation_ccfv2.raw > 0
-    brain_annotation_ccfv2.raw[fiber_mask] = fiber_annotation_ccfv2.raw[fiber_mask]
+    brain_annotation_ccfv2 = combine_ccfv2_annotations(
+        brain_annotation_ccfv2, fiber_annotation_ccfv2
+    )
     brain_annotation_ccfv3_mask = brain_annotation_ccfv3.raw > 0
     ccfv3_ids = np.unique(brain_annotation_ccfv3.raw[brain_annotation_ccfv3_mask])
     missing_ids = np.isin(brain_annotation_ccfv2.raw, ccfv3_ids, invert=True)

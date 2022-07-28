@@ -75,6 +75,8 @@ def get_glia_input_data(glia_cell_count):
     }
     glia_densities["glia"] = np.random.random_sample(shape)
 
+    for glia_type, proportion in glia_proportions.items():
+        glia_densities[glia_type][0][0][0] = 1e-5  # the outside voxels' intensity should be low
     return {
         "region_map": RegionMap.load_json(Path(TESTS_PATH, "1.json")),
         "annotation": np.arange(8000).reshape(shape),

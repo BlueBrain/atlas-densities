@@ -108,7 +108,7 @@ def test_get_group_ids():
     assert len(group_ids["Cerebellum group"] & group_ids["Isocortex group"]) == 0
     assert len(group_ids["Cerebellum group"] & group_ids["Molecular layer"]) > 0
     assert len(group_ids["Cerebellum group"] & group_ids["Purkinje layer"]) > 0
-    assert len(group_ids["Isocortex group"] & group_ids["Molecular layer"]) > 0
+    assert len(group_ids["Isocortex group"] & group_ids["Molecular layer"]) == 0
     assert len(group_ids["Isocortex group"] & group_ids["Purkinje layer"]) == 0
     assert len(group_ids["Isocortex group"] & group_ids["Rest"]) == 0
     assert len(group_ids["Cerebellum group"] & group_ids["Rest"]) == 0
