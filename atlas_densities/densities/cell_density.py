@@ -110,4 +110,4 @@ def compute_cell_density(
     for group, mask in region_masks.items():
         nissl[mask] = nissl[mask] * (cell_counts()[group] / np.sum(nissl[mask]))
 
-    return np.asarray(nissl / voxel_volume, dtype=np.float32)
+    return nissl / voxel_volume

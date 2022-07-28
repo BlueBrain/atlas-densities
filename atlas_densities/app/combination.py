@@ -147,8 +147,7 @@ def combine_ccfv2_annotations(
     fiber_annotation_ccfv2 = voxcell.VoxelData.load_nrrd(fiber_annotation_ccfv2)
 
     combined_annotation = annotations_combinator.combine_ccfv2_annotations(
-        brain_annotation_ccfv2,
-        fiber_annotation_ccfv2
+        brain_annotation_ccfv2, fiber_annotation_ccfv2
     )
     combined_annotation.save_nrrd(output_path)
 
