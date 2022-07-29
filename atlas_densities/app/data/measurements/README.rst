@@ -13,6 +13,9 @@ Content
 The excel file `gaba_papers.xlsx` is a compilation of measurements from the scientific literature
 collected in `Rodarie et al. (2021)`_.
 
+The file `non_density_measurement.csv` is a series of measurements which have been manually
+extracted from `gaba_papers.xlsx` due to their peculiarities.
+
 The two files `mmc1.xlsx` and `mmc3.xlsx` are unmodified copies of excel files from the
 supplementary materials of `Kim et al. (2017)`_.
 
@@ -40,9 +43,6 @@ in regions where neurons are inhibitory only, using a precomputed volumetric neu
 
 The two previous files taken apart, the data files of this directory are static and should
 not be updated.
-
-The file `non_density_measurement.csv` is a series of measurements which have been manually
-extracted from `gaba_papers.xlsx` due to their peculiarities.
 
 
 .. _`Kim et al. (2017)`: https://www.sciencedirect.com/science/article/pii/S0092867417310693?via%3Dihub

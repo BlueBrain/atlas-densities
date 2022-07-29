@@ -134,7 +134,7 @@ The BBP Cell Atlas pipeline leverages `in situ` hybridization (ISH) volumetric d
 to estimate cell type densities in all regions of the mouse brain. These ISH datasets have to be
 realigned to the Nissl reference volume.
 
-The DeepAtlas_ toolkit allows you to download AIBS ISH image stacks, align these images to the Nissl 
+The DeepAtlas_ toolkit allows you to download AIBS ISH image stacks, align these images to the Nissl
 volume, and interpolate between them to create volumetric ISH datasets for each gene of your interest.
 
 Combine ISH datasets for glia cells
@@ -151,7 +151,7 @@ The list of required genes to combine for the generic glia marker can be found a
     atlas-densities combination combine-markers         \
         --hierarchy-path=data/1.json                    \
         --annotation-path=data/ccfv2/annotation_25.nrrd \
-        --config=data/combine_markers_ccfv2_config.yaml
+        --config=atlas_densities/app/data/markers/combine_markers_ccfv2_config.yaml
 
 ISH datasets for inhibitory/excitatory neurons
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -221,6 +221,7 @@ in a separate CSV file.
 
 .. code-block:: bash
 
+    # make output directory
     mkdir -p data/ccfv2/measurements
 
     atlas-densities cell-densities compile-measurements                                  \
@@ -251,7 +252,7 @@ Fitting of transfer functions from mean region intensity to neuron density
 We fit here transfer functions that describe the relation between mean ISH expression in regions of
 the mouse brain and literature regional density estimates (see `Rodarie et al. (2021)`_ for more
 details). This step leverages AIBS ISH marker datasets (in their expression form, see also
-`fit_average_densities_config.yaml`) and the previously computed
+`fit_average_densities_ccfv2_config.yaml`) and the previously computed
 literature density values.
 These transfer functions are used to obtain first estimates of neuron densities in regions not
 covered by literature.
@@ -260,14 +261,17 @@ for each region of the annotation volume.
 
 .. code-block:: bash
 
-    atlas-densities cell-densities fit-average-densities                              \
-        --hierarchy-path=data/1.json                                                  \
-        --annotation-path=data/ccfv2/annotation_25.nrrd                               \
-        --neuron-density-path=data/ccfv2/density_volumes/neuron_density.nrrd          \
-        --average-densities-path=data/ccfv2/measurements/lit_densities.csv            \
-        --homogenous-regions-path=data/ccfv2/measurements/homogeneous_regions.csv     \
-        --gene-config-path=data/ccfv2/fit_average_densities_config.yaml               \
-        --fitted-densities-output-path=data/ccfv2/first_estimates/first_estimates.csv \
+    # make output folder
+    mkdir -p data/ccfv2/first_estimates
+
+    atlas-densities cell-densities fit-average-densities                                            \
+        --hierarchy-path=data/1.json                                                                \
+        --annotation-path=data/ccfv2/annotation_25.nrrd                                             \
+        --neuron-density-path=data/ccfv2/density_volumes/neuron_density.nrrd                        \
+        --average-densities-path=data/ccfv2/measurements/lit_densities.csv                          \
+        --homogenous-regions-path=data/ccfv2/measurements/homogeneous_regions.csv                   \
+        --gene-config-path=atlas_densities/app/data/markers/fit_average_densities_ccfv2_config.yaml \
+        --fitted-densities-output-path=data/ccfv2/first_estimates/first_estimates.csv               \
         --fitting-maps-output-path=data/ccfv2/first_estimates/fitting.json
 
 
@@ -293,8 +297,8 @@ and whole brain estimates from `Kim et al. (2017)`_ (located at
         --gad1-path=data/ccfv2/marker_volumes/gad1.nrrd                                 \
         --nrn1-path=data/ccfv2/marker_volumes/nrn1.nrrd                                 \
         --neuron-density-path=data/ccfv2/density_volumes/neuron_density.nrrd            \
-        --inhibitory-neuron-counts-path=atlas_densities/app/data/measurements/mmc3.xlsx \
-        --output-dir=data/ccfv2/densities/
+        --inhibitory-neuron-counts-path=atlas_densities/app/data/measurements/mmc1.xlsx \
+        --output-dir=data/ccfv2/density_volumes/
 
 BBP Cell Atlas version 2
 ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -309,7 +313,7 @@ transfer functions computed previously (first density estimates).
         --annotation-path=data/ccfv2/annotation_25.nrrd                         \
         --neuron-density-path=data/ccfv2/density_volumes/neuron_density.nrrd    \
         --average-densities-path=data/ccfv2/first_estimates/first_estimates.csv \
-        --output-dir=data/ccfv2/densities/
+        --output-dir=data/ccfv2/density_volumes/
 
 Instructions for developers
 ===========================
@@ -341,5 +345,5 @@ Copyright © 2022 Blue Brain Project/EPFL
 .. _cgal-pybind: https://github.com/BlueBrain/cgal-pybind
 .. _`DeepAtlas`: https://github.com/BlueBrain/Deep-Atlas
 .. _`Kim et al. (2017)`: https://www.sciencedirect.com/science/article/pii/S0092867417310693
-.. _`fit_average_densities_config.yaml`: https://github.com/BlueBrain/atlas-densities/blob/main/atlas_densities/app/data/markers/fit_average_densities_ccfv2_config.yaml
+.. _`fit_average_densities_ccfv2_config.yaml`: https://github.com/BlueBrain/atlas-densities/blob/main/atlas_densities/app/data/markers/fit_average_densities_ccfv2_config.yaml
 .. _`combine_markers_ccfv2_config.yaml`: https://github.com/BlueBrain/atlas-densities/blob/main/atlas_densities/app/data/markers/combine_markers_ccfv2_config.yaml
