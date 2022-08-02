@@ -48,6 +48,8 @@ The python project cgal-pybind_ needs to be installed prior to the above instruc
 Examples
 ========
 
+Note: Depending on the size and resolution of the atlas, it can happen that some of the examples may not run with the 25um atlas from the Allen Institute due to memory requirements.  For instance, 8GB of memory is often not enough for the "Combine ISH datasets for glia cells", depending on the datasets being combined.
+
 Reference atlases
 -----------------
 
