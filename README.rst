@@ -163,7 +163,7 @@ from the inhibitory neurons using the Nrn1 and GAD67 (or GAD1) genetic marker.
 
 In `Rodarie et al. (2021)`_ (i.e., BBP Cell Atlas version 2), the authors used parvalbumin (Pvalb),
 somatostatin (SST), vasoactive intestinal peptide (VIP) and gabaergic (GAD1) markers (see also
-`fit_average_densities_config.yaml`_).
+`fit_average_densities_ccfv2_config.yaml`_).
 
 Cell density estimation
 -----------------------
@@ -254,7 +254,7 @@ Fitting of transfer functions from mean region intensity to neuron density
 We fit here transfer functions that describe the relation between mean ISH expression in regions of
 the mouse brain and literature regional density estimates (see `Rodarie et al. (2021)`_ for more
 details). This step leverages AIBS ISH marker datasets (in their expression form, see also
-`fit_average_densities_ccfv2_config.yaml`) and the previously computed
+`fit_average_densities_ccfv2_config.yaml`_) and the previously computed
 literature density values.
 These transfer functions are used to obtain first estimates of neuron densities in regions not
 covered by literature.

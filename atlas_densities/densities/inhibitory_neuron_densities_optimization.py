@@ -669,8 +669,13 @@ def create_inhibitory_neuron_densities(  # pylint: disable=too-many-locals
                 "be solved."
             )
 
-        # inhibitory neuron count estimates x_{i, m} and delta_{r, m} values are non-negative
-        assert np.all(result.x >= 0.0)
+        # inhibitory neuron count estimates x_{i, m} and delta_{r, m} values are non-negative.
+        # Due to float rounding errors, we set a minimum negative value epsilon below which we
+        # consider a negative value to be an error. x_ and delta_ being neuron counts derived
+        # values, epsilon does not have to be very small (i.e., < -1e-10).
+        epsilon = -1e-9
+        assert np.all(result.x >= epsilon)
+        result.x[result.x < 0.0] = 0.0
         # inhibitory neuron count estimates x_{i, m} don't exceed prescribed bounds
         # (over all neuron counts)
         assert np.all(result.x <= bounds[:, 1])
