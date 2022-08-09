@@ -8,5 +8,5 @@ sectionDataSetID:
     sst: "1001"
     vip: "77371835"
     gad67: "479"
-realignedSlicesPath: atlas_densities/app/measurements/markers/realigned_slices_ccfv2.json
-cellDensityStandardDeviationsPath: atlas_densities/app/measurements/std_cells.json
+realignedSlicesPath: atlas_densities/app/data/markers/realigned_slices_ccfv2.json
+cellDensityStandardDeviationsPath: atlas_densities/app/data/measurements/std_cells.json
