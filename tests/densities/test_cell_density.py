@@ -23,6 +23,7 @@ def test_compute_cell_density():
 
     rng = np.random.default_rng(seed=42)
     nissl = rng.random(annotation.shape)
+    nissl[0][0][0] = 1e-5  # the outside voxels' intensity should be low
 
     cell_density = tested.compute_cell_density(region_map, annotation, voxel_volume, nissl)
     # Each group has a prescribed cell count
@@ -47,6 +48,7 @@ def test_cell_density_with_soma_correction():
     voxel_volume = 25**3 / 1e9
     rng = np.random.default_rng(seed=42)
     nissl = rng.random(annotation.shape)
+    nissl[0][0][0] = 1e-5  # the outside voxels' intensity should be low
 
     cell_density = tested.compute_cell_density(
         region_map,
@@ -76,6 +78,7 @@ def test_cell_density_options():
     voxel_volume = 25**3 / 1e9
     rng = np.random.default_rng(seed=42)
     nissl = rng.random(annotation.shape)
+    nissl[0][0][0] = 1e-5  # the outside voxels' intensity should be low
     group_ids = get_group_ids(region_map)
     region_masks = get_region_masks(group_ids, annotation)
 
