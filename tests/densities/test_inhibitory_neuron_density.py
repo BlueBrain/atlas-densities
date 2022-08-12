@@ -2,7 +2,7 @@
 Unit tests for inhibitory cell density computation
 """
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 import numpy as np
 import numpy.testing as npt
@@ -85,7 +85,10 @@ def test_compute_inhibitory_neuron_density():
                 "atlas_densities.densities.inhibitory_neuron_density.compensate_cell_overlap",
                 side_effect=[data["gad1"], data["nrn1"]],
             ):
-                region_map = {}  # Fake
+                # have any empty region map
+                region_map = Mock()
+                region_map.find = lambda name, attr, with_descendants: set()
+
                 inhibitory_neuron_density = tested.compute_inhibitory_neuron_density(
                     region_map,
                     annotation,
@@ -118,7 +121,8 @@ def get_inhibitory_neuron_input_data(neuron_count):
     shape = (20, 20, 20)
     annotation = np.arange(8000).reshape(shape)
     voxel_volume = (25**3) / 1e9
-    neuron_density = np.random.random_sample(annotation.shape)
+    rng = np.random.default_rng(seed=42)
+    neuron_density = rng.random(annotation.shape)
     neuron_density = (2.5 * neuron_count * neuron_density / np.sum(neuron_density)) / voxel_volume
     inhibitory_data = {
         "proportions": {
@@ -132,8 +136,8 @@ def get_inhibitory_neuron_input_data(neuron_count):
         "annotation": annotation,
         "neuron_density": neuron_density,
         "voxel_volume": voxel_volume,
-        "gad1": np.random.random_sample(annotation.shape),
-        "nrn1": np.random.random_sample(annotation.shape),
+        "gad1": rng.random(annotation.shape),
+        "nrn1": rng.random(annotation.shape),
         "inhibitory_data": inhibitory_data,
     }
 

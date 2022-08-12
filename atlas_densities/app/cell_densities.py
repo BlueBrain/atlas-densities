@@ -170,7 +170,7 @@ def cell_density(annotation_path, hierarchy_path, nissl_path, output_path):
         _get_voxel_volume_in_mm3(annotation),
         nissl.raw,
     )
-    nissl.with_data(np.asarray(overall_cell_density, dtype=float)).save_nrrd(output_path)
+    nissl.with_data(overall_cell_density).save_nrrd(output_path)
 
 
 @app.command()

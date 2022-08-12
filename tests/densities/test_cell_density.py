@@ -13,13 +13,17 @@ from atlas_densities.densities.cell_counts import cell_counts
 from atlas_densities.densities.utils import get_group_ids, get_region_masks
 
 TESTS_PATH = Path(__file__).parent.parent
+HIERARCHY_PATH = Path(TESTS_PATH, "1.json")
 
 
 def test_compute_cell_density():
-    region_map = RegionMap.load_json(Path(TESTS_PATH, "1.json"))
+    region_map = RegionMap.load_json(HIERARCHY_PATH)
     annotation = np.arange(8000).reshape(20, 20, 20)
     voxel_volume = 25**3 / 1e9
-    nissl = np.random.random_sample(annotation.shape)
+
+    rng = np.random.default_rng(seed=42)
+    nissl = rng.random(annotation.shape)
+
     cell_density = tested.compute_cell_density(region_map, annotation, voxel_volume, nissl)
     # Each group has a prescribed cell count
     group_ids = get_group_ids(region_map)
@@ -38,10 +42,12 @@ def test_compute_cell_density():
 
 
 def test_cell_density_with_soma_correction():
-    region_map = RegionMap.load_json(Path(TESTS_PATH, "1.json"))
+    region_map = RegionMap.load_json(HIERARCHY_PATH)
     annotation = np.arange(8000).reshape(20, 20, 20)
     voxel_volume = 25**3 / 1e9
-    nissl = np.random.random_sample(annotation.shape)
+    rng = np.random.default_rng(seed=42)
+    nissl = rng.random(annotation.shape)
+
     cell_density = tested.compute_cell_density(
         region_map,
         annotation,
@@ -65,12 +71,14 @@ def test_cell_density_with_soma_correction():
 
 
 def test_cell_density_options():
-    region_map = RegionMap.load_json(Path(TESTS_PATH, "1.json"))
+    region_map = RegionMap.load_json(HIERARCHY_PATH)
     annotation = np.arange(8000).reshape(20, 20, 20)
     voxel_volume = 25**3 / 1e9
-    nissl = np.random.random_sample(annotation.shape)
+    rng = np.random.default_rng(seed=42)
+    nissl = rng.random(annotation.shape)
     group_ids = get_group_ids(region_map)
     region_masks = get_region_masks(group_ids, annotation)
+
     with patch(
         "atlas_densities.densities.cell_density.compensate_cell_overlap",
         return_value=nissl,

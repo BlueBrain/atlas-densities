@@ -3,9 +3,9 @@
 from typing import Dict, Tuple, Union
 
 import numpy as np
+import scipy.ndimage
+import scipy.signal
 from atlas_commons.typing import AnnotationT, BoolArray, NDArray, NumericArray
-from scipy.ndimage.morphology import generate_binary_structure
-from scipy.signal import correlate
 from voxcell import RegionMap  # type: ignore
 
 from atlas_densities.exceptions import AtlasDensitiesError
@@ -159,8 +159,8 @@ def compute_boundary(v_1, v_2):
         by `v_1` and `v_2`. This corresponds to a subset of `v_1`.
     """
 
-    filter_ = generate_binary_structure(3, 1).astype(int)
-    full_volume = correlate(v_1 * 1 + v_2 * 8, filter_, mode="same")
+    filter_ = scipy.ndimage.generate_binary_structure(3, 1).astype(int)
+    full_volume = scipy.signal.correlate(v_1 * 1 + v_2 * 8, filter_, mode="same")
 
     return np.logical_and(v_1, full_volume > 8)
 

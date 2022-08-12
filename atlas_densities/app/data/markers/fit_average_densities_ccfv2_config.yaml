@@ -1,0 +1,12 @@
+inputGeneVolumePath:
+    pv: data/ccfv2/marker_volumes/pvalb.nrrd
+    sst: data/ccfv2/marker_volumes/SST.nrrd
+    vip: data/ccfv2/marker_volumes/VIP.nrrd
+    gad67: data/ccfv2/marker_volumes/gad1.nrrd
+sectionDataSetID:
+    pv: "868"
+    sst: "1001"
+    vip: "77371835"
+    gad67: "479"
+realignedSlicesPath: atlas_densities/app/data/markers/realigned_slices_ccfv2.json
+cellDensityStandardDeviationsPath: atlas_densities/app/data/measurements/std_cells.json
