@@ -14,7 +14,7 @@ The tools implementation is based on the methods of `Eroe et al. (2018)`_, `Roda
 and `Roussel et al. (2021)`_.
 
 The source code was originally written by Csaba Eroe, Dimitri Rodarie, Hugo Dictus, Lu Huanxiang,
-Wajerowicz Wojciech, Jonathan Lurie, and Yann Roussel.
+Wojciech Wajerowicz, Jonathan Lurie, and Yann Roussel.
 
 The tools allow to:
 
