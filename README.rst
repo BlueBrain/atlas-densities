@@ -330,6 +330,14 @@ Run the following commands before submitting your code for review:
 
 These formatting operations will help you pass the linting check `testenv:lint` defined in `tox.ini`.
 
+Citation
+========
+
+When you use this software, we kindly ask you to cite the following DOI:
+
+.. image:: https://zenodo.org/badge/451804383.svg
+   :target: https://zenodo.org/badge/latestdoi/451804383
+
 Acknowledgements
 ================
 
