@@ -216,8 +216,8 @@ Format literature review files
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 We compile here the cell density estimates related to measurements of `Kim et al. (2017)`_ density
-file (`atlas_densities/app/data/measurements/mmc3.xlsx`) and `Rodarie et al. (2021)`_ literature
-review file (`atlas_densities/app/data/measurements/gaba_papers.xsls`) into a single CSV file.
+file (`mmc3.xlsx`_) and `Rodarie et al. (2021)`_ literature
+review file (`gaba_papers.xlsx`_) into a single CSV file.
 Regions known to be purely excitatory or inhibitory (in terms of neuron composition) are also listed
 in a separate CSV file.
 
@@ -248,7 +248,7 @@ region volumes).
         --output-path=data/ccfv2/measurements/lit_densities.csv
 
 
-Fitting of transfer functions from mean region intensity to neuron density
+Fit transfer functions from mean region intensity to neuron density
 ---------------------
 
 We fit here transfer functions that describe the relation between mean ISH expression in regions of
@@ -289,7 +289,7 @@ BBP Cell Atlas version 1
 
 Estimate excitatory and inhibitory neuron densities from the Nrn1 and GAD1 (or GAD67) AIBS ISH markers
 and whole brain estimates from `Kim et al. (2017)`_ (located at
-`atlas_densities/app/data/measurements/mmc3.xlsx`).
+`mmc1.xlsx`_).
 
 .. code-block:: bash
 
@@ -317,6 +317,24 @@ transfer functions computed previously (first density estimates).
         --average-densities-path=data/ccfv2/first_estimates/first_estimates.csv \
         --output-dir=data/ccfv2/density_volumes/
 
+Compute ME-types densities from a probality map
+---------------------------
+Morphological and Electrical type densities of inhibitory neurons in the isocortex can be estimated
+using Roussel et al.'s pipeline. This pipeline produces a mapping from inhibitory neuron molecular
+types (here PV, SST, VIP and GAD67) to ME-types defined in `Markram et al. (2015)`_.
+
+The following command creates neuron density nrrd files for the me-types listed in a probability
+mapping csv file (see also `mtypes_probability_map_config.yaml`_).
+
+.. code-block:: bash
+
+    atlas-densities mtype-densities create-from-probability-map
+        --hierarchy-path=data/1.json
+        --annotation-path=data/ccfv2/annotation_25.nrrd
+        --metadata-path=atlas-densities/atlas_densities/app/data/metadata/isocortex_23_metadata.json
+        --mtypes-config-path=data/ccfv2/mtypes_probability_map_config.yaml
+        --output-dir=data/ccfv2/me-types/
+
 Instructions for developers
 ===========================
 
@@ -333,7 +351,9 @@ These formatting operations will help you pass the linting check `testenv:lint` 
 Acknowledgements
 ================
 
-The development of this software was supported by funding to the Blue Brain Project, a research center of the École polytechnique fédérale de Lausanne (EPFL), from the Swiss government’s ETH Board of the Swiss Federal Institutes of Technology.
+The development of this software was supported by funding to the Blue Brain Project, a research
+center of the École polytechnique fédérale de Lausanne (EPFL), from the Swiss government’s ETH Board
+of the Swiss Federal Institutes of Technology.
 
 For license and authors, see LICENSE.txt and AUTHORS.txt respectively.
 
@@ -341,11 +361,16 @@ Copyright © 2022 Blue Brain Project/EPFL
 
 .. _`Allen Institute for Brain Science (AIBS)`: https://alleninstitute.org/what-we-do/brain-science/
 .. _`Eroe et al. (2018)`: https://www.frontiersin.org/articles/10.3389/fninf.2018.00084/full
+.. _`Kim et al. (2017)`: https://www.sciencedirect.com/science/article/pii/S0092867417310693
+.. _`Markram et al. (2015)`: https://www.cell.com/cell/fulltext/S0092-8674(15)01191-5
 .. _`Rodarie et al. (2021)`: https://www.biorxiv.org/content/10.1101/2021.11.20.469384v2
 .. _`Roussel et al. (2021)`: https://www.biorxiv.org/content/10.1101/2021.11.24.469815v1
 .. _`BBP Cell Atlas`: https://portal.bluebrain.epfl.ch/resources/models/cell-atlas/
 .. _cgal-pybind: https://github.com/BlueBrain/cgal-pybind
 .. _`DeepAtlas`: https://github.com/BlueBrain/Deep-Atlas
-.. _`Kim et al. (2017)`: https://www.sciencedirect.com/science/article/pii/S0092867417310693
 .. _`fit_average_densities_ccfv2_config.yaml`: https://github.com/BlueBrain/atlas-densities/blob/main/atlas_densities/app/data/markers/fit_average_densities_ccfv2_config.yaml
 .. _`combine_markers_ccfv2_config.yaml`: https://github.com/BlueBrain/atlas-densities/blob/main/atlas_densities/app/data/markers/combine_markers_ccfv2_config.yaml
+.. _`mmc1.xlsx`: https://github.com/BlueBrain/atlas-densities/blob/main/atlas_densities/app/data/measurements/mmc1.xlsx
+.. _`mmc3.xlsx`: https://github.com/BlueBrain/atlas-densities/blob/main/atlas_densities/app/data/measurements/mmc3.xlsx
+.. _`gaba_papers.xlsx`: https://github.com/BlueBrain/atlas-densities/blob/main/atlas_densities/app/data/measurements/gaba_papers.xlsx
+.. _`mtypes_probability_map_config.yaml`: https://github.com/BlueBrain/atlas-densities/blob/main/atlas_densities/app/data/ccfv2/mtypes_probability_map_config.yaml
