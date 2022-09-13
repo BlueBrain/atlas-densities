@@ -141,7 +141,8 @@ def _get_coefficients(
         coefficients[layer_name] = {
             molecular_type: probability_map.at[f"{layer_name}_{molecular_type}", mtype]
             for molecular_type in molecular_types
-            if molecular_type != "gad67" and not (layer_name == "layer_6" and molecular_type == "vip")
+            if molecular_type != "gad67" and not (
+                    layer_name == "layer_6" and molecular_type == "vip")
         }
 
     return coefficients

@@ -227,8 +227,6 @@ def standardize_probability_map(probability_map: "pd.DataFrame") -> "pd.DataFram
         Lowercase labels and use explicit layer names.
         """
         splitting = re.split("_", row_label)  # remove unused Creline information
-        splitting[0] = splitting[0].replace("/", "")
-        splitting[0] = splitting[0].replace("6a", "6")
         splitting[0] = splitting[0].replace("L", "layer_")
         splitting[1] = splitting[1].replace("Pvalb", "pv")
         # Although Gad2 = Gad65, see e.g. https://www.genecards.org/cgi-bin/carddisp.pl?gene=GAD2
