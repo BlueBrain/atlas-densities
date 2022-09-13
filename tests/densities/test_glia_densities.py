@@ -43,11 +43,11 @@ def test_glia_cell_counts_per_voxel_input():
     rng = np.random.default_rng(seed=42)
 
     cell_density = rng.random(annotation.shape).reshape(shape)
-    cell_density[0][0][0] = 0. # cell density outside the brain should be null.
+    cell_density[0][0][0] = 0.0  # cell density outside the brain should be null.
     cell_density = 50000 * cell_density / np.sum(cell_density)
     glia_cell_count = 25000
     glia_density = rng.random(annotation.shape).reshape(shape)
-    glia_density[0][0][0] = 0.  # cell density outside the brain should be null.
+    glia_density[0][0][0] = 0.0  # cell density outside the brain should be null.
     group_ids = {
         "Purkinje layer": set({1, 2, 7, 11, 20, 25, 33, 200, 1000, 31, 16}),
         "Fiber tracts group": set({3, 6, 14, 56, 62, 88, 279, 2200, 5667, 7668}),
@@ -70,7 +70,7 @@ def get_glia_input_data(glia_cell_count):
     shape = (20, 20, 20)
     rng = np.random.default_rng(seed=42)
     cell_density = rng.random(shape)
-    cell_density[0][0][0] = 0.  # cell density outside the brain should be null.
+    cell_density[0][0][0] = 0.0  # cell density outside the brain should be null.
     voxel_volume = (25**3) / 1e9
     cell_density = (2 * glia_cell_count * cell_density / np.sum(cell_density)) / voxel_volume
     glia_proportions = {

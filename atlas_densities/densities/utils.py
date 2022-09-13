@@ -10,9 +10,8 @@ import scipy.ndimage
 from atlas_commons.typing import AnnotationT, BoolArray, FloatArray
 from tqdm import tqdm
 
-from atlas_densities.exceptions import AtlasDensitiesError
+from atlas_densities.exceptions import AtlasDensitiesError, AtlasDensitiesWarning
 from atlas_densities.utils import copy_array
-from atlas_densities.exceptions import AtlasDensitiesWarning
 
 if TYPE_CHECKING:  # pragma: no cover
     from voxcell import RegionMap  # type: ignore

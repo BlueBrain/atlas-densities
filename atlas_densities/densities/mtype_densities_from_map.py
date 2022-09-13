@@ -72,7 +72,7 @@ def _check_dataframe_labels_sanity(dataframe: "pd.DataFrame") -> None:
 
 
 def _check_probability_map_consistency(
-        probability_map: "pd.DataFrame", layer_names: Set[str], molecular_types: Set[str]
+    probability_map: "pd.DataFrame", layer_names: Set[str], molecular_types: Set[str]
 ) -> None:
     """
     Check `probabibility_map` sanity and its consistency with `metadata`.
@@ -109,10 +109,10 @@ def _check_probability_map_consistency(
 
 
 def _get_coefficients(
-        mtype: str,
-        probability_map: "pd.DataFrame",
-        layer_names: List[str],
-        molecular_types: List[str],
+    mtype: str,
+    probability_map: "pd.DataFrame",
+    layer_names: List[str],
+    molecular_types: List[str],
 ) -> Dict[str, Dict]:
     """
     Get from `probability_map` the coefficients used to express the `mtype` density as
@@ -141,20 +141,20 @@ def _get_coefficients(
         coefficients[layer_name] = {
             molecular_type: probability_map.at[f"{layer_name}_{molecular_type}", mtype]
             for molecular_type in molecular_types
-            if molecular_type != "gad67" and not (
-                    layer_name == "layer_6" and molecular_type == "vip")
+            if molecular_type != "gad67"
+            and not (layer_name == "layer_6" and molecular_type == "vip")
         }
 
     return coefficients
 
 
 def create_from_probability_map(
-        annotation: "VoxelData",
-        region_map: "RegionMap",
-        metadata: Dict,
-        molecular_type_densities: Dict[str, FloatArray],
-        probability_map: "pd.DataFrame",
-        output_dirpath: str,
+    annotation: "VoxelData",
+    region_map: "RegionMap",
+    metadata: Dict,
+    molecular_type_densities: Dict[str, FloatArray],
+    probability_map: "pd.DataFrame",
+    output_dirpath: str,
 ) -> None:
     """
     Create a density field for each mtype listed in `probability_map.csv`.
@@ -207,10 +207,12 @@ def create_from_probability_map(
     layer_names = metadata["layers"]["names"]
     # The rows of the probability map which refer to the VIP molecular type are not used by this
     # algorithm.
-    molecular_type_densities["lamp5"] = molecular_type_densities["gad67"] - \
-                                        molecular_type_densities["vip"] - \
-                                        molecular_type_densities["sst"] - \
-                                        molecular_type_densities["pv"]
+    molecular_type_densities["lamp5"] = (
+        molecular_type_densities["gad67"]
+        - molecular_type_densities["vip"]
+        - molecular_type_densities["sst"]
+        - molecular_type_densities["pv"]
+    )
     _check_probability_map_consistency(
         probability_map, set(layer_names), set(molecular_type_densities.keys())
     )
@@ -225,19 +227,19 @@ def create_from_probability_map(
         for layer_name in layer_names[1:]:
             for molecular_type, density in molecular_type_densities.items():
                 if molecular_type != "gad67" and not (
-                        layer_name == "layer_6" and molecular_type == "vip"):
+                    layer_name == "layer_6" and molecular_type == "vip"
+                ):
                     mtype_density[layer_masks[layer_name]] += (
-                            density[layer_masks[layer_name]] * coefficients[layer_name][
-                        molecular_type]
+                        density[layer_masks[layer_name]] * coefficients[layer_name][molecular_type]
                     )
                 elif layer_name == "layer_6" and molecular_type == "vip":
                     mtype_density[layer_masks[layer_name]] += (
-                            density[layer_masks[layer_name]] * coefficients[layer_name]["lamp5"]
+                        density[layer_masks[layer_name]] * coefficients[layer_name]["lamp5"]
                     )
 
         density = molecular_type_densities["gad67"]
         mtype_density[layer_masks["layer_1"]] = (
-                density[layer_masks["layer_1"]] * probability_map.at["layer_1_gad67", mtype]
+            density[layer_masks["layer_1"]] * probability_map.at["layer_1_gad67", mtype]
         )
 
         # Saving to file
