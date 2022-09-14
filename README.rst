@@ -249,7 +249,7 @@ region volumes).
 
 
 Fit transfer functions from mean region intensity to neuron density
----------------------
+-------------------------------------------------------------------
 
 We fit here transfer functions that describe the relation between mean ISH expression in regions of
 the mouse brain and literature regional density estimates (see `Rodarie et al. (2021)`_ for more
@@ -318,7 +318,8 @@ transfer functions computed previously (first density estimates).
         --output-dir=data/ccfv2/density_volumes/
 
 Compute ME-types densities from a probality map
----------------------------
+-----------------------------------------------
+
 Morphological and Electrical type densities of inhibitory neurons in the isocortex can be estimated
 using Roussel et al.'s pipeline. This pipeline produces a mapping from inhibitory neuron molecular
 types (here PV, SST, VIP and GAD67) to ME-types defined in `Markram et al. (2015)`_.
