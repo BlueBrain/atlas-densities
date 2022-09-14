@@ -328,11 +328,12 @@ mapping csv file (see also `mtypes_probability_map_config.yaml`_).
 
 .. code-block:: bash
 
-    atlas-densities mtype-densities create-from-probability-map                                      \
-        --hierarchy-path=data/1.json                                                                 \
-        --annotation-path=data/ccfv2/annotation_25.nrrd                                              \
-        --metadata-path=atlas-densities/atlas_densities/app/data/metadata/isocortex_23_metadata.json \
-        --mtypes-config-path=data/ccfv2/mtypes_probability_map_config.yaml                           \
+    DATA=atlas-densities/atlas_densities/app/data
+    atlas-densities mtype-densities create-from-probability-map              \
+        --hierarchy-path=data/1.json                                         \
+        --annotation-path=data/ccfv2/annotation_25.nrrd                      \
+        --metadata-path=$DATA/metadata/isocortex_23_metadata.json            \
+        --mtypes-config-path=$DATA/mtypes/mtypes_probability_map_config.yaml \
         --output-dir=data/ccfv2/me-types/
 
 Instructions for developers
@@ -373,4 +374,4 @@ Copyright © 2022 Blue Brain Project/EPFL
 .. _`mmc1.xlsx`: https://github.com/BlueBrain/atlas-densities/blob/main/atlas_densities/app/data/measurements/mmc1.xlsx
 .. _`mmc3.xlsx`: https://github.com/BlueBrain/atlas-densities/blob/main/atlas_densities/app/data/measurements/mmc3.xlsx
 .. _`gaba_papers.xlsx`: https://github.com/BlueBrain/atlas-densities/blob/main/atlas_densities/app/data/measurements/gaba_papers.xlsx
-.. _`mtypes_probability_map_config.yaml`: https://github.com/BlueBrain/atlas-densities/blob/main/atlas_densities/app/data/ccfv2/mtypes_probability_map_config.yaml
+.. _`mtypes_probability_map_config.yaml`: https://github.com/BlueBrain/atlas-densities/blob/main/atlas_densities/app/data/mtypes/mtypes_probability_map_config.yaml
