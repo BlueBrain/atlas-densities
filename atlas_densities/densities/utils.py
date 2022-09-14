@@ -1,6 +1,7 @@
 """Utility functions for cell density computation."""
 
 from typing import TYPE_CHECKING, Dict, Set
+from warnings import warn
 
 import numpy as np
 import pandas as pd
@@ -9,7 +10,7 @@ import scipy.ndimage
 from atlas_commons.typing import AnnotationT, BoolArray, FloatArray
 from tqdm import tqdm
 
-from atlas_densities.exceptions import AtlasDensitiesError
+from atlas_densities.exceptions import AtlasDensitiesError, AtlasDensitiesWarning
 from atlas_densities.utils import copy_array
 
 if TYPE_CHECKING:  # pragma: no cover
@@ -60,7 +61,7 @@ def normalize_intensity(
         threshold_scale_factor: Scale factor for the threshold.
         region_id: (Optional) identifier of the region over which an intensity average is computed.
             The latter constant is then subtracted from the `marker_intensity`.
-            Defaults to 0, the background identifier, which identfies voxels lying out of the
+            Defaults to 0, the background identifier, which identifies voxels lying out of the
             whole brain annotated volume.
         copy: If True, a deepcopy of the input is normalized and returned. Otherwise, the input is
              normalized in place. Defaults to True.
@@ -78,6 +79,13 @@ def normalize_intensity(
     max_intensity = np.max(output_intensity)
     if max_intensity > 0:
         output_intensity /= max_intensity
+    else:
+        warn(
+            f"The thresholding of the dataset according to the intensity in region id={region_id} "
+            f"with scaling factor={threshold_scale_factor} resulted in the whole dataset being "
+            f"set to 0.",
+            AtlasDensitiesWarning,
+        )
 
     return output_intensity
 

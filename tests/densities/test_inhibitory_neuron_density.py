@@ -123,7 +123,12 @@ def get_inhibitory_neuron_input_data(neuron_count):
     voxel_volume = (25**3) / 1e9
     rng = np.random.default_rng(seed=42)
     neuron_density = rng.random(annotation.shape)
+    neuron_density[0][0][0] = 0.0  # Neuron density outside the brain should be null.
     neuron_density = (2.5 * neuron_count * neuron_density / np.sum(neuron_density)) / voxel_volume
+    gad1_expr = rng.random(annotation.shape)
+    gad1_expr[0][0][0] = 1e-5
+    nrn1_expr = rng.random(annotation.shape)
+    nrn1_expr[0][0][0] = 1e-5
     inhibitory_data = {
         "proportions": {
             "Cerebellum group": 0.4,
@@ -136,8 +141,8 @@ def get_inhibitory_neuron_input_data(neuron_count):
         "annotation": annotation,
         "neuron_density": neuron_density,
         "voxel_volume": voxel_volume,
-        "gad1": rng.random(annotation.shape),
-        "nrn1": rng.random(annotation.shape),
+        "gad1": gad1_expr,
+        "nrn1": nrn1_expr,
         "inhibitory_data": inhibitory_data,
     }
 

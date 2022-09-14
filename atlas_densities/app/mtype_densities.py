@@ -221,21 +221,12 @@ def standardize_probability_map(probability_map: "pd.DataFrame") -> "pd.DataFram
 
     Returns: a data frame complying with all the above constraints.
     """
-    probability_map = probability_map.copy()
-
-    # The rows referring to layer 6b or to the Vip molecular marker are not used by the algorithm
-    # computing the mtype densities.
-    mask = [("Vip" in row_label) or ("6b" in row_label) for row_label in probability_map.index]
-    indices = probability_map.index[mask]
-    probability_map.drop(indices, inplace=True)
 
     def standardize_row_label(row_label: str):
         """
         Lowercase labels and use explicit layer names.
         """
-        splitting = re.split("-|_| ", row_label)[:-2]  # remove unused Creline information
-        splitting[0] = splitting[0].replace("/", "")
-        splitting[0] = splitting[0].replace("6a", "6")
+        splitting = re.split("_", row_label)  # remove unused Creline information
         splitting[0] = splitting[0].replace("L", "layer_")
         splitting[1] = splitting[1].replace("Pvalb", "pv")
         # Although Gad2 = Gad65, see e.g. https://www.genecards.org/cgi-bin/carddisp.pl?gene=GAD2

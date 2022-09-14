@@ -1,0 +1,6 @@
+probabilityMapPath: probability_map/probability_map.csv
+molecularTypeDensityPaths:
+    gad67: where/you/put/your/files/gad67.nrrd
+    pv: where/you/put/your/files/pv.nrrd
+    sst: where/you/put/your/files/sst.nrrd
+    vip: where/you/put/your/files/vip.nrrd

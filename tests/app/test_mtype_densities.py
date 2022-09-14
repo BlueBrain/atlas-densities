@@ -145,18 +145,16 @@ class Test_mtype_densities_from_probability_map:
         )
         probability_map = pd.DataFrame(
             {
-                "ChC": [0.5, 0.0, 0.0, 0.0, 0.0, 0.0],
-                "NGC-SA": [0.5, 0.0, 0.0, 0.0, 0.0, 0.0],
-                "DLAC": [0.0] * 6,
-                "SLAC": [0.0] * 6,
+                "ChC": [0.5, 0.0, 0.0, 0.0],
+                "NGC-SA": [0.5, 0.0, 0.0, 0.0],
+                "DLAC": [0.0] * 4,
+                "SLAC": [0.0] * 4,
             },
             index=[
-                "L1 Gad2-IRES-Cre",
-                "L6a Htr3a-Cre_NO152",
-                "L2/3 Pvalb-IRES-Cre",
-                "L4 Htr3a-Cre_NO152",
-                "L4 Vip-IRES-Cre",
-                "L6b Htr3a-Cre_NO152",
+                "L1_Gad2",
+                "L6_Vip",
+                "L23_Pvalb",
+                "L4_Vip",
             ],
         )
         actual = tested.standardize_probability_map(probability_map)
@@ -167,7 +165,7 @@ class Test_mtype_densities_from_probability_map:
                 "lac": [0.0] * 4,
                 "sac": [0.0] * 4,
             },
-            index=["layer_1_gad67", "layer_6_htr3a", "layer_23_pv", "layer_4_htr3a"],
+            index=["layer_1_gad67", "layer_6_vip", "layer_23_pv", "layer_4_vip"],
         )
         pdt.assert_frame_equal(actual, expected)
 

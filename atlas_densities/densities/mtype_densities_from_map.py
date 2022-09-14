@@ -142,6 +142,7 @@ def _get_coefficients(
             molecular_type: probability_map.at[f"{layer_name}_{molecular_type}", mtype]
             for molecular_type in molecular_types
             if molecular_type != "gad67"
+            and not (layer_name == "layer_6" and molecular_type == "vip")
         }
 
     return coefficients
@@ -206,21 +207,17 @@ def create_from_probability_map(
     layer_names = metadata["layers"]["names"]
     # The rows of the probability map which refer to the VIP molecular type are not used by this
     # algorithm.
+    molecular_type_densities["lamp5"] = (
+        molecular_type_densities["gad67"]
+        - molecular_type_densities["vip"]
+        - molecular_type_densities["sst"]
+        - molecular_type_densities["pv"]
+    )
     _check_probability_map_consistency(
-        probability_map, set(layer_names), set(molecular_type_densities.keys()) - {"vip"}
+        probability_map, set(layer_names), set(molecular_type_densities.keys())
     )
 
     layer_masks = get_layer_masks(annotation.raw, region_map, metadata)
-    htr3a = molecular_type_densities["gad67"].copy()
-    for molecular_type, density in molecular_type_densities.items():
-        if molecular_type not in ("gad67", "vip"):
-            htr3a -= density
-
-    # The density of neurons reacting to Htr3a is an approximation of the density
-    # of the neurons reacting to GAD67 but not to PV nor SST.
-    molecular_type_densities["htr3a"] = htr3a
-    del molecular_type_densities["vip"]
-
     zero_density_mtypes = []
     for mtype in probability_map.columns:
         mtype_density = np.zeros(annotation.shape, dtype=float)
@@ -229,9 +226,15 @@ def create_from_probability_map(
         )
         for layer_name in layer_names[1:]:
             for molecular_type, density in molecular_type_densities.items():
-                if molecular_type != "gad67":
+                if molecular_type != "gad67" and not (
+                    layer_name == "layer_6" and molecular_type == "vip"
+                ):
                     mtype_density[layer_masks[layer_name]] += (
                         density[layer_masks[layer_name]] * coefficients[layer_name][molecular_type]
+                    )
+                elif layer_name == "layer_6" and molecular_type == "vip":
+                    mtype_density[layer_masks[layer_name]] += (
+                        density[layer_masks[layer_name]] * coefficients[layer_name]["lamp5"]
                     )
 
         density = molecular_type_densities["gad67"]
