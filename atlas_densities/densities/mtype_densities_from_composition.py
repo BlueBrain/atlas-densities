@@ -60,7 +60,7 @@ def create_from_composition(
 
 
 def _excitatory_mtypes_from_taxonomy(taxonomy: pd.DataFrame) -> Tuple[str, ...]:
-    """Returns a tuple with all the unique excitatory mtypes in the taxonom"""
+    """Returns a tuple with all the unique excitatory mtypes in the taxonomy"""
     is_excitatory = taxonomy["sClass"] == "EXC"
 
     return tuple(taxonomy[is_excitatory]["mtype"].unique())
