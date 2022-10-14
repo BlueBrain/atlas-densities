@@ -69,8 +69,11 @@ def compute_region_densities(
         The index is the sorted list of all region identifiers.
     """
     densities = []
-    for set_ in hierarchy_info["descendant_id_set"]:
-        mask = np.isin(annotation, list(set_))
+    tot = len(hierarchy_info["descendant_id_set"])
+    print("\nDensities to compute:", tot)
+    for iset_ in range(tot):
+        if not (iset_ % (tot/10)): print("density %d of %d" % (iset_+1, tot))
+        mask = np.isin(annotation, list(hierarchy_info["descendant_id_set"].iloc[iset_]))
         densities.append(np.sum(cell_density[mask]) / np.count_nonzero(mask))
 
     return pd.DataFrame(
