@@ -35,7 +35,7 @@ setup(
         ],
         "notebooks": [
             "matplotlib>=3.6.0",
-
+            "scikit-image>=0.19.3"
         ]
     },
     packages=find_packages(),
