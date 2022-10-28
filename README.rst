@@ -337,6 +337,38 @@ mapping csv file (see also `mtypes_probability_map_config.yaml`_).
         --mtypes-config-path=$DATA/mtypes/mtypes_probability_map_config.yaml \
         --output-dir=data/ccfv2/me-types/
 
+
+Compute excitatory densities in SSCX and cut out SSCX from inhibitory and excitattory nrrds
+-----------------------------------------------
+
+Use the total excitatory neurons in each layer and the proportion of pyramidal cell types to compute the proper density of those pyramidal cell types in each layer. These proportions come from a csv file included with the code.
+
+Also produces excitatory neuron and inhibitory nrrd files with SSCX cut out.
+
+To run:
+
+.. code-block:: bash
+
+    make_new_inhib_exc_outside_SSCX.py
+
+Input support files needed should be copied from previous portions of the pipeline.
+
+Input:
+
+annotation atlas- brain_regions.nrrd;
+
+annotation hierarchy- hierarchy.json;
+
+inhibitory- gad67+_density_v3_MMB.nrrd;
+
+total neuron- neuron_density_v3_MMB.nrrd;
+
+Output:
+
+excitatory nrrd files in output directory;
+
+inhibitory minus cortex in output directory
+
 Instructions for developers
 ===========================
 
