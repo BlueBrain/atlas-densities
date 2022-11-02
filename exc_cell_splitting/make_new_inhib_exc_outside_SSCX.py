@@ -1,4 +1,3 @@
-
 ###############################################################################
 # Copyright 2022 Blue Brain
 # Author: Daniel Keller
@@ -15,95 +14,75 @@
 #         ME type excitatory nrrd files
 ###############################################################################
 
-#packages
+import logging
 import os
-import re
+
+from pathlib import Path
+
 from voxcell import VoxelData
 from voxcell.nexus.voxelbrain import Atlas
-import numpy as np
 
-#load an nrrd
-def find_regions(fn_cand, root, format="path"):
-    #for fn_cand in fn_regions:
-    if 1:
-        expected_fn_regions = os.path.join(root, fn_cand)
-        if os.path.isfile(expected_fn_regions):
-            if format == "path":
-                return expected_fn_regions
-            elif format == "voxcell":
-                return VoxelData.load_nrrd(expected_fn_regions)
-            raise ValueError("Unknown format spec: {0}".format(format))
-    return None
+import numpy as np
+import pandas as pd
+
+
+logging.basicConfig(level=logging.INFO)
+
+L = logging.getLogger(__name__)
 
 
 #make excitatory density
-neuron_nrrd= find_regions("neuron_density_v3.nrrd",'./', "voxcell")
-inh_nrrd= find_regions("gad67+_density_v3.nrrd",'./', "voxcell")
-exc_nrrd=neuron_nrrd
-exc_nrrd.raw=neuron_nrrd.raw-inh_nrrd.raw
-exc_nrrd.raw=exc_nrrd.raw*(exc_nrrd.raw>0)
+neuron_density = VoxelData.load_nrrd("neuron_density_v3.nrrd")
+inh_density = VoxelData.load_nrrd("gad67+_density_v3.nrrd")
+exc_density = neuron_density.with_data(np.clip(neuron_density.raw - inh_density.raw, a_min=0, a_max=None))
 
-#Do remapping
-
-#read in mapping file
-import csv
-allrows=[]
-with open('mapping_cortex_all_to_exc_mtypes.csv', newline='') as csvfile:
-    reader = csv.reader(csvfile, delimiter=',', quotechar='|')
-    for row in reader:
-        allrows.append(row)
-        #print(', '.join(row))
-
-
-#load atlas
+excitatory_mapping = pd.read_csv('mapping_cortex_all_to_exc_mtypes.csv').set_index('layer')
 atlas = Atlas.open('.')
+region_map = atlas.load_region_map()
 brain_regions = atlas.load_data('brain_regions')
 
+#layer names, starting with layer 2 and going to layer 6
+layer_names = {
+    'L1': ['SS1', 'SSp-bfd1', 'SSp-ll1', 'SSp-m1', 'SSp-n1', 'SSp-tr1', 'SSp-ul1', 'SSp-un1', 'SSp1', 'SSs1', 'VISrll1'],
+    'L2': ['SS2', 'SSp-ll2', 'SSp-m2', 'SSp-tr2', 'SSp-ul2', 'SSp-un2', 'SSs2', 'VISrll2'],
+    'L3': ['SS3', 'SSp-bfd3', 'SSp-ll3', 'SSp-m3', 'SSp-n3', 'SSp-tr3', 'SSp-ul3', 'SSp-un3', 'SSp3', 'SSs3', 'VISrll3'],
+    'L4': ['SS4', 'SSp-bfd4', 'SSp-ll4', 'SSp-m4', 'SSp-n4', 'SSp-tr4', 'SSp-ul4', 'SSp-un4', 'SSp4', 'SSs4'],
+    'L5': ['SS5', 'SSp-bfd5', 'SSp-ll5', 'SSp-m5', 'SSp-n5', 'SSp-tr5', 'SSp-ul5', 'SSp-un5', 'SSp5', 'SSs5'],
+    'L6': ['SS6a', 'SS6b', 'SSp-bfd6a', 'SSp-bfd6b', 'SSp-ll6a', 'SSp-ll6b', 'SSp-m6a', 'SSp-m6b', 'SSp-n6a', 'SSp-n6b', 'SSp-tr6a', 'SSp-tr6b', 'SSp-ul6a', 'SSp-ul6b', 'SSp-un6a', 'SSp-un6b', 'SSp6a', 'SSp6b', 'SSs6a', 'SSs6b'],
+}
 
-#make output directory
-if (os.path.exists('./output')):
-    print('output directory already exists')
-else:
-    os.mkdir('output')
+
+def get_ids(region_map, acronyms):
+    return [next(iter(region_map.find(acronym, 'acronym'))) for acronym in acronyms]
 
 
-output_brain_regions=atlas.load_data('brain_regions')
-PC_morphology_names=allrows[0]
+def scale_excitatory_densities(output, region_map, brain_regions, mapping, layer_names, exc_density):
+    output = Path(output)
 
-#layer IDs, starting with layer 2 and going to layer 6
-allids=[{614454286,614454294,614454296,614454298,614454300,614454302,614454304,614454306},{614454287,614454289,614454291,614454293,614454295,614454297,614454299,614454301,614454303,614454305,614454307},{12995,865,654,1047,1094,950,577,1086,182305701,1035}, {12996,921,702,1070,1128,974,625,1111,182305705,1090}, {12997,12998,686,719,889,929,1038,1062,478,510,1102,2,945,1026,9,461,182305709,182305713,862,893}]
+    for layer, df in mapping.iterrows():
+        ids = get_ids(region_map, layer_names[layer])
+        idx = np.nonzero(np.isin(brain_regions.raw, ids))
 
-#loop through the layers and write out ME fractions of PCs in those layers
-for count1 in range(1,len(allrows)):
-    print(count1)
-    ids=allids[count1-1]
-    
-    row=allrows[count1] 
-    region_inds=np.transpose(np.nonzero(np.isin(brain_regions.raw, list(ids))))
-    for count2 in range(1,len(PC_morphology_names)):
-        if row[count2]=='0':
-            continue
-        scale=float(row[count2])
-        output_name='./output/'+(PC_morphology_names[count2])+'_cADpyr.nrrd'
-        output_array=0*exc_nrrd.raw
-        allval=0
-        for ind in region_inds:
-            val=exc_nrrd.raw[ind[0],ind[1],ind[2]]
-            output_array[ind[0],ind[1],ind[2]]=scale*val
-            allval+=val
+        for mtype, scale in df.iteritems():
+            if scale == 0:
+                continue
+            L.info('Performing %s', mtype)
+            raw = np.zeros_like(exc_density.raw)
+            raw[idx] = scale * exc_density.raw[idx]
+            output_name = output / f'{mtype}_cADpyr.nrrd'
+            exc_density.with_data(raw).save_nrrd(output_name)
 
-        output_brain_regions.raw=output_array
-        output_brain_regions.save_nrrd(output_name)
+scale_excitatory_densities('output', region_map, brain_regions, excitatory_mapping, layer_names, exc_density)
 
-#now remove regions from excitatory
-#append layer 1
-allids.append({12993,793,558,981,480149206,1030,878,450,1006,182305693,873  })
-for ids in allids:
-    region_inds=np.transpose(np.nonzero(np.isin(brain_regions.raw, list(ids))))
-    for ind in region_inds:
-        exc_nrrd.raw[ind[0],ind[1],ind[2]]=0
-        inh_nrrd.raw[ind[0],ind[1],ind[2]]=0
+def set_acronyms_to_zero(output_name, region_map, brain_regions, nrrd, acronyms):
+    L.info('Setting acronyms to zero, outputting %s', output_name)
+    ids = get_ids(region_map, acronyms)
+    idx = np.nonzero(np.isin(brain_regions.raw, list(ids)))
+    raw = nrrd.raw.copy()
+    raw[idx] = 0.
+    nrrd.with_data(raw).save_nrrd(output_name)
 
-#save the output
-exc_nrrd.save_nrrd('./output/Generic_Excitatory_Neuron_MType_Generic_Excitatory_Neuron_EType.nrrd')
-inh_nrrd.save_nrrd('./output/Generic_Inhibitory_Neuron_MType_Generic_Inhibitory_Neuron_EType.nrrd')
+
+acronyms = sum(layer_names.values(), [])
+set_acronyms_to_zero('./output/Generic_Excitatory_Neuron_MType_Generic_Excitatory_Neuron_EType.nrrd', region_map, brain_regions, exc_density, acronyms)
+set_acronyms_to_zero('./output/Generic_Inhibitory_Neuron_MType_Generic_Inhibitory_Neuron_EType.nrrd', region_map, brain_regions, inh_density, acronyms)
