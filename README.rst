@@ -317,7 +317,7 @@ transfer functions computed previously (first density estimates).
         --average-densities-path=data/ccfv2/first_estimates/first_estimates.csv \
         --output-dir=data/ccfv2/density_volumes/
 
-Compute ME-types densities from a probality map
+Compute ME-types densities from a probability map
 -----------------------------------------------
 
 Morphological and Electrical type densities of inhibitory neurons in the isocortex can be estimated
@@ -336,6 +336,29 @@ mapping csv file (see also `mtypes_probability_map_config.yaml`_).
         --metadata-path=$DATA/metadata/isocortex_23_metadata.json            \
         --mtypes-config-path=$DATA/mtypes/mtypes_probability_map_config.yaml \
         --output-dir=data/ccfv2/me-types/
+
+Subdivide excitatory files into pyramidal subtypes
+-----------------------------------------------
+This should run after the ME mapping from Roussel. To run:
+
+make_new_inhib_exc_outside_SSCX.py
+
+Input support files needed:
+
+annotation atlas (with L23 split): brain_regions.nrrd
+
+annotation hierarchy (with L23 split): hierarchy.json
+
+inhibitory: gad67+_density_v3_MMB.nrrd
+
+total neuron: neuron_density_v3_MMB.nrrd
+
+Output:
+
+excitatory nrrd files in output directory
+
+inhibitory minus cortex in output directory
+
 
 Instructions for developers
 ===========================
