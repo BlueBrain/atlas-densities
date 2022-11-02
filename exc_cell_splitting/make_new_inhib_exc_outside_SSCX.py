@@ -41,7 +41,7 @@ atlas = Atlas.open('.')
 region_map = atlas.load_region_map()
 brain_regions = atlas.load_data('brain_regions')
 
-#layer names, starting with layer 2 and going to layer 6
+#layer names, starting with layer 1 and going to layer 6
 layer_names = {
  'L1': ['SS1', 'SSp1','SSp-n1', 'SSp-bfd1', 'SSp-ll1', 'SSp-m1', 'SSp-tr1', 'SSp-ul1', 'SSp-un1', 'SSs1'],
  'L2': ['SS2', 'SSp2','SSp-n2', 'SSp-bfd2', 'SSp-ll2', 'SSp-m2', 'SSp-tr2', 'SSp-ul2', 'SSp-un2', 'SSs2'],
