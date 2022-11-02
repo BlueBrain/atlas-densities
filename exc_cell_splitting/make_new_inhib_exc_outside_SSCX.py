@@ -43,12 +43,12 @@ brain_regions = atlas.load_data('brain_regions')
 
 #layer names, starting with layer 2 and going to layer 6
 layer_names = {
-    'L1': ['SS1', 'SSp-bfd1', 'SSp-ll1', 'SSp-m1', 'SSp-n1', 'SSp-tr1', 'SSp-ul1', 'SSp-un1', 'SSp1', 'SSs1', 'VISrll1'],
-    'L2': ['SS2', 'SSp-ll2', 'SSp-m2', 'SSp-tr2', 'SSp-ul2', 'SSp-un2', 'SSs2', 'VISrll2'],
-    'L3': ['SS3', 'SSp-bfd3', 'SSp-ll3', 'SSp-m3', 'SSp-n3', 'SSp-tr3', 'SSp-ul3', 'SSp-un3', 'SSp3', 'SSs3', 'VISrll3'],
-    'L4': ['SS4', 'SSp-bfd4', 'SSp-ll4', 'SSp-m4', 'SSp-n4', 'SSp-tr4', 'SSp-ul4', 'SSp-un4', 'SSp4', 'SSs4'],
-    'L5': ['SS5', 'SSp-bfd5', 'SSp-ll5', 'SSp-m5', 'SSp-n5', 'SSp-tr5', 'SSp-ul5', 'SSp-un5', 'SSp5', 'SSs5'],
-    'L6': ['SS6a', 'SS6b', 'SSp-bfd6a', 'SSp-bfd6b', 'SSp-ll6a', 'SSp-ll6b', 'SSp-m6a', 'SSp-m6b', 'SSp-n6a', 'SSp-n6b', 'SSp-tr6a', 'SSp-tr6b', 'SSp-ul6a', 'SSp-ul6b', 'SSp-un6a', 'SSp-un6b', 'SSp6a', 'SSp6b', 'SSs6a', 'SSs6b'],
+ 'L1': ['SS1', 'SSp1','SSp-n1', 'SSp-bfd1', 'SSp-ll1', 'SSp-m1', 'SSp-tr1', 'SSp-ul1', 'SSp-un1', 'SSs1'],
+ 'L2': ['SS2', 'SSp2','SSp-n2', 'SSp-bfd2', 'SSp-ll2', 'SSp-m2', 'SSp-tr2', 'SSp-ul2', 'SSp-un2', 'SSs2'],
+ 'L3': ['SS3', 'SSp3','SSp-n3', 'SSp-bfd3', 'SSp-ll3', 'SSp-m3', 'SSp-tr3', 'SSp-ul3', 'SSp-un3', 'SSs3'],
+ 'L4': ['SS4', 'SSp4','SSp-n4', 'SSp-bfd4', 'SSp-ll4', 'SSp-m4', 'SSp-tr4', 'SSp-ul4', 'SSp-un4', 'SSs4'],
+ 'L5': ['SS5', 'SSp5','SSp-n5', 'SSp-bfd5', 'SSp-ll5', 'SSp-m5', 'SSp-tr5', 'SSp-ul5', 'SSp-un5', 'SSs5'],
+ 'L6': ['SS6a', 'SS6b','SSp6a', 'SSp6b', 'SSp-n6a', 'SSp-n6b','SSp-bfd6a', 'SSp-bfd6b', 'SSp-ll6a', 'SSp-ll6b', 'SSp-m6a', 'SSp-m6b',  'SSp-tr6a', 'SSp-tr6b', 'SSp-ul6a', 'SSp-ul6b', 'SSp-un6a', 'SSp-un6b', 'SSs6a', 'SSs6b'],
 }
 
 
