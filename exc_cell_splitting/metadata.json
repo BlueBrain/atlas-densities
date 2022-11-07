@@ -10,6 +10,6 @@
         "names": ["layer_1", "layer_2", "layer_3", "layer_4", "layer_5", "layer_6"],
         "queries": ["@.*1[ab]?$", "@.*2[ab]?$", "@.*[^/]3[ab]?$", "@.*4[ab]?$", "@.*5[ab]?$", "@.*6[ab]?$"],
         "attribute": "name",
-        "with_descendants": false
+        "with_descendants": true
     }
 }

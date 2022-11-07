@@ -41,11 +41,18 @@ atlas = Atlas.open('.')
 region_map = atlas.load_region_map()
 brain_regions = atlas.load_data('brain_regions')
 
+
+
 #make dictionary of layers in cortex
 layer_ids={}
+iso_ids = region_map.find('Isocortex', 'acronym', with_descendants=True)
 for count1 in range(0,6):
     temp=atlas.get_layer(count1)
-    layer_ids[temp[0]]=temp[1]
+    ids=[]
+    for id in list(temp[1]):
+        if id in iso_ids:
+            ids.append(id)
+    layer_ids[temp[0]]=ids
 
 def scale_excitatory_densities(output, region_map, brain_regions, mapping, layer_ids, exc_density):
     output = Path(output)
@@ -53,7 +60,10 @@ def scale_excitatory_densities(output, region_map, brain_regions, mapping, layer
     for layer, df in mapping.iterrows():
         print(layer)
         ids = list(layer_ids[layer])
-
+        
+#        for id in ids:
+#            print(region_map.get(id, "name"))
+ 
         idx = np.nonzero(np.isin(brain_regions.raw, ids))
 
         for mtype, scale in df.iteritems():
