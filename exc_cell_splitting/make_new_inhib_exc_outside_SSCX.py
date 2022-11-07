@@ -25,6 +25,7 @@ from voxcell.nexus.voxelbrain import Atlas
 import numpy as np
 import pandas as pd
 
+import json
 
 logging.basicConfig(level=logging.INFO)
 
@@ -41,18 +42,29 @@ atlas = Atlas.open('.')
 region_map = atlas.load_region_map()
 brain_regions = atlas.load_data('brain_regions')
 
+metadata_path=atlas.fetch_metadata()
+with open(metadata_path, "r", encoding="utf-8") as file_:
+      metadata = json.load(file_)
+      #assert_metadata_content(metadata)
 
 
-#make dictionary of layers in cortex
-layer_ids={}
-iso_ids = region_map.find('Isocortex', 'acronym', with_descendants=True)
-for count1 in range(0,6):
-    temp=atlas.get_layer(count1)
-    ids=[]
-    for id in list(temp[1]):
-        if id in iso_ids:
-            ids.append(id)
-    layer_ids[temp[0]]=ids
+metadata_layers = metadata["layers"]
+
+region_ids = region_map.find(
+      metadata["region"]["query"],
+      attr=metadata["region"]["attribute"],
+      with_descendants=metadata["region"].get("with_descendants", False),
+  ) # set of ids of Isocortex
+
+
+layer_ids = {}
+for (index, query) in enumerate(metadata_layers["queries"], 1):
+        layer_ids['layer_'+str(index)] = region_ids & region_map.find(
+            query,
+            attr=metadata_layers["attribute"],
+            with_descendants=metadata_layers.get("with_descendants", False),
+        ) # set of ids of one layer
+
 
 def scale_excitatory_densities(output, region_map, brain_regions, mapping, layer_ids, exc_density):
     output = Path(output)
