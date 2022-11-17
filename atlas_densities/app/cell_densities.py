@@ -58,6 +58,7 @@ from atlas_commons.app_utils import (
 from voxcell import RegionMap, VoxelData  # type: ignore
 
 from atlas_densities.app.utils import AD_PATH, DATA_PATH
+from atlas_densities.densities import excitatory_inhibitory_splitting
 from atlas_densities.densities.cell_counts import (
     extract_inhibitory_neurons_dataframe,
     glia_cell_counts,
@@ -84,6 +85,10 @@ from atlas_densities.densities.refined_inhibitory_neuron_densities import (
 from atlas_densities.densities.utils import zero_negative_values
 from atlas_densities.exceptions import AtlasDensitiesError
 
+EXCITATORY_SPLIT_CORTEX_ALL_TO_EXC_MTYPES = (
+    DATA_PATH / "mtypes" / "mapping_cortex_all_to_exc_mtypes.csv"
+)
+EXCITATORY_SPLIT_METADATA = DATA_PATH / "metadata" / "excitatory-inhibitory-splitting.json"
 HOMOGENOUS_REGIONS_PATH = DATA_PATH / "measurements" / "homogenous_regions.csv"
 HOMOGENOUS_REGIONS_REL_PATH = HOMOGENOUS_REGIONS_PATH.relative_to(AD_PATH)
 MARKERS_README_REL_PATH = (DATA_PATH / "markers" / "README.rst").relative_to(AD_PATH)
@@ -951,3 +956,97 @@ def inhibitory_neuron_densities(
         annotation.with_data(volumetric_density).save_nrrd(
             str(Path(output_dir, f"{cell_type}_density.nrrd"))
         )
+
+
+@app.command()
+@click.option(
+    "--annotation-path",
+    type=EXISTING_FILE_PATH,
+    required=True,
+    help="The path to the whole mouse brain annotation file (nrrd).",
+)
+@click.option(
+    "--hierarchy-path",
+    type=EXISTING_FILE_PATH,
+    required=True,
+    help="The path to the hierarchy file, i.e., AIBS 1.json or BBP hierarchy.json.",
+)
+@click.option(
+    "--neuron-density",
+    type=EXISTING_FILE_PATH,
+    required=True,
+    help="Complete neuron density for full brain",
+)
+@click.option(
+    "--inhibitory-density",
+    type=EXISTING_FILE_PATH,
+    required=True,
+    help="Complete inhibitory density for full brain",
+)
+@click.option(
+    "--cortex-all-to-exc-mtypes",
+    type=EXISTING_FILE_PATH,
+    required=True,
+    default=EXCITATORY_SPLIT_CORTEX_ALL_TO_EXC_MTYPES,
+    help="CSV file with mappings for isocortex mtypes",
+    show_default=True,
+)
+@click.option(
+    "--metadata-path",
+    type=EXISTING_FILE_PATH,
+    required=True,
+    default=EXCITATORY_SPLIT_METADATA,
+    help="CSV file with mappings for isocortex mtypes",
+    show_default=True,
+)
+@click.option("--output-dir", required=True, help="Output path")
+@log_args(L)
+def excitatory_split(
+    annotation_path,
+    hierarchy_path,
+    neuron_density,
+    inhibitory_density,
+    cortex_all_to_exc_mtypes,
+    metadata_path,
+    output_dir,
+):
+    """
+    This program makes exc and inh densities with isocortex cut out
+    It also remaps exc cells to morphological fractions in those regions
+    using the m-type fractions in the csv file. All etype exc types are the same
+    """
+    output_dir = Path(output_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    region_map = RegionMap.load_json(hierarchy_path)
+    brain_regions = VoxelData.load_nrrd(annotation_path)
+
+    inhibitory_density = VoxelData.load_nrrd(inhibitory_density)
+    excitatory_density = excitatory_inhibitory_splitting.make_excitatory_density(
+        VoxelData.load_nrrd(neuron_density), inhibitory_density
+    )
+
+    layer_ids = excitatory_inhibitory_splitting.gather_isocortex_ids_from_metadata(
+        region_map, metadata_path
+    )
+
+    excitatory_mapping = pd.read_csv(cortex_all_to_exc_mtypes).set_index("layer")
+
+    excitatory_inhibitory_splitting.scale_excitatory_densities(
+        output_dir, brain_regions, excitatory_mapping, layer_ids, excitatory_density
+    )
+
+    remove_ids = sum(layer_ids.values(), [])
+
+    excitatory_inhibitory_splitting.set_ids_to_zero_and_save(
+        str(output_dir / "Generic_Excitatory_Neuron_MType_Generic_Excitatory_Neuron_EType.nrrd"),
+        brain_regions,
+        excitatory_density,
+        remove_ids,
+    )
+    excitatory_inhibitory_splitting.set_ids_to_zero_and_save(
+        str(output_dir / "Generic_Inhibitory_Neuron_MType_Generic_Inhibitory_Neuron_EType.nrrd"),
+        brain_regions,
+        inhibitory_density,
+        remove_ids,
+    )
