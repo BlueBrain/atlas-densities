@@ -29,6 +29,8 @@ def scale_excitatory_densities(output, brain_regions, mapping, layer_ids, densit
         layer_ids (dict layer_name -> list of ids): ids to scale
         density (VoxelData): initial density to scale
     """
+    assert (mapping.to_numpy() >= 0).all(), "Cannot have negative scaling factors"
+
     for layer, df in mapping.iterrows():
         L.info("Performing layer: %s", layer)
         idx = np.nonzero(np.isin(brain_regions.raw, layer_ids[layer]))

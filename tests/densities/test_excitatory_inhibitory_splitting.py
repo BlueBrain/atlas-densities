@@ -15,24 +15,18 @@ HIERARCHY_PATH = Path(TESTS_PATH, "1.json")
 
 
 def test_scale_excitatory_densities(tmp_path):
+    shape = (
+        3,
+        3,
+    )
     brain_regions = VoxelData(
-        np.ones(
-            (
-                3,
-                3,
-            )
-        ),
+        np.ones(shape),
         voxel_dimensions=(10.0, 10.0),
     )
     mapping = pd.DataFrame()
     layer_ids = pd.DataFrame()
     density = VoxelData(
-        np.ones(
-            (
-                3,
-                3,
-            )
-        ),
+        np.ones(shape),
         voxel_dimensions=(10.0, 10.0),
     )
     tested.scale_excitatory_densities(tmp_path, brain_regions, mapping, layer_ids, density)
@@ -87,23 +81,18 @@ def test_scale_excitatory_densities(tmp_path):
 
 
 def test_set_ids_to_zero_and_save(tmp_path):
+    shape = (
+        3,
+        3,
+    )
+    raw = np.ones(shape)
     path = tmp_path / "zero.nrrd"
     brain_regions = VoxelData(
-        np.ones(
-            (
-                3,
-                3,
-            )
-        ),
+        raw.copy(),
         voxel_dimensions=(10.0, 10.0),
     )
     nrrd = VoxelData(
-        np.ones(
-            (
-                3,
-                3,
-            )
-        ),
+        raw.copy(),
         voxel_dimensions=(10.0, 10.0),
     )
     tested.set_ids_to_zero_and_save(
@@ -119,12 +108,6 @@ def test_set_ids_to_zero_and_save(tmp_path):
     assert output.shape == nrrd.shape
     assert np.sum(output.raw) == 0.0
 
-    raw = np.ones(
-        (
-            3,
-            3,
-        )
-    )
     raw[0, 0] = 10
     raw[0, 1] = 11
     brain_regions = VoxelData(raw, voxel_dimensions=(10.0, 10.0))
@@ -135,23 +118,16 @@ def test_set_ids_to_zero_and_save(tmp_path):
 
 
 def test_make_excitatory_density():
+    shape = (
+        3,
+        3,
+    )
     neuron_density = VoxelData(
-        2
-        * np.ones(
-            (
-                3,
-                3,
-            )
-        ),
+        2 * np.ones(shape),
         voxel_dimensions=(10.0, 10.0),
     )
     inhibitory_density = VoxelData(
-        np.ones(
-            (
-                3,
-                3,
-            )
-        ),
+        np.ones(shape),
         voxel_dimensions=(10.0, 10.0),
     )
     res = tested.make_excitatory_density(neuron_density, inhibitory_density)
