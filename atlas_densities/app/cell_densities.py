@@ -797,12 +797,13 @@ def fit_average_densities(
     with open(config["realignedSlicesPath"], "r", encoding="utf-8") as file_:
         slices = json.load(file_)
 
+    toLower = "Layer "
     with open(config["cellDensityStandardDeviationsPath"], "r", encoding="utf-8") as file_:
         cell_density_stddev = json.load(file_)
         cell_density_stddev = {
             # Use the AIBS name attribute as key (this is a unique identifier in 1.json)
             # (Ex: former key "|root|Basic cell groups and regions|Cerebrum" -> new key: "Cerebrum")
-            region_name.split("|")[-1]: stddev
+            region_name.split("|")[-1].replace(toLower, toLower.lower()).replace("/layer", ", layer"): stddev
             for (region_name, stddev) in cell_density_stddev.items()
         }
 
@@ -817,6 +818,8 @@ def fit_average_densities(
     L.info("Loading average densities dataframe ...")
     average_densities_df = pd.read_csv(average_densities_path)
     homogenous_regions_df = pd.read_csv(homogenous_regions_path)
+    homogenous_regions_df["brain_region"].replace(toLower, toLower.lower(), inplace=True, regex=True)
+    homogenous_regions_df["brain_region"].replace("/layer", ", layer", inplace=True, regex=True)
 
     L.info("Fitting of average densities: started")
     fitted_densities_df, fitting_maps = linear_fitting(
