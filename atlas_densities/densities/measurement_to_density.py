@@ -15,6 +15,7 @@ from typing import Set, Tuple, Union
 
 import numpy as np
 import pandas as pd
+from tqdm import tqdm
 from atlas_commons.typing import AnnotationT, FloatArray
 from voxcell import RegionMap  # type: ignore
 
@@ -69,10 +70,9 @@ def compute_region_densities(
         The index is the sorted list of all region identifiers.
     """
     densities = []
-    tot = len(hierarchy_info["descendant_id_set"])
-    print("\nDensities to compute:", tot)
-    for iset_ in range(tot):
-        if not (iset_ % (tot/10)): print("density %d of %d" % (iset_+1, tot))
+    total = len(hierarchy_info["descendant_id_set"])
+    print("\nDensities to compute:", total)
+    for iset_ in tqdm(range(total)):
         mask = np.isin(annotation, list(hierarchy_info["descendant_id_set"].iloc[iset_]))
         densities.append(np.sum(cell_density[mask]) / np.count_nonzero(mask))
 
