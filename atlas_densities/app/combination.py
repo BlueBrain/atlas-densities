@@ -203,7 +203,7 @@ def combine_markers(annotation_path, hierarchy_path, config):
         ],
         columns=["gene", "volume"],
     )
-    for gene, volume in volumes[["gene", "volume"]]:
+    for gene, volume in volumes[["gene", "volume"]].values:
         if len(volume.shape) > 3:
             raise ValueError(
                 f"volume of gene {gene} has shape {volume.shape} "
