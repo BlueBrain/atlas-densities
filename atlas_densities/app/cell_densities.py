@@ -99,7 +99,6 @@ ALGORITHMS: Dict[str, Callable] = {
     "linprog": linprog,
 }
 
-
 L = logging.getLogger(__name__)
 
 
@@ -959,7 +958,6 @@ def inhibitory_neuron_densities(
         )
 
 
-
 @app.command()
 @click.option(
     "--annotation-path",
@@ -1052,64 +1050,3 @@ def excitatory_split(
         inhibitory_density,
         remove_ids,
     )
-
-
-ID_TO_MARKER = {
-    868: 'pvalb',
-    1001: 'SST',
-    77371835: 'VIP',
-    479: 'gad1',
-    79556706: 'CNP',
-    79591671: 'MBP',
-    112202838: 'GFAP',
-    79591593: 'S100b',
-    1175: 'ALDH1L1',
-    75147760: 'TMEM119',
-    #68161453, 68631984?
-}
-
-@app.command()
-@click.option(
-    "--input-dir",
-    type=str,
-    required=True,
-    help=("directory containing interpolated markers"),
-)
-@click.option(
-    "--output-dir",
-    type=str,
-    required=True,
-    help="directory in which to place marker files",
-)
-@click.option(
-    "--reference-nrrd",
-    type=EXISTING_FILE_PATH,
-    required=True,
-    help=("a .nrrd file to use as a reference to create the marker files."
-          "Can be any .nrrd file from the same atlas")
-    )
-def nrrdify_markers(
-        input_dir: str,
-        output_dir: str,
-        reference_nrrd: str
-):
-    """Transfer marker files as output by Deep-Atlas to .nrrd format"""
-    out_path = Path(output_dir)
-    reference = VoxelData.load_nrrd(reference_nrrd)
-    moved = set()
-    for npyfile in Path(input_dir).glob("*.npy"):
-        experiment_id = int(str(npyfile.name).split('-')[0])
-        if experiment_id in moved:
-            L.warning(
-                f"More than one file for experiment id {experiment_id}"
-                f"ignoring {str(npyfile)}")
-            continue
-        moved.add(experiment_id)
-        try:
-            marker_name = ID_TO_MARKER[experiment_id]
-        except KeyError:
-            L.warning(
-                f"No known marker corresponding to {experiment_id}, skipping")
-            continue
-        out_name = str(out_path / (marker_name + '.nrrd'))
-        reference.with_data(np.load(npyfile)).save_nrrd(out_name)
