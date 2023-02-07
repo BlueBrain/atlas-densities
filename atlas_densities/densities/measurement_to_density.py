@@ -15,8 +15,8 @@ from typing import Set, Tuple, Union
 
 import numpy as np
 import pandas as pd
-from tqdm import tqdm
 from atlas_commons.typing import AnnotationT, FloatArray
+from tqdm import tqdm
 from voxcell import RegionMap  # type: ignore
 
 from atlas_densities.densities.utils import compute_region_volumes, get_hierarchy_info
