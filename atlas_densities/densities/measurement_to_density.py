@@ -70,10 +70,9 @@ def compute_region_densities(
         The index is the sorted list of all region identifiers.
     """
     densities = []
-    total = len(hierarchy_info["descendant_id_set"])
-    print("\nDensities to compute:", total)
-    for iset_ in tqdm(range(total)):
-        mask = np.isin(annotation, list(hierarchy_info["descendant_id_set"].iloc[iset_]))
+    descendants = hierarchy_info["descendant_id_set"]
+    for iset_ in tqdm(range(len(descendants))):
+        mask = np.isin(annotation, list(descendants.iloc[iset_]))
         densities.append(np.sum(cell_density[mask]) / np.count_nonzero(mask))
 
     return pd.DataFrame(
