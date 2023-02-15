@@ -91,6 +91,8 @@ Make `data` directory, and download needed annotation volumes, Nissl volume and 
 
    # AIBS Nissl volume:
    curl -o data/ccfv2/ara_nissl_25.nrrd http://download.alleninstitute.org/informatics-archive/current-release/mouse_ccf/ara_nissl/ara_nissl_25.nrrd
+   # Create a symbolic link in the CCFv3 folder to the CCFv2 Nissl file.
+   ln -s data/ccfv2/ara_nissl_25.nrrd data/ccfv3/ara_nissl_25.nrrd
 
 Preparation of the annotation volume
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
