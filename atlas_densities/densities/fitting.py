@@ -198,9 +198,7 @@ def compute_average_intensity(
     else:
         restricted_mask = np.zeros_like(volume_mask)
         # remove slices indices outside the volume_mask
-        slices_ = np.copy(slices)
-        slices_ = np.delete(slices_, slices_ >= volume_mask.shape[0])
-        slices_ = np.delete(slices_, slices_ < 0)
+        slices_ = [slice_ for slice_ in slices if 0 <= slice_ < volume_mask.shape[0]]
         restricted_mask[slices_] = True
         restricted_mask = np.logical_and(restricted_mask, volume_mask)
 
