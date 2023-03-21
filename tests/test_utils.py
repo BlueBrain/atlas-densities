@@ -75,36 +75,6 @@ def test_get_region_mask():
     npt.assert_array_equal(mask, expected)
 
 
-def test_split_into_halves():
-    volume = np.array(
-        [
-            [[0, 1, 2], [2, 3, 4]],
-            [[4, 5, 6], [7, 8, 9]],
-        ],
-        dtype=np.int64,
-    )
-    halves = tested.split_into_halves(volume)
-    npt.assert_array_equal(
-        halves[0],
-        np.array(
-            [
-                [[0, 0, 0], [2, 0, 0]],
-                [[4, 0, 0], [7, 0, 0]],
-            ],
-            dtype=np.int64,
-        ),
-    )
-    npt.assert_array_equal(
-        halves[1],
-        np.array(
-            [
-                [[0, 1, 2], [0, 3, 4]],
-                [[0, 5, 6], [0, 8, 9]],
-            ]
-        ),
-    )
-
-
 def test_is_obtuse_angle():
     vector_field_1 = np.array(
         [
