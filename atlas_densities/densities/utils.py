@@ -158,7 +158,7 @@ def optimize_distance_to_line(  # pylint: disable=too-many-arguments
     """
     Find inside a box the closest point to a line with prescribed coordinate sum.
 
-    This function aims at solving the following (convex quadratic) optmization problem:
+    This function aims at solving the following (convex quadratic) optimization problem:
 
     Given a sum S >= 0.0, a line D in the non-negative orthant of the Euclidean N-dimensional
     space and a box B in this orthant (an N-dimensional vector with non-negative coordinates),
@@ -176,26 +176,30 @@ def optimize_distance_to_line(  # pylint: disable=too-many-arguments
     Args:
         line_direction_vector: N-dimensional float vector with non-negative coordinates.
         upper_bounds: N-dimensional float vector with non-negative coordinates. Defines the
-            the box constraining the optimization process.
-        sum_constraints: non-negative float number. The coordinate sum constraints imposed on
+            box constraining the optimization process.
+        sum_constraint: non-negative float number. The coordinate sum constraints imposed on
             the point P we are looking for.
         threshold: non-negative float value. If the coordinate sum of the current point
             is below `threshold`, the function returns the current point.
         max_iter: maximum number of iterations.
-        copy: If True, the function makes a copy of the input `line_direction_vector`. Otherwise
+        copy: If True, the function makes a copy of the input `line_direction_vector`. Otherwise,
             `line_direction_vector` is modified in-place and holds the optimal value.
 
     Returns: N-dimensional float vector with non-negative coordinates. The solution point of the
-        optimization problem, if it exists, up to inacurracy due to threshold size or early
-        termination of the algorithm. Otherwise a point on the boundary of the box B defined by
+        optimization problem, if it exists, up to inaccuracy due to threshold size or early
+        termination of the algorithm. Otherwise, a point on the boundary of the box B defined by
         `upper_bounds`.
     """
     diff = float("inf")
     iter_ = 0
     point = line_direction_vector.copy() if copy else line_direction_vector
+    scalable_voxels = np.ones_like(point, dtype=bool)
     while diff > threshold and iter_ < max_iter:
-        point *= sum_constraint / np.sum(point)
+        point[scalable_voxels] *= (sum_constraint - np.sum(point[~scalable_voxels])) / np.sum(
+            point[scalable_voxels]
+        )
         point = np.min([point, upper_bounds], axis=0)
+        scalable_voxels = point < upper_bounds
         diff = np.abs(np.sum(point) - sum_constraint)
         iter_ += 1
 
@@ -385,7 +389,7 @@ def get_group_names(region_map: "RegionMap", cleanup_rest: bool = False) -> Dict
 
     Args:
         region_map: object to navigate the mouse brain regions hierarchy
-            (instantied from AIBS 1.json).
+            (instantiated from AIBS 1.json).
         cleanup_rest: (Optional) If True, the name of any ascendant region of the Cerebellum and
             Isocortex groups are removed from the names of the Rest group. This makes sure that
             the set of names of the Rest group is closed under taking descendants.
@@ -485,7 +489,8 @@ def get_hierarchy_info(
     ]
     region_names = [region_map.get(id_, attr="name") for id_ in region_ids]
     data_frame = pd.DataFrame(
-        {"brain_region": region_names, "descendant_id_set": descendant_id_sets}, index=region_ids
+        {"brain_region": region_names, "descendant_id_set": descendant_id_sets},
+        index=region_ids,
     )
 
     return data_frame
