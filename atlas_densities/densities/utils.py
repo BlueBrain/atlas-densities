@@ -193,13 +193,13 @@ def optimize_distance_to_line(  # pylint: disable=too-many-arguments
     diff = float("inf")
     iter_ = 0
     point = line_direction_vector.copy() if copy else line_direction_vector
-    scalable_voxels = np.ones_like(point, dtype=bool)
-    while diff > threshold and iter_ < max_iter:
+    scalable_voxels = point != 0
+    while diff > threshold and iter_ < max_iter and scalable_voxels.any():
         point[scalable_voxels] *= (sum_constraint - np.sum(point[~scalable_voxels])) / np.sum(
             point[scalable_voxels]
         )
         point = np.min([point, upper_bounds], axis=0)
-        scalable_voxels = point < upper_bounds
+        scalable_voxels = np.logical_and(point != 0, point < upper_bounds)
         diff = np.abs(np.sum(point) - sum_constraint)
         iter_ += 1
 

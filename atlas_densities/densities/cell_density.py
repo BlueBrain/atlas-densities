@@ -107,7 +107,9 @@ def compute_cell_density(
     group_ids = get_group_ids(region_map)
     region_masks = get_region_masks(group_ids, annotation)
     fix_purkinje_layer_intensity(region_map, annotation, region_masks, nissl)
+    non_zero_nissl = nissl != 0
     for group, mask in region_masks.items():
+        mask = np.logical_and(non_zero_nissl, mask)
         nissl[mask] = nissl[mask] * (cell_counts()[group] / np.sum(nissl[mask]))
 
     return nissl / voxel_volume
