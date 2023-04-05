@@ -35,7 +35,7 @@ def scale_excitatory_densities(output, brain_regions, mapping, layer_ids, densit
         L.info("Performing layer: %s", layer)
         idx = np.nonzero(np.isin(brain_regions.raw, layer_ids[layer]))
 
-        for mtype, scale in df.iteritems():
+        for mtype, scale in df.items():
             if scale == 0:
                 continue
 
