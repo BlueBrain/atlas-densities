@@ -45,7 +45,7 @@ def create_from_composition(
 
     layer_masks = get_layer_masks(annotation.raw, region_map, metadata)
 
-    for layer, layer_data in excitatory_mtype_composition.groupby(["layer"]):
+    for layer, layer_data in excitatory_mtype_composition.groupby("layer"):
 
         layer_sum = layer_data["density"].sum()
 
