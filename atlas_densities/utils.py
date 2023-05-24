@@ -262,7 +262,7 @@ def create_layered_volume(
         attr=metadata["region"]["attribute"],
         with_descendants=metadata["region"].get("with_descendants", False),
     )
-    for (index, query) in enumerate(metadata_layers["queries"], 1):
+    for index, query in enumerate(metadata_layers["queries"], 1):
         layer_ids = region_map.find(
             query,
             attr=metadata_layers["attribute"],
