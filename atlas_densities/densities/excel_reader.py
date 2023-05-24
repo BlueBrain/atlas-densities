@@ -188,7 +188,7 @@ def _set_metadata_columns(
 
     In `dataframe`, the rows corresponding to the same article have no valid 'source title',
     'comment' nor 'specimen age' except the first one. This function makes sure every row is
-    set with approriate values in the aforementioned columns.
+    set with appropriate values in the aforementioned columns.
 
     Args:
         dataframe: DataFrame obtained when reading the worksheets 'GAD67 densities' or 'PV-SST-VIP'
@@ -352,8 +352,6 @@ def read_inhibitory_neuron_measurement_compilation(
     Read the neuron densities of the worksheet 'GAD67 densities' in gaba_papers.xlsx
 
     Args:
-        region_map: RegionMap object to navigate the brain regions hierarchy.
-            Assumed to be instantiated with AIBS 1.json.
         measurements_path: path to the file gaba_papers.xlsx
 
     Returns:
@@ -361,7 +359,7 @@ def read_inhibitory_neuron_measurement_compilation(
         this module.
     """
 
-    # Reading takes several seconds, possibly due to formulaes interpretation
+    # Reading takes several seconds, possibly due to formulas interpretation
     L.info("Loading excel worksheet ...")
     inhibitory_neurons_worksheet = pd.read_excel(
         str(measurements_path),
@@ -435,8 +433,6 @@ def read_pv_sst_vip_measurement_compilation(measurements_path: Union[str, "Path"
     Read the neuron densities of the worksheet 'PV-SST-VIP' in gaba_papers.xlsx
 
     Args:
-        region_map: RegionMap object to navigate the brain regions hierarchy.
-            Assumed to be instantiated with AIBS 1.json.
         measurements_path: path to the file gaba_papers.xlsx
 
     Returns:
@@ -484,7 +480,7 @@ def read_homogenous_neuron_type_regions(measurements_path: Union[str, "Path"]) -
 
     Returns:
         pd.DataFrame with two columns: 'brain_region' and 'cell_type'. A cell type value
-        is either 'ihibitory' or 'excitatory' and applies to every cell in the region.
+        is either 'inhibitory' or 'excitatory' and applies to every cell in the region.
     """
 
     homogenous_regions_worksheet = pd.read_excel(

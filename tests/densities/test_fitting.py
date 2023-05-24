@@ -219,6 +219,10 @@ def test_compute_average_intensity():
     assert np.allclose(actual, 0.3 / 2.0)
     actual = tested.compute_average_intensity(intensity, volume_mask, slices=[1])
     assert np.allclose(actual, 0.1 / 2.0)
+    actual = tested.compute_average_intensity(intensity, volume_mask, slices=[-1, 1, 3])
+    assert np.allclose(actual, 0.1 / 2.0)
+    actual = tested.compute_average_intensity(intensity, volume_mask, slices=[-1, 3])
+    assert actual == 0
 
 
 def test_compute_average_intensities(hierarchy_info):
