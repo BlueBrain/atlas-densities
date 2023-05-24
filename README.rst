@@ -340,26 +340,16 @@ mapping csv file (see also `mtypes_probability_map_config.yaml`_).
 Subdivide excitatory files into pyramidal subtypes
 --------------------------------------------------
 
-This should run after the ME mapping from Roussel. To run:
+This should run after the inhibitory/excitatory computation above. To run:
 
-make_new_inhib_exc_outside_SSCX.py
+.. code-block:: bash
 
-Input support files needed:
-
-annotation atlas (with L23 split): brain_regions.nrrd
-
-annotation hierarchy (with L23 split): hierarchy.json
-
-inhibitory: gad67+_density_v3_MMB.nrrd
-
-total neuron: neuron_density_v3_MMB.nrrd
-
-Output:
-
-excitatory nrrd files in output directory
-
-inhibitory minus cortex in output directory
-
+    atlas-densities cell-densities excitatory-split                         \
+        --annotation-path=data/ccfv2/annotation_25.nrrd                     \
+        --hierarchy-path=data/1.json                                        \
+        --neuron-density=data/ccfv2/density_volumes/neuron_density.nrrd     \
+        --inhibitory-density=data/ccfv2/density_volumes/gad67+_density.nrrd \
+        --output-dir=data/ccfv2/excitatory_split
 
 Instructions for developers
 ===========================
