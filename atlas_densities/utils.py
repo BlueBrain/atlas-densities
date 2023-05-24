@@ -1,6 +1,6 @@
 """Generic Atlas files tools"""
 
-from typing import Dict, Tuple, Union
+from typing import Dict, Union
 
 import numpy as np
 import scipy.ndimage
@@ -80,31 +80,6 @@ def get_region_mask(
     region = {"query": acronym, "attribute": "acronym", "with_descendants": True}
 
     return query_region_mask(region, annotation, region_map)
-
-
-def split_into_halves(
-    volume: NumericArray,
-    halfway_offset: int = 0,
-) -> Tuple[NumericArray, NumericArray]:
-    """
-    Split input 3D volume into two halves along the z-axis.
-
-    Args:
-        volume: 3D numeric array.
-            halfway_offset: Optional offset used for the
-            splitting along the z-axis.
-    Returns:
-        tuple(left_volume, right_volume), the two halves of the
-        input volume. Each has the same shape as `volume`.
-        Voxels are zeroed for the z-values above, respectively
-        below, the half of the z-dimension.
-    """
-    z_halfway = volume.shape[2] // 2 + halfway_offset
-    left_volume = volume.copy()
-    left_volume[..., z_halfway:] = 0
-    right_volume = volume.copy()
-    right_volume[..., :z_halfway] = 0
-    return left_volume, right_volume
 
 
 def is_obtuse_angle(vector_field_1: NumericArray, vector_field_2: NumericArray) -> BoolArray:

@@ -58,6 +58,7 @@ from atlas_commons.app_utils import (
 from voxcell import RegionMap, VoxelData  # type: ignore
 
 from atlas_densities.app.utils import AD_PATH, DATA_PATH
+from atlas_densities.densities import excitatory_inhibitory_splitting
 from atlas_densities.densities.cell_counts import (
     extract_inhibitory_neurons_dataframe,
     glia_cell_counts,
@@ -84,6 +85,10 @@ from atlas_densities.densities.refined_inhibitory_neuron_densities import (
 from atlas_densities.densities.utils import zero_negative_values
 from atlas_densities.exceptions import AtlasDensitiesError
 
+EXCITATORY_SPLIT_CORTEX_ALL_TO_EXC_MTYPES = (
+    DATA_PATH / "mtypes" / "mapping_cortex_all_to_exc_mtypes.csv"
+)
+EXCITATORY_SPLIT_METADATA = DATA_PATH / "metadata" / "excitatory-inhibitory-splitting.json"
 HOMOGENOUS_REGIONS_PATH = DATA_PATH / "measurements" / "homogenous_regions.csv"
 HOMOGENOUS_REGIONS_REL_PATH = HOMOGENOUS_REGIONS_PATH.relative_to(AD_PATH)
 MARKERS_README_REL_PATH = (DATA_PATH / "markers" / "README.rst").relative_to(AD_PATH)
@@ -150,7 +155,7 @@ def cell_density(annotation_path, hierarchy_path, nissl_path, output_path):
 
     \b
     - the Nissl stain intensity, which is supposed to represent the overall cell density, up to
-    to region-dependent constant scaling factors.
+    region-dependent constant scaling factors.
     - cell counts from the scientific literature, which are used to determine a local
     linear dependency factor for each region where a cell count is available.
     - the optional soma radii, used to operate a correction.
@@ -412,7 +417,7 @@ def inhibitory_and_excitatory_neuron_densities(
     Note: optimization is not fully implemented and the current process only returns a
     feasible point.
 
-    The ouput densities are saved in the specified output directory under the following
+    The output densities are saved in the specified output directory under the following
     names:
 
     \b
@@ -485,7 +490,7 @@ def compile_measurements(
     Sexual Dimorphism' by Kim et al., 2017.
     https://ars.els-cdn.com/content/image/1-s2.0-S0092867417310693-mmc3.xlsx
     - `atlas_densities/app/data/measurements/gaba_papers.xlsx`, a compilation of measurements
-    from the scientifc literature made by Rodarie Dimitri (BBP).
+    from the scientific literature made by Rodarie Dimitri (BBP).
 
     This command extracts measurements from the above two files and gathers them into a unique
     CSV file with the following columns:
@@ -526,7 +531,7 @@ def compile_measurements(
     See `atlas_densities/densities/excel_reader.py` for more information.
 
     Note: This function should be deprecated once its output has been stored permanently as the
-    the unique source of density-related measurements for the AIBS mouse brain. New measurements
+    unique source of density-related measurements for the AIBS mouse brain. New measurements
     should be added to the stored file (Nexus).
     """
 
@@ -614,7 +619,7 @@ def measurements_to_average_densities(
     If several combinations of measurements yield several average cell densities for the same
     region, then the output data frame records the average of these measurements.
 
-    The ouput average cell densities are saved in under the CSV format as a dataframe with the same
+    The output average cell densities are saved in under the CSV format as a dataframe with the same
     columns as the input data frame specified via `--measurements-path`.
     See :mod:`atlas_densities.app.densities.compile_measurements`.
 
@@ -739,7 +744,7 @@ def fit_average_densities(
     gad67+) in every homogenous region of type "inhibitory".
 
     Our linear fitting of density values relies on the assumption that the average cell density
-    (number of cells per mm^3) of a cell type T in a brain region R depends linearily on the
+    (number of cells per mm^3) of a cell type T in a brain region R depends linearly on the
     average intensity of a gene marker of T. The conversion factor is a constant which depends only
     on T and on which of the following three groups R belongs to:
 
@@ -896,7 +901,7 @@ def inhibitory_neuron_densities(
     (inhibitory neurons) and those of the inhibitory neuron subtypes PV+, SST+ and VIP+.
 
     The function modifies the estimates in `average_densities` (the "first estimates" of the paper)
-    to make them consistent accross cell types: the average density of GAD67+ cells in a leaf
+    to make them consistent across cell types: the average density of GAD67+ cells in a leaf
     region L should be at most the sum of the average densities of its subtypes under scrutiny
     (e.g. PV+, SST+ and VIP+) and should not exceed the neuron density of L.
 
@@ -958,3 +963,97 @@ def inhibitory_neuron_densities(
         annotation.with_data(volumetric_density).save_nrrd(
             str(Path(output_dir, f"{cell_type}_density.nrrd"))
         )
+
+
+@app.command()
+@click.option(
+    "--annotation-path",
+    type=EXISTING_FILE_PATH,
+    required=True,
+    help="The path to the whole mouse brain annotation file (nrrd).",
+)
+@click.option(
+    "--hierarchy-path",
+    type=EXISTING_FILE_PATH,
+    required=True,
+    help="The path to the hierarchy file, i.e., AIBS 1.json or BBP hierarchy.json.",
+)
+@click.option(
+    "--neuron-density",
+    type=EXISTING_FILE_PATH,
+    required=True,
+    help="Complete neuron density for full brain",
+)
+@click.option(
+    "--inhibitory-density",
+    type=EXISTING_FILE_PATH,
+    required=True,
+    help="Complete inhibitory density for full brain",
+)
+@click.option(
+    "--cortex-all-to-exc-mtypes",
+    type=EXISTING_FILE_PATH,
+    required=True,
+    default=EXCITATORY_SPLIT_CORTEX_ALL_TO_EXC_MTYPES,
+    help="CSV file with mappings for isocortex mtypes",
+    show_default=True,
+)
+@click.option(
+    "--metadata-path",
+    type=EXISTING_FILE_PATH,
+    required=True,
+    default=EXCITATORY_SPLIT_METADATA,
+    help="CSV file with mappings for isocortex mtypes",
+    show_default=True,
+)
+@click.option("--output-dir", required=True, help="Output path")
+@log_args(L)
+def excitatory_split(
+    annotation_path,
+    hierarchy_path,
+    neuron_density,
+    inhibitory_density,
+    cortex_all_to_exc_mtypes,
+    metadata_path,
+    output_dir,
+):
+    """
+    This program makes exc and inh densities with isocortex cut out
+    It also remaps exc cells to morphological fractions in those regions
+    using the m-type fractions in the csv file. All etype exc types are the same
+    """
+    output_dir = Path(output_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    region_map = RegionMap.load_json(hierarchy_path)
+    brain_regions = VoxelData.load_nrrd(annotation_path)
+
+    inhibitory_density = VoxelData.load_nrrd(inhibitory_density)
+    excitatory_density = excitatory_inhibitory_splitting.make_excitatory_density(
+        VoxelData.load_nrrd(neuron_density), inhibitory_density
+    )
+
+    layer_ids = excitatory_inhibitory_splitting.gather_isocortex_ids_from_metadata(
+        region_map, metadata_path
+    )
+
+    excitatory_mapping = pd.read_csv(cortex_all_to_exc_mtypes).set_index("layer")
+
+    excitatory_inhibitory_splitting.scale_excitatory_densities(
+        output_dir, brain_regions, excitatory_mapping, layer_ids, excitatory_density
+    )
+
+    remove_ids = sum(layer_ids.values(), [])
+
+    excitatory_inhibitory_splitting.set_ids_to_zero_and_save(
+        str(output_dir / "Generic_Excitatory_Neuron_MType_Generic_Excitatory_Neuron_EType.nrrd"),
+        brain_regions,
+        excitatory_density,
+        remove_ids,
+    )
+    excitatory_inhibitory_splitting.set_ids_to_zero_and_save(
+        str(output_dir / "Generic_Inhibitory_Neuron_MType_Generic_Inhibitory_Neuron_EType.nrrd"),
+        brain_regions,
+        inhibitory_density,
+        remove_ids,
+    )

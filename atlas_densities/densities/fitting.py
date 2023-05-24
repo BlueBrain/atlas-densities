@@ -177,7 +177,8 @@ def compute_average_intensity(
     Compute the average of `intensity` within the volume defined by `volume_mask`.
 
     If `slices` is a non-empty list of slice indices along the x-axis, then the average is
-    restricted to the subvolume of `volume_mask` enclosed by these slices.
+    restricted to the subvolume of `volume_mask` enclosed by these slices. Slices indices outside
+    the `volume_mask` will be ignored.
 
     Args:
         intensity: a float array of shape (W, H, D) where W, H and D are integer dimensions.
@@ -196,7 +197,9 @@ def compute_average_intensity(
         restricted_mask = volume_mask
     else:
         restricted_mask = np.zeros_like(volume_mask)
-        restricted_mask[slices] = True
+        # remove slices indices outside the volume_mask
+        slices_ = [slice_ for slice_ in slices if 0 <= slice_ < volume_mask.shape[0]]
+        restricted_mask[slices_] = True
         restricted_mask = np.logical_and(restricted_mask, volume_mask)
 
     if np.any(restricted_mask):
