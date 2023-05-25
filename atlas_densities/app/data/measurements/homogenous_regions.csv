@@ -5,7 +5,7 @@ brain_region,cell_type
 "Agranular insular area, posterior part, layer 1",inhibitory
 "Prelimbic area, layer 1",inhibitory
 "Anteromedial visual area, layer 1",inhibitory
-"Primary motor area, layer 1",inhibitory
+"Primary motor area, Layer 1",inhibitory
 "Lateral visual area, layer 1",inhibitory
 "Retrosplenial area, dorsal part, layer 1",inhibitory
 "Orbital area, lateral part, layer 1",inhibitory
@@ -26,7 +26,7 @@ brain_region,cell_type
 "Primary auditory area, layer 1",inhibitory
 "Posterolateral visual area, layer 1",inhibitory
 "posteromedial visual area, layer 1",inhibitory
-"Ectorhinal area, layer 1",inhibitory
+"Ectorhinal area/Layer 1",inhibitory
 "Supplemental somatosensory area, layer 1",inhibitory
 "Primary somatosensory area, mouth, layer 1",inhibitory
 "Visceral area, layer 1",inhibitory
