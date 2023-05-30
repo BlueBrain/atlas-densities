@@ -26,7 +26,7 @@ brain_region,cell_type
 "Primary auditory area, layer 1",inhibitory
 "Posterolateral visual area, layer 1",inhibitory
 "posteromedial visual area, layer 1",inhibitory
-"Ectorhinal area/Layer 1",inhibitory
+Ectorhinal area/Layer 1,inhibitory
 "Supplemental somatosensory area, layer 1",inhibitory
 "Primary somatosensory area, mouth, layer 1",inhibitory
 "Visceral area, layer 1",inhibitory
@@ -39,7 +39,7 @@ brain_region,cell_type
 "Primary somatosensory area, lower limb, layer 1",inhibitory
 "Anterolateral visual area, layer 1",inhibitory
 "Primary somatosensory area, unassigned, layer 1",inhibitory
-"Reticular nucleus of the thalamus",inhibitory
+Reticular nucleus of the thalamus,inhibitory
 "Simple lobule, molecular layer",inhibitory
 "Crus 1, molecular layer",inhibitory
 "Crus 2, molecular layer",inhibitory
@@ -56,6 +56,6 @@ brain_region,cell_type
 "Pyramus (VIII), molecular layer",inhibitory
 "Uvula (IX), molecular layer",inhibitory
 "Nodulus (X), molecular layer",inhibitory
-"Posterior complex of the thalamus",excitatory
-"Ventral posteromedial nucleus of the thalamus",excitatory
+Posterior complex of the thalamus,excitatory
+Ventral posteromedial nucleus of the thalamus,excitatory
 "Ventral posteromedial nucleus of the thalamus, parvicellular part",excitatory
