@@ -16,6 +16,7 @@ from typing import Set, Tuple, Union
 import numpy as np
 import pandas as pd
 from atlas_commons.typing import AnnotationT, FloatArray
+from tqdm import tqdm
 from voxcell import RegionMap  # type: ignore
 
 from atlas_densities.densities.utils import compute_region_volumes, get_hierarchy_info
@@ -69,8 +70,9 @@ def compute_region_densities(
         The index is the sorted list of all region identifiers.
     """
     densities = []
-    for set_ in hierarchy_info["descendant_id_set"]:
-        mask = np.isin(annotation, list(set_))
+    descendants = hierarchy_info["descendant_id_set"]
+    for iset_ in tqdm(range(len(descendants))):
+        mask = np.isin(annotation, list(descendants.iloc[iset_]))
         densities.append(np.sum(cell_density[mask]) / np.count_nonzero(mask))
 
     return pd.DataFrame(

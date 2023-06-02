@@ -226,7 +226,7 @@ def _set_metadata_columns(
         always coincide.
         """
         columns: Dict[str, List[str]] = defaultdict(list)
-        for (start, end) in zip(collapsed_blocks.index, collapsed_blocks.index[1:]):
+        for start, end in zip(collapsed_blocks.index, collapsed_blocks.index[1:]):
             columns[header].extend([dataframe[header][start]] * (end - start))
         # Handle the tail of the column
         delta = len(dataframe.index) - len(columns[header])
