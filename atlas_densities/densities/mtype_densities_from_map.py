@@ -253,9 +253,7 @@ def create_from_probability_map(
         for layer_name, layer_mask in layer_masks.items():
             layer_density = np.zeros(layer_mask.shape, dtype=float)
             layer_density[layer_mask] = mtype_density[layer_mask]
-            filename = (
-                f"L{layer_name.split('_')[-1]}_{mtype_filename}"
-            )
+            filename = f"L{layer_name.split('_')[-1]}_{mtype_filename}"
             if not np.isclose(np.sum(layer_density), 0.0):
                 filepath = str(Path(output_dirpath) / "with_layers" / filename)
                 L.info("Saving %s ...", filepath)
