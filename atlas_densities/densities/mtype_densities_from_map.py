@@ -161,14 +161,14 @@ def create_from_probability_map(
 
     The ouput volumetric density for the mtype named ``mtype`` is saved into
     `<output_dirpath>/no_layers` under the name ``<mtype>_densities.nrrd`` if its sum is not too
-    close to zero where <mtype> is uppercase and dash separated.
+    close to zero, where <mtype> is dash separated.
     Example: if mtype = "ngc_sa", then output_file_name = "NGC-SA_densities.nrrd".
 
     The restriction of the volumetric density for the mtype named ``mtype`` to layer
     ``layer_name`` is saved into `<output_dirpath>/with_layers` under the name
     ``<layer_name>_<mtype>_densities.nrrd`` if its sum is not too close to zero.
     The string <layer_name> is of the form "L<layer_index>", e,g, "L1" for "layer_1" and
-    the string <mtype> is upper case and dash-separted.
+    the string <mtype> is dash-separted.
     Example: if mtype = "ngc_sa", layer_name = "layer_23",  then
     output_file_name = "L23_NGC-SA_densities.nrrd".
 
@@ -243,10 +243,10 @@ def create_from_probability_map(
         )
 
         # Saving to file
+        mtype_filename = f"{mtype.replace('_', '-')}_densities.nrrd"
         (Path(output_dirpath) / "no_layers").mkdir(exist_ok=True, parents=True)
         if not np.isclose(np.sum(mtype_density), 0.0):
-            filename = f"{mtype.upper().replace('_', '-')}_densities.nrrd"
-            filepath = str(Path(output_dirpath) / "no_layers" / filename)
+            filepath = str(Path(output_dirpath) / "no_layers" / mtype_filename)
             L.info("Saving %s ...", filepath)
             annotation.with_data(mtype_density).save_nrrd(filepath)
 
@@ -255,7 +255,7 @@ def create_from_probability_map(
             layer_density = np.zeros(layer_mask.shape, dtype=float)
             layer_density[layer_mask] = mtype_density[layer_mask]
             filename = (
-                f"L{layer_name.split('_')[-1]}_{mtype.upper().replace('_', '-')}_densities.nrrd"
+                f"L{layer_name.split('_')[-1]}_{mtype_filename}"
             )
             if not np.isclose(np.sum(layer_density), 0.0):
                 filepath = str(Path(output_dirpath) / "with_layers" / filename)
