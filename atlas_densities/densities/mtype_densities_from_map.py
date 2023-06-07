@@ -60,7 +60,6 @@ def _check_dataframe_labels_sanity(dataframe: "pd.DataFrame") -> None:
         AtlasBuildingTools error on failure.
     """
     d_f = dataframe.copy()
-    d_f = d_f.rename(str.lower, axis="columns")
     d_f = d_f.rename(str.lower, axis="rows")
     d_f.columns = d_f.columns.str.replace(" ", "")
     d_f.index = d_f.index.str.replace(" ", "")

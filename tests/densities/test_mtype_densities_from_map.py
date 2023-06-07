@@ -136,7 +136,7 @@ def create_from_probability_map_data():
 
     probability_map = DataFrame(
         {
-            "chc": [
+            "ChC": [
                 0.0,
                 0.0,
                 0.0,
@@ -155,7 +155,7 @@ def create_from_probability_map_data():
                 1.0,
                 1.0,
             ],
-            "lac": [
+            "LAC": [
                 1.0,
                 1.0,
                 1.0,
@@ -235,7 +235,7 @@ class Test_create_from_probability_map:
         no_layers_filepaths = {
             Path.resolve(f).name for f in Path(tmpdir, "no_layers").glob("*.nrrd")
         }
-        assert no_layers_filepaths == {"CHC_densities.nrrd", "LAC_densities.nrrd"}
+        assert no_layers_filepaths == {"ChC_densities.nrrd", "LAC_densities.nrrd"}
         with_layers_filepaths = {
             Path.resolve(f).name for f in Path(tmpdir, "with_layers").glob("*.nrrd")
         }
@@ -244,19 +244,19 @@ class Test_create_from_probability_map:
             "L4_LAC_densities.nrrd",
             "L23_LAC_densities.nrrd",
             "L6_LAC_densities.nrrd",
-            "L6_CHC_densities.nrrd",
-            "L5_CHC_densities.nrrd",
+            "L6_ChC_densities.nrrd",
+            "L5_ChC_densities.nrrd",
         }
 
     def test_output_consistency(self):
         sum_ = {
-            "CHC": np.zeros(self.data["annotation"].shape, dtype=float),
+            "ChC": np.zeros(self.data["annotation"].shape, dtype=float),
             "LAC": np.zeros(self.data["annotation"].shape, dtype=float),
         }
         tmpdir = self.tmpdir.name
-        for filename in ["L5_CHC_densities.nrrd", "L6_CHC_densities.nrrd"]:
+        for filename in ["L5_ChC_densities.nrrd", "L6_ChC_densities.nrrd"]:
             filepath = str(Path(tmpdir) / "with_layers" / filename)
-            sum_["CHC"] += VoxelData.load_nrrd(filepath).raw
+            sum_["ChC"] += VoxelData.load_nrrd(filepath).raw
 
         for filename in [
             "L1_LAC_densities.nrrd",
@@ -267,7 +267,7 @@ class Test_create_from_probability_map:
             filepath = str(Path(tmpdir) / "with_layers" / filename)
             sum_["LAC"] += VoxelData.load_nrrd(filepath).raw
 
-        for mtype in ["CHC", "LAC"]:
+        for mtype in ["ChC", "LAC"]:
             filepath = str(Path(tmpdir) / "no_layers" / f"{mtype}_densities.nrrd")
             density = VoxelData.load_nrrd(filepath)
             npt.assert_array_equal(
@@ -279,10 +279,10 @@ class Test_create_from_probability_map:
     def test_output_values(self):
         tmpdir = self.tmpdir.name
         expected_densities = {
-            "CHC": np.array([[[0.0, 0.0, 0.0, 2.0, 0.4]]], dtype=float),
+            "ChC": np.array([[[0.0, 0.0, 0.0, 2.0, 0.4]]], dtype=float),
             "LAC": np.array([[[1.5, 2.0, 1.0, 0.0, 0.6]]], dtype=float),
         }
-        for mtype in ["CHC", "LAC"]:
+        for mtype in ["ChC", "LAC"]:
             filepath = str(Path(tmpdir) / "no_layers" / f"{mtype}_densities.nrrd")
             npt.assert_array_almost_equal(
                 VoxelData.load_nrrd(filepath).raw, expected_densities[mtype]
@@ -308,17 +308,17 @@ class Test_create_from_probability_map_exceptions:
         )
 
     def test_probability_map_sanity_negative_probability(self):
-        self.data["probability_map"].loc["layer_1_gad67", "chc"] = -0.0025
+        self.data["probability_map"].loc["layer_1_gad67", "ChC"] = -0.0025
         with pytest.raises(AtlasDensitiesError):
             self.create_densities()
 
     def test_probability_map_sanity_row_sum_is_1(self):
-        self.data["probability_map"].loc["layer_1_gad67", "chc"] = 2.0
+        self.data["probability_map"].loc["layer_1_gad67", "ChC"] = 2.0
         with pytest.raises(AtlasDensitiesError):
             self.create_densities()
 
     def test_labels_sanity(self):
-        self.data["probability_map"].rename(str.upper, axis="columns", inplace=True)
+        self.data["probability_map"].rename(str.upper, axis="rows", inplace=True)
         with pytest.raises(AtlasDensitiesError):
             self.create_densities()
 

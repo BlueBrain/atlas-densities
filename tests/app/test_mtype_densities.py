@@ -160,10 +160,10 @@ class Test_mtype_densities_from_probability_map:
         actual = tested.standardize_probability_map(probability_map)
         expected = pd.DataFrame(
             {
-                "chc": [0.5, 0.0, 0.0, 0.0],
-                "ngc_sa": [0.5, 0.0, 0.0, 0.0],
-                "lac": [0.0] * 4,
-                "sac": [0.0] * 4,
+                "ChC": [0.5, 0.0, 0.0, 0.0],
+                "NGC_SA": [0.5, 0.0, 0.0, 0.0],
+                "LAC": [0.0] * 4,
+                "SAC": [0.0] * 4,
             },
             index=["layer_1_gad67", "layer_6_vip", "layer_23_pv", "layer_4_vip"],
         )
@@ -176,7 +176,7 @@ class Test_mtype_densities_from_probability_map:
             result = get_result_from_probablity_map_(runner)
             assert result.exit_code == 0
 
-            chc = VoxelData.load_nrrd(str(Path("output_dir") / "no_layers" / "CHC_densities.nrrd"))
+            chc = VoxelData.load_nrrd(str(Path("output_dir") / "no_layers" / "ChC_densities.nrrd"))
             assert chc.raw.dtype == float
             npt.assert_array_equal(chc.voxel_dimensions, self.data["annotation"].voxel_dimensions)
 

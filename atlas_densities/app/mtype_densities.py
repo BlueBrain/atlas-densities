@@ -204,7 +204,7 @@ def standardize_probability_map(probability_map: "pd.DataFrame") -> "pd.DataFram
     Standardize the labels of the rows and the columns of `probability_map` and
     remove unused rows.
 
-    Output labels are all lower case.
+    Output row labels are all lower case.
     The underscore is the only delimiter used in an output label.
     The layer names refered to by output labels are:
         "layer_1," "layer_23", "layer_4", "layer_5" and "layer_6".
@@ -242,9 +242,7 @@ def standardize_probability_map(probability_map: "pd.DataFrame") -> "pd.DataFram
 
         Example: "NGC-SA" -> "ngc_sa"
         """
-        col_label = col_label.replace("-", "_")
-
-        return col_label.lower()
+        return col_label.replace("-", "_")
 
     bbp_mtypes_map = {"DLAC": "LAC", "SLAC": "SAC"}
     probability_map.rename(bbp_mtypes_map, axis="columns", inplace=True)
@@ -312,7 +310,7 @@ def create_from_probability_map(
     else:
         probability_map.set_index(probability_map.columns[0], inplace=True)
 
-    # Remove useless lines, use lower case and "standardized" explicit label names
+    # Remove useless lines, use lower case row labels and "standardized" explicit label names
     probability_map = standardize_probability_map(probability_map)
     check_probability_map_sanity(probability_map)
 
