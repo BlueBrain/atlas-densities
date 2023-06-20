@@ -218,7 +218,7 @@ class Test_create_from_probability_map:
     def setup_method(self, method):
         self.tmpdir = tempfile.TemporaryDirectory()
         self.data = create_from_probability_map_data()
-        tested.create_from_probability_map(
+        tested.create.create_from_probability_map(
             self.data["annotation"],
             self.data["region_map"],
             self.data["metadata"],
@@ -298,7 +298,7 @@ class Test_create_from_probability_map_exceptions:
         self.tmpdir.cleanup()
 
     def create_densities(self):
-        tested.create_from_probability_map(
+        tested.create.create_from_probability_map(
             self.data["annotation"],
             self.data["region_map"],
             self.data["metadata"],
