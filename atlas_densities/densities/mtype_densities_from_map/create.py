@@ -1,3 +1,13 @@
+"""
+Create a density field for each mtype listed in
+`app/data/mtypes/probability_map/probability_map.csv`.
+
+This input file can be replaced by user's custom file of the same format.
+
+Volumetric density nrrd files are created for each mtype listed `probability_map.csv`.
+This module re-uses the computation of the densities of the neurons reacting to PV, SST, VIP
+and GAD67, see mod:`app/cell_densities`.
+"""
 import logging
 from pathlib import Path
 from typing import TYPE_CHECKING, Dict
@@ -5,8 +15,7 @@ from typing import TYPE_CHECKING, Dict
 import numpy as np
 from atlas_commons.typing import FloatArray
 
-from atlas_densities.utils import get_layer_masks
-from atlas_densities.densities.mtype_densities_from_map.molecular_type_densities_adjustments import (
+from atlas_densities.densities.mtype_densities_from_map.molecular_type_densities import (
     MOLECULAR_TYPE_DENSITIES_ADJUSTMENTS,
 )
 from atlas_densities.densities.mtype_densities_from_map.utils import (
@@ -14,6 +23,7 @@ from atlas_densities.densities.mtype_densities_from_map.utils import (
     _check_probability_map_consistency,
     _get_coefficients,
 )
+from atlas_densities.utils import get_layer_masks
 
 if TYPE_CHECKING:  # pragma: no cover
     import pandas as pd
