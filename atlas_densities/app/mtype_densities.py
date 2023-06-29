@@ -25,7 +25,6 @@ Note that excitatory mtypes are handled in the first but not in the second case.
 """
 import json
 import logging
-import re
 from pathlib import Path
 from typing import Dict, List
 
@@ -41,7 +40,6 @@ from atlas_commons.app_utils import (
     log_args,
     set_verbose,
 )
-from atlas_commons.utils import assert_metadata_content
 from voxcell import RegionMap, VoxelData  # type: ignore
 
 from atlas_densities.app.utils import AD_PATH, DATA_PATH
@@ -199,59 +197,6 @@ def _check_config_sanity(config: dict) -> None:
         )
 
 
-def standardize_probability_map(probability_map: "pd.DataFrame") -> "pd.DataFrame":
-    """
-    Standardize the labels of the rows and the columns of `probability_map` and
-    remove unused rows.
-
-    Output row labels are all lower case.
-    The underscore is the only delimiter used in an output label.
-    The layer names refered to by output labels are:
-        "layer_1," "layer_23", "layer_4", "layer_5" and "layer_6".
-    Rows whose labels contain "VIP" or "6b" are removed.
-
-    Row example: "L2/3 Pvalb-IRES-Cre" -> "layer_23_pv"
-    Column example: "NGC-SA" -> "ngc_sa"
-
-    Args:
-        probability_map: probability_map:
-            data frame whose rows are labeled by molecular types and layers (e.g.,
-            "L6a Htr3a-Cre_NO152", "L2/3 Pvalb-IRES-Cre", "L4 Htr3a-Cre_NO152") and whose columns
-            are labeled by mtypes (mtypes = morphological types, e.g., "NGC-SA", "ChC", "DLAC").
-
-    Returns: a data frame complying with all the above constraints.
-    """
-
-    def standardize_row_label(row_label: str):
-        """
-        Lowercase labels and use explicit layer names.
-        """
-        splitting = re.split("_", row_label)  # remove unused Creline information
-        splitting[0] = splitting[0].replace("L", "layer_")
-        splitting[1] = splitting[1].replace("Pvalb", "pv")
-        # Although Gad2 = Gad65, see e.g. https://www.genecards.org/cgi-bin/carddisp.pl?gene=GAD2
-        # Gad1 = Gad67 is taken as an acceptable substitute for density estimates.
-        splitting[1] = splitting[1].replace("Gad2", "gad67")
-
-        return "_".join(splitting).lower()
-
-    def standardize_column_label(col_label: str):
-        """
-        Lowercase labels and use underscore as delimiter for composed
-        molecular types such as NGC-DA or NGC-SA.
-
-        Example: "NGC-SA" -> "ngc_sa"
-        """
-        return col_label.replace("-", "_")
-
-    bbp_mtypes_map = {"DLAC": "LAC", "SLAC": "SAC"}
-    probability_map.rename(bbp_mtypes_map, axis="columns", inplace=True)
-    probability_map.rename(standardize_column_label, axis="columns", inplace=True)
-    probability_map.rename(standardize_row_label, axis="rows", inplace=True)
-
-    return probability_map
-
-
 @app.command()
 @common_atlas_options
 @click.option(
@@ -297,7 +242,6 @@ def create_from_probability_map(
 
     Note: this command does not generate volumetric density files for excitatory neurons.
     """
-
     L.info("Loading configuration file ...")
     with open(mtypes_config_path, "r", encoding="utf-8") as file_:
         config = yaml.load(file_, Loader=yaml.FullLoader)
@@ -305,19 +249,13 @@ def create_from_probability_map(
 
     L.info("Loading probability mapping ...")
     probability_map = pd.DataFrame(pd.read_csv(config["probabilityMapPath"]))
-    if "molecular_type" in probability_map.columns:
-        probability_map.set_index("molecular_type", inplace=True)
-    else:
-        probability_map.set_index(probability_map.columns[0], inplace=True)
+    probability_map.set_index(["region", "molecular_type"], inplace=True)
 
-    # Remove useless lines, use lower case row labels and "standardized" explicit label names
-    probability_map = standardize_probability_map(probability_map)
     check_probability_map_sanity(probability_map)
 
     L.info("Loading brain region metadata ...")
     with open(metadata_path, "r", encoding="utf-8") as file_:
         metadata = json.load(file_)
-        assert_metadata_content(metadata)
 
     L.info("Loading hierarchy json file ...")
     region_map = RegionMap.load_json(hierarchy_path)

@@ -9,21 +9,15 @@ This module re-uses the computation of the densities of the neurons reacting to 
 and GAD67, see mod:`app/cell_densities`.
 """
 import logging
-from pathlib import Path
-from typing import TYPE_CHECKING, Dict
+from typing import TYPE_CHECKING, Any, Dict
 
 import numpy as np
 from atlas_commons.typing import FloatArray
 
-from atlas_densities.densities.mtype_densities_from_map.molecular_type_densities import (
-    MOLECULAR_TYPE_DENSITIES_ADJUSTMENTS,
-)
+from atlas_densities.densities.mtype_densities_from_map.save import save_densities
 from atlas_densities.densities.mtype_densities_from_map.utils import (
-    _check_dataframe_labels_sanity,
     _check_probability_map_consistency,
-    _get_coefficients,
 )
-from atlas_densities.utils import get_layer_masks
 
 if TYPE_CHECKING:  # pragma: no cover
     import pandas as pd
@@ -72,10 +66,10 @@ def create_from_probability_map(
             "ngc_sa", "chc", "lac").
         output_dirpath: path of the directory where to save the volumetric density nrrd files.
             It will be created if it doesn't exist already. It will contain two subdirectories,
-            namely `no_layers` and `with_layers`. They will be created if they don't exist already.
-            The subdirectory `no_layers` contains a volumetric density file of each mtype appearing
-            as column label of `probability_map`.
-            The subdirectory `with_layers` contains the volumetric density of each mtype for each
+            namely `no_regions` and `with_regions`. They will be created if they don't exist.
+            The subdirectory `no_regions` contains a volumetric density file of each mtype
+            appearing as column label of `probability_map`.
+            The subdirectory `with_regions` contains the volumetric density of each mtype for each
             layer.
 
     Raises:
@@ -87,64 +81,90 @@ def create_from_probability_map(
             described in `metadata`
     """
     # pylint: disable=too-many-locals
-    _check_dataframe_labels_sanity(probability_map)
-    layer_names = metadata["layers"]["names"]
+    region_ids = []
+    for region in metadata["regions"]:
+        region_ids.extend(
+            [
+                region_id
+                for region_id in region_map.find(
+                    region["query"], region["attribute"], with_descendants=True
+                )
+                if region_map.is_leaf_id(region_id)
+            ]
+        )
+    region_acronyms = [region_map.get(region_id, "acronym") for region_id in region_ids]
 
-    for adjustment in MOLECULAR_TYPE_DENSITIES_ADJUSTMENTS:
-        molecular_type_densities = adjustment(molecular_type_densities)
-
-    _check_probability_map_consistency(
-        probability_map, set(layer_names), set(molecular_type_densities.keys())
+    regions_acronyms_diff, molecular_types_diff = _check_probability_map_consistency(
+        probability_map, set(region_acronyms), set(molecular_type_densities.keys())
     )
+    region_ids = [
+        region_id
+        for region_acronym, region_id in zip(region_acronyms, region_ids)
+        if region_acronym not in regions_acronyms_diff
+    ]
+    region_acronyms = [
+        region_acronym
+        for region_acronym in region_acronyms
+        if region_acronym not in regions_acronyms_diff
+    ]
+    molecular_type_densities = {
+        key: value
+        for key, value in molecular_type_densities.items()
+        if key not in molecular_types_diff
+    }
 
-    layer_masks = get_layer_masks(annotation.raw, region_map, metadata)
+    # create region mask
+    combined_region_masks = np.zeros_like(annotation.raw, dtype=np.uint16)
+    for region_id in region_ids:
+        combined_region_masks[np.isin(annotation.raw, [region_id])] = np.array([region_id]).astype(
+            np.uint16
+        )
+
+    region_masks = {
+        region_acronym: combined_region_masks == region_id
+        for region_acronym, region_id in zip(region_acronyms, region_ids)
+    }
+
     zero_density_mtypes = []
     for mtype in probability_map.columns:
         mtype_density = np.zeros(annotation.shape, dtype=float)
-        coefficients = _get_coefficients(
-            mtype, probability_map, layer_names, list(molecular_type_densities.keys())
-        )
-        for layer_name in layer_names[1:]:
+
+        coefficients: Dict[str, Dict[str, Any]] = {}
+        for region_acronym in region_acronyms:
+            coefficients[region_acronym] = {}
+            for molecular_type in list(molecular_type_densities.keys()):
+                try:
+                    coefficients[region_acronym][molecular_type] = probability_map.at[
+                        (region_acronym, molecular_type), mtype
+                    ]
+                except KeyError:
+                    pass
+
+        for region_acronym in region_acronyms:
             for molecular_type, density in molecular_type_densities.items():
-                if molecular_type != "gad67" and not (
-                    layer_name == "layer_6" and molecular_type == "vip"
+                if (
+                    region_acronym in region_masks
+                    and region_acronym in coefficients
+                    and molecular_type in coefficients[region_acronym]
                 ):
-                    mtype_density[layer_masks[layer_name]] += (
-                        density[layer_masks[layer_name]] * coefficients[layer_name][molecular_type]
-                    )
-                elif layer_name == "layer_6" and molecular_type == "vip":
-                    mtype_density[layer_masks[layer_name]] += (
-                        density[layer_masks[layer_name]] * coefficients[layer_name]["lamp5"]
+                    mtype_density[region_masks[region_acronym]] += (
+                        density[region_masks[region_acronym]]
+                        * coefficients[region_acronym][molecular_type]
                     )
 
-        density = molecular_type_densities["gad67"]
-        mtype_density[layer_masks["layer_1"]] = (
-            density[layer_masks["layer_1"]] * probability_map.at["layer_1_gad67", mtype]
+        zero_densities = save_densities(
+            mtype=mtype,
+            annotation=annotation,
+            region_acronyms=region_acronyms,
+            region_masks=region_masks,
+            mtype_density=mtype_density,
+            output_dirpath=output_dirpath,
         )
-
-        # Saving to file
-        mtype_filename = f"{mtype.replace('_', '-')}_densities.nrrd"
-        (Path(output_dirpath) / "no_layers").mkdir(exist_ok=True, parents=True)
-        if not np.isclose(np.sum(mtype_density), 0.0):
-            filepath = str(Path(output_dirpath) / "no_layers" / mtype_filename)
-            logger.info("Saving %s ...", filepath)
-            annotation.with_data(mtype_density).save_nrrd(filepath)
-
-        (Path(output_dirpath) / "with_layers").mkdir(exist_ok=True, parents=True)
-        for layer_name, layer_mask in layer_masks.items():
-            layer_density = np.zeros(layer_mask.shape, dtype=float)
-            layer_density[layer_mask] = mtype_density[layer_mask]
-            filename = f"L{layer_name.split('_')[-1]}_{mtype_filename}"
-            if not np.isclose(np.sum(layer_density), 0.0):
-                filepath = str(Path(output_dirpath) / "with_layers" / filename)
-                logger.info("Saving %s ...", filepath)
-                annotation.with_data(layer_density).save_nrrd(filepath)
-            else:
-                zero_density_mtypes.append(filename.replace("_densities.nrrd", ""))
+        zero_density_mtypes.extend(zero_densities)
 
     if zero_density_mtypes:
         logger.info(
-            "Found %d (layer, mtype) pairs with zero densities: %s",
+            "Found %d (region, mtype) pairs with zero densities: %s",
             len(zero_density_mtypes),
             zero_density_mtypes,
         )

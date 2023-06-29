@@ -129,45 +129,13 @@ class Test_mtype_densities_from_probability_map:
                 },
             }
             yaml.dump(config, file_)
-        self.data["raw_probability_map"].insert(0, "mtype", self.data["raw_probability_map"].index)
-        self.data["raw_probability_map"].to_csv("probability_map.csv", index=False)
+        self.data["probability_map"].to_csv("probability_map.csv", index=True)
 
         for type_, filepath in config["molecularTypeDensityPaths"].items():
             VoxelData(
                 self.data["molecular_type_densities"][type_],
                 voxel_dimensions=self.data["annotation"].voxel_dimensions,
             ).save_nrrd(filepath)
-
-    def test_standardize_probability_map(self):
-        pdt.assert_frame_equal(
-            self.data["probability_map"],
-            tested.standardize_probability_map(self.data["raw_probability_map"]),
-        )
-        probability_map = pd.DataFrame(
-            {
-                "ChC": [0.5, 0.0, 0.0, 0.0],
-                "NGC-SA": [0.5, 0.0, 0.0, 0.0],
-                "DLAC": [0.0] * 4,
-                "SLAC": [0.0] * 4,
-            },
-            index=[
-                "L1_Gad2",
-                "L6_Vip",
-                "L23_Pvalb",
-                "L4_Vip",
-            ],
-        )
-        actual = tested.standardize_probability_map(probability_map)
-        expected = pd.DataFrame(
-            {
-                "ChC": [0.5, 0.0, 0.0, 0.0],
-                "NGC_SA": [0.5, 0.0, 0.0, 0.0],
-                "LAC": [0.0] * 4,
-                "SAC": [0.0] * 4,
-            },
-            index=["layer_1_gad67", "layer_6_vip", "layer_23_pv", "layer_4_vip"],
-        )
-        pdt.assert_frame_equal(actual, expected)
 
     def test_output(self):
         runner = CliRunner()
@@ -176,7 +144,7 @@ class Test_mtype_densities_from_probability_map:
             result = get_result_from_probablity_map_(runner)
             assert result.exit_code == 0
 
-            chc = VoxelData.load_nrrd(str(Path("output_dir") / "no_layers" / "ChC_densities.nrrd"))
+            chc = VoxelData.load_nrrd(str(Path("output_dir") / "no_regions" / "ChC_densities.nrrd"))
             assert chc.raw.dtype == float
             npt.assert_array_equal(chc.voxel_dimensions, self.data["annotation"].voxel_dimensions)
 
