@@ -15,9 +15,6 @@ from typing import TYPE_CHECKING, Dict
 import numpy as np
 from atlas_commons.typing import FloatArray
 
-from atlas_densities.densities.mtype_densities_from_map.molecular_type_densities import (
-    MOLECULAR_TYPE_DENSITIES_ADJUSTMENTS,
-)
 from atlas_densities.densities.mtype_densities_from_map.utils import (
     _check_dataframe_labels_sanity,
     _check_probability_map_consistency,
@@ -90,9 +87,6 @@ def create_from_probability_map(
     _check_dataframe_labels_sanity(probability_map)
     layer_names = metadata["layers"]["names"]
 
-    for adjustment in MOLECULAR_TYPE_DENSITIES_ADJUSTMENTS:
-        molecular_type_densities = adjustment(molecular_type_densities)
-
     _check_probability_map_consistency(
         probability_map, set(layer_names), set(molecular_type_densities.keys())
     )
@@ -114,7 +108,7 @@ def create_from_probability_map(
                     )
                 elif layer_name == "layer_6" and molecular_type == "vip":
                     mtype_density[layer_masks[layer_name]] += (
-                        density[layer_masks[layer_name]] * coefficients[layer_name]["lamp5"]
+                        density[layer_masks[layer_name]] * coefficients[layer_name]["approxlamp5"]
                     )
 
         density = molecular_type_densities["gad67"]
