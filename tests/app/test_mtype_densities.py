@@ -144,7 +144,7 @@ class Test_mtype_densities_from_probability_map:
             result = get_result_from_probablity_map_(runner)
             assert result.exit_code == 0
 
-            chc = VoxelData.load_nrrd(str(Path("output_dir") / "no_regions" / "ChC_densities.nrrd"))
+            chc = VoxelData.load_nrrd(str(Path("output_dir") / "ChC_densities.nrrd"))
             assert chc.raw.dtype == float
             npt.assert_array_equal(chc.voxel_dimensions, self.data["annotation"].voxel_dimensions)
 

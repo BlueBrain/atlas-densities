@@ -131,50 +131,8 @@ class Test_create_from_probability_map:
 
     def test_filenames(self):
         tmpdir = self.tmpdir.name
-        no_regions_filepaths = {
-            Path.resolve(f).name for f in Path(tmpdir, "no_regions").glob("*.nrrd")
-        }
-        assert no_regions_filepaths == {"LAC_densities.nrrd", "ChC_densities.nrrd"}
-        with_regions_filepaths = {
-            Path.resolve(f).name for f in Path(tmpdir, "with_regions").glob("*.nrrd")
-        }
-        assert with_regions_filepaths == {
-            "AUDd4_ChC_densities.nrrd",
-            "AUDd5_ChC_densities.nrrd",
-            "AUDd23_LAC_densities.nrrd",
-            "AUDd23_ChC_densities.nrrd",
-            "AUDd4_LAC_densities.nrrd",
-        }
-
-    def test_output_consistency(self):
-        sum_ = {
-            "ChC": np.zeros(self.data["annotation"].shape, dtype=float),
-            "LAC": np.zeros(self.data["annotation"].shape, dtype=float),
-        }
-        tmpdir = self.tmpdir.name
-        for filename in [
-            "AUDd4_ChC_densities.nrrd",
-            "AUDd5_ChC_densities.nrrd",
-            "AUDd23_ChC_densities.nrrd",
-        ]:
-            filepath = str(Path(tmpdir) / "with_regions" / filename)
-            sum_["ChC"] += VoxelData.load_nrrd(filepath).raw
-
-        for filename in [
-            "AUDd23_LAC_densities.nrrd",
-            "AUDd4_LAC_densities.nrrd",
-        ]:
-            filepath = str(Path(tmpdir) / "with_regions" / filename)
-            sum_["LAC"] += VoxelData.load_nrrd(filepath).raw
-
-        for mtype in ["ChC", "LAC"]:
-            filepath = str(Path(tmpdir) / "no_regions" / f"{mtype}_densities.nrrd")
-            density = VoxelData.load_nrrd(filepath)
-            npt.assert_array_equal(
-                density.voxel_dimensions, self.data["annotation"].voxel_dimensions
-            )
-            assert density.raw.dtype == float
-            npt.assert_array_almost_equal(sum_[mtype], density.raw)
+        filepaths = {Path.resolve(f).name for f in Path(tmpdir).glob("*.nrrd")}
+        assert filepaths == {"LAC_densities.nrrd", "ChC_densities.nrrd"}
 
     def test_output_values(self):
         tmpdir = self.tmpdir.name
@@ -183,7 +141,7 @@ class Test_create_from_probability_map:
             "LAC": np.array([[[1.4, 0.0, 0.0, 0.0, 0.8]]], dtype=float),
         }
         for mtype in ["ChC", "LAC"]:
-            filepath = str(Path(tmpdir) / "no_regions" / f"{mtype}_densities.nrrd")
+            filepath = str(Path(tmpdir) / f"{mtype}_densities.nrrd")
             npt.assert_array_almost_equal(
                 VoxelData.load_nrrd(filepath).raw, expected_densities[mtype]
             )

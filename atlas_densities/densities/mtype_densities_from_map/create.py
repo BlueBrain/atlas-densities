@@ -65,12 +65,8 @@ def create_from_probability_map(
             "layer_5_sst") and whose columns are labeled by mtypes (morphological types, e.g.,
             "ngc_sa", "chc", "lac").
         output_dirpath: path of the directory where to save the volumetric density nrrd files.
-            It will be created if it doesn't exist already. It will contain two subdirectories,
-            namely `no_regions` and `with_regions`. They will be created if they don't exist.
-            The subdirectory `no_regions` contains a volumetric density file of each mtype
-            appearing as column label of `probability_map`.
-            The subdirectory `with_regions` contains the volumetric density of each mtype for each
-            layer.
+            It will be created if it doesn't exist already. It will contain a volumetric density
+            file of each mtype appearing as column label of `probability_map`.
 
     Raises:
         AtlasBuildingTools error if
@@ -125,7 +121,6 @@ def create_from_probability_map(
         for region_acronym, region_id in zip(region_acronyms, region_ids)
     }
 
-    zero_density_mtypes = []
     for mtype in probability_map.columns:
         mtype_density = np.zeros(annotation.shape, dtype=float)
 
@@ -152,19 +147,9 @@ def create_from_probability_map(
                         * coefficients[region_acronym][molecular_type]
                     )
 
-        zero_densities = save_densities(
+        save_densities(
             mtype=mtype,
             annotation=annotation,
-            region_acronyms=region_acronyms,
-            region_masks=region_masks,
             mtype_density=mtype_density,
             output_dirpath=output_dirpath,
-        )
-        zero_density_mtypes.extend(zero_densities)
-
-    if zero_density_mtypes:
-        logger.info(
-            "Found %d (region, mtype) pairs with zero densities: %s",
-            len(zero_density_mtypes),
-            zero_density_mtypes,
         )
