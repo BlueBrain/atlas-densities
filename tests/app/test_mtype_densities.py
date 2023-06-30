@@ -126,7 +126,7 @@ class Test_mtype_densities_from_probability_map:
                     "sst": "sst.nrrd",
                     "vip": "vip.nrrd",
                     "gad67": "gad67.nrrd",
-                    "approxlamp5": "approxlamp5.nrrd",
+                    "approx_lamp5": "approx_lamp5.nrrd",
                 },
             }
             yaml.dump(config, file_)
