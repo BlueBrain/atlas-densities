@@ -9,12 +9,13 @@ This module re-uses the computation of the densities of the neurons reacting to 
 and GAD67, see mod:`app/cell_densities`.
 """
 import logging
+from tqdm import tqdm
+from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict
 
 import numpy as np
 from atlas_commons.typing import FloatArray
 
-from atlas_densities.densities.mtype_densities_from_map.save import save_densities
 from atlas_densities.densities.mtype_densities_from_map.utils import (
     _check_probability_map_consistency,
 )
@@ -103,53 +104,41 @@ def create_from_probability_map(
         for region_acronym in region_acronyms
         if region_acronym not in regions_acronyms_diff
     ]
+
     molecular_type_densities = {
         key: value
         for key, value in molecular_type_densities.items()
         if key not in molecular_types_diff
     }
 
-    # create region mask
-    combined_region_masks = np.zeros_like(annotation.raw, dtype=np.uint16)
-    for region_id in region_ids:
-        combined_region_masks[np.isin(annotation.raw, [region_id])] = np.array([region_id]).astype(
-            np.uint16
-        )
-
     region_masks = {
-        region_acronym: combined_region_masks == region_id
+        region_acronym: annotation.raw == region_id
         for region_acronym, region_id in zip(region_acronyms, region_ids)
     }
 
-    for mtype in probability_map.columns:
+    Path(output_dirpath).mkdir(exist_ok=True, parents=True)
+
+    for mtype in tqdm(probability_map.columns):
         mtype_density = np.zeros(annotation.shape, dtype=float)
 
         coefficients: Dict[str, Dict[str, Any]] = {}
         for region_acronym in region_acronyms:
-            coefficients[region_acronym] = {}
-            for molecular_type in list(molecular_type_densities.keys()):
-                try:
-                    coefficients[region_acronym][molecular_type] = probability_map.at[
-                        (region_acronym, molecular_type), mtype
-                    ]
-                except KeyError:
-                    pass
-
+            coefficients[region_acronym] = {
+                molecular_type: probability_map.at[(region_acronym, molecular_type), mtype]
+                for molecular_type in list(molecular_type_densities.keys())
+                if (region_acronym, molecular_type) in probability_map.index
+            }
+        
         for region_acronym in region_acronyms:
-            for molecular_type, density in molecular_type_densities.items():
-                if (
-                    region_acronym in region_masks
-                    and region_acronym in coefficients
-                    and molecular_type in coefficients[region_acronym]
-                ):
-                    mtype_density[region_masks[region_acronym]] += (
-                        density[region_masks[region_acronym]]
-                        * coefficients[region_acronym][molecular_type]
-                    )
+           mtype_density[region_masks[region_acronym]] = sum(
+               density[region_masks[region_acronym]] * coefficients[region_acronym][molecular_type]
+               for molecular_type, density in molecular_type_densities.items()
+               if molecular_type in coefficients[region_acronym]
+           )
 
-        save_densities(
-            mtype=mtype,
-            annotation=annotation,
-            mtype_density=mtype_density,
-            output_dirpath=output_dirpath,
-        )
+        mtype_filename = f"{mtype.replace('_', '-')}_densities.nrrd"  # do we need this?
+
+        if not np.isclose(np.sum(mtype_density), 0.0):
+            filepath = str(Path(output_dirpath) / mtype_filename)
+            annotation.with_data(mtype_density).save_nrrd(filepath)
+
