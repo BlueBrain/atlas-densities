@@ -9,12 +9,12 @@ This module re-uses the computation of the densities of the neurons reacting to 
 and GAD67, see mod:`app/cell_densities`.
 """
 import logging
-from tqdm import tqdm
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict
 
 import numpy as np
 from atlas_commons.typing import FloatArray
+from tqdm import tqdm
 
 from atlas_densities.densities.mtype_densities_from_map.utils import (
     _check_probability_map_consistency,
@@ -128,17 +128,16 @@ def create_from_probability_map(
                 for molecular_type in list(molecular_type_densities.keys())
                 if (region_acronym, molecular_type) in probability_map.index
             }
-        
+
         for region_acronym in region_acronyms:
-           mtype_density[region_masks[region_acronym]] = sum(
-               density[region_masks[region_acronym]] * coefficients[region_acronym][molecular_type]
-               for molecular_type, density in molecular_type_densities.items()
-               if molecular_type in coefficients[region_acronym]
-           )
+            mtype_density[region_masks[region_acronym]] = sum(
+                density[region_masks[region_acronym]] * coefficients[region_acronym][molecular_type]
+                for molecular_type, density in molecular_type_densities.items()
+                if molecular_type in coefficients[region_acronym]
+            )
 
         mtype_filename = f"{mtype.replace('_', '-')}_densities.nrrd"  # do we need this?
 
         if not np.isclose(np.sum(mtype_density), 0.0):
             filepath = str(Path(output_dirpath) / mtype_filename)
             annotation.with_data(mtype_density).save_nrrd(filepath)
-

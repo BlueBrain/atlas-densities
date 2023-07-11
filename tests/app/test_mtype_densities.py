@@ -333,7 +333,6 @@ class Test_mtype_densities_from_probability_map:
             pdt.assert_frame_equal(tested._load_neuronal_mtype_taxonomy(taxonomy_path), taxonomy)
 
         def test_validate_mtype_taxonomy(self, taxonomy):
-
             tested._validate_mtype_taxonomy(taxonomy)
 
             wrong_taxonomy = taxonomy.rename(columns={"sClass": "John"})
@@ -393,7 +392,6 @@ class Test_mtype_densities_from_probability_map:
             composition_path,
             class_tmpdir,
         ):
-
             output_dir = class_tmpdir.mkdir("output")
 
             runner = CliRunner()

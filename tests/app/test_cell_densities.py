@@ -125,7 +125,7 @@ def test_glia_cell_densities():
         VoxelData(input_["cell_density"], voxel_dimensions=voxel_dimensions).save_nrrd(
             "cell_density.nrrd"
         )
-        for (glia_type, unconstrained_density) in input_["glia_densities"].items():
+        for glia_type, unconstrained_density in input_["glia_densities"].items():
             VoxelData(unconstrained_density, voxel_dimensions=voxel_dimensions).save_nrrd(
                 glia_type + "_density.nrrd"
             )
