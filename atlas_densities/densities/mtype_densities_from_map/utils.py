@@ -20,8 +20,8 @@ def check_probability_map_sanity(probability_map: "pd.DataFrame") -> None:
 
     Args:
         probability_map:
-            data frame whose rows are labelled by molecular types and layers and whose columns are
-            labelled by mtypes.
+            data frame whose rows are labeled by regions and molecular types and whose columns are
+            labeled by mtypes.
     Raises:
         AtlasDensitiesError if the sum of each row is not (close to) 1.0 or if `probability_map`
         holds a negative value.
@@ -36,40 +36,16 @@ def check_probability_map_sanity(probability_map: "pd.DataFrame") -> None:
         )
 
 
-def _check_dataframe_labels_sanity(dataframe: "pd.DataFrame") -> None:
-    """
-    Check if row and column labels are white-space-free and lower-case.
-
-    Raises otherwise.
-
-    Args:
-        dataframe: the data frame to be checked.
-
-    Raises:
-        AtlasBuildingTools error on failure.
-    """
-    d_f = dataframe.copy()
-    d_f = d_f.rename(str.lower, axis="rows")
-    d_f.columns = d_f.columns.str.replace(" ", "")
-    d_f.index = d_f.index.str.replace(" ", "")
-
-    if np.any(dataframe.columns != d_f.columns) or np.any(dataframe.index != d_f.index):
-        raise AtlasDensitiesError(
-            "Rows and columns aren't all labeled with lowercase strings or contain white spaces."
-        )
-
-
 def _check_probability_map_consistency(
     probability_map: "pd.DataFrame", regions: Set[str], molecular_types: Set[str]
 ) -> Tuple[Set[str], Set[str]]:
     """
-    Check `probabibility_map` sanity and its consistency with `metadata`.
+    Check `probabibility_map` sanity and its consistency with `regions` and `molecular_types`.
 
     Args:
         probability_map:
-            data frame whose rows are labelled by molecular types and regions
-            and whose columns are labelled by mtypes (morphological types, e.g.,
-            "chc", "lac").
+            data frame whose rows are labeled by regions and molecular types and whose columns are
+            labeled by mtypes.
         regions: set of region names specified in the metadata json file.
         molecular_types: set of molecular types a.k.a gene marker types,
             e.g., "pv", "sst", "vip", "gad67", "htr3a".

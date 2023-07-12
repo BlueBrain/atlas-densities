@@ -1,15 +1,316 @@
 {
-    "region": {
-        "name": "Isocortex",
-        "query": "Isocortex",
-        "attribute": "acronym",
-        "with_descendants": true
-
-    },
-    "layers": {
-        "names": ["layer_1", "layer_23", "layer_4", "layer_5", "layer_6"],
-        "queries": ["@.*1[ab]?$", "@.*[2-3][ab]?$", "@.*4[ab]?$", "@.*5[ab]?$", "@.*6[ab]?$"],
-        "attribute": "acronym",
-        "with_descendants": true
-    }
+    "regions": [
+        {
+            "name": "Posterior auditory area, layer 2/3",
+            "query": "AUDpo2/3",
+            "attribute": "acronym",
+            "with_descendants": false
+        },
+        {
+            "name": "Anterolateral visual area, layer 2/3",
+            "query": "VISal2/3",
+            "attribute": "acronym",
+            "with_descendants": false
+        },
+        {
+            "name": "Posterolateral visual area, layer 2/3",
+            "query": "VISpl2/3",
+            "attribute": "acronym",
+            "with_descendants": false
+        },
+        {
+            "name": "Rostrolateral area, layer 2/3",
+            "query": "VISrl2/3",
+            "attribute": "acronym",
+            "with_descendants": false
+        },
+        {
+            "name": "Primary somatosensory area, mouth, layer 2/3",
+            "query": "SSp-m2/3",
+            "attribute": "acronym",
+            "with_descendants": false
+        },
+        {
+            "name": "Mediomedial anterior visual area, layer 2/3",
+            "query": "VISmma2/3",
+            "attribute": "acronym",
+            "with_descendants": false
+        },
+        {
+            "name": "Frontal pole, layer 2/3",
+            "query": "FRP2/3",
+            "attribute": "acronym",
+            "with_descendants": false
+        },
+        {
+            "name": "Orbital area, lateral part, layer 2/3",
+            "query": "ORBl2/3",
+            "attribute": "acronym",
+            "with_descendants": false
+        },
+        {
+            "name": "Anterior cingulate area, layer 2/3",
+            "query": "ACA2/3",
+            "attribute": "acronym",
+            "with_descendants": false
+        },
+        {
+            "name": "Primary somatosensory area, trunk, layer 2/3",
+            "query": "SSp-tr2/3",
+            "attribute": "acronym",
+            "with_descendants": false
+        },
+        {
+            "name": "Orbital area, ventrolateral part, layer 2/3",
+            "query": "ORBvl2/3",
+            "attribute": "acronym",
+            "with_descendants": false
+        },
+        {
+            "name": "Primary somatosensory area, unassigned, layer 2/3",
+            "query": "SSp-un2/3",
+            "attribute": "acronym",
+            "with_descendants": false
+        },
+        {
+            "name": "Agranular insular area, posterior part, layer 2/3",
+            "query": "AIp2/3",
+            "attribute": "acronym",
+            "with_descendants": false
+        },
+        {
+            "name": "Supplemental somatosensory area, layer 2/3",
+            "query": "SSs2/3",
+            "attribute": "acronym",
+            "with_descendants": false
+        },
+        {
+            "name": "Anterior cingulate area, ventral part, layer 2/3",
+            "query": "ACAv2/3",
+            "attribute": "acronym",
+            "with_descendants": false
+        },
+        {
+            "name": "posteromedial visual area, layer 2/3",
+            "query": "VISpm2/3",
+            "attribute": "acronym",
+            "with_descendants": false
+        },
+        {
+            "name": "Anteromedial visual area, layer 2/3",
+            "query": "VISam2/3",
+            "attribute": "acronym",
+            "with_descendants": false
+        },
+        {
+            "name": "Postrhinal area, layer 2/3",
+            "query": "VISpor2/3",
+            "attribute": "acronym",
+            "with_descendants": false
+        },
+        {
+            "name": "Infralimbic area, layer 2/3",
+            "query": "ILA2/3",
+            "attribute": "acronym",
+            "with_descendants": false
+        },
+        {
+            "name": "Mediomedial posterior visual area, layer 2/3",
+            "query": "VISmmp2/3",
+            "attribute": "acronym",
+            "with_descendants": false
+        },
+        {
+            "name": "Retrosplenial area, ventral part, layer 2/3",
+            "query": "RSPv2/3",
+            "attribute": "acronym",
+            "with_descendants": false
+        },
+        {
+            "name": "Prelimbic area, layer 2/3",
+            "query": "PL2/3",
+            "attribute": "acronym",
+            "with_descendants": false
+        },
+        {
+            "name": "Visual areas, layer 2/3",
+            "query": "VIS2/3",
+            "attribute": "acronym",
+            "with_descendants": false
+        },
+        {
+            "name": "Retrosplenial area, dorsal part, layer 2/3",
+            "query": "RSPd2/3",
+            "attribute": "acronym",
+            "with_descendants": false
+        },
+        {
+            "name": "Gustatory areas, layer 2/3",
+            "query": "GU2/3",
+            "attribute": "acronym",
+            "with_descendants": false
+        },
+        {
+            "name": "Primary visual area, layer 2/3",
+            "query": "VISp2/3",
+            "attribute": "acronym",
+            "with_descendants": false
+        },
+        {
+            "name": "Agranular insular area, ventral part, layer 2/3",
+            "query": "AIv2/3",
+            "attribute": "acronym",
+            "with_descendants": false
+        },
+        {
+            "name": "Somatosensory areas, layer 2/3",
+            "query": "SS2/3",
+            "attribute": "acronym",
+            "with_descendants": false
+        },
+        {
+            "name": "Secondary motor area, layer 2/3",
+            "query": "MOs2/3",
+            "attribute": "acronym",
+            "with_descendants": false
+        },
+        {
+            "name": "Retrosplenial area, lateral agranular part, layer 2/3",
+            "query": "RSPagl2/3",
+            "attribute": "acronym",
+            "with_descendants": false
+        },
+        {
+            "name": "Primary somatosensory area, nose, layer 2/3",
+            "query": "SSp-n2/3",
+            "attribute": "acronym",
+            "with_descendants": false
+        },
+        {
+            "name": "Orbital area, medial part, layer 2/3",
+            "query": "ORBm2/3",
+            "attribute": "acronym",
+            "with_descendants": false
+        },
+        {
+            "name": "Agranular insular area, dorsal part, layer 2/3",
+            "query": "AId2/3",
+            "attribute": "acronym",
+            "with_descendants": false
+        },
+        {
+            "name": "Primary somatosensory area, barrel field, layer 2/3",
+            "query": "SSp-bfd2/3",
+            "attribute": "acronym",
+            "with_descendants": false
+        },
+        {
+            "name": "Medial visual area, layer 2/3",
+            "query": "VISm2/3",
+            "attribute": "acronym",
+            "with_descendants": false
+        },
+        {
+            "name": "Lateral visual area, layer 2/3",
+            "query": "VISl2/3",
+            "attribute": "acronym",
+            "with_descendants": false
+        },
+        {
+            "name": "Visceral area, layer 2/3",
+            "query": "VISC2/3",
+            "attribute": "acronym",
+            "with_descendants": false
+        },
+        {
+            "name": "Anterior cingulate area, dorsal part, layer 2/3",
+            "query": "ACAd2/3",
+            "attribute": "acronym",
+            "with_descendants": false
+        },
+        {
+            "name": "Primary somatosensory area, upper limb, layer 2/3",
+            "query": "SSp-ul2/3",
+            "attribute": "acronym",
+            "with_descendants": false
+        },
+        {
+            "name": "Dorsal auditory area, layer 2/3",
+            "query": "AUDd2/3",
+            "attribute": "acronym",
+            "with_descendants": false
+        },
+        {
+            "name": "Rostrolateral lateral visual area, layer 2/3",
+            "query": "VISrll2/3",
+            "attribute": "acronym",
+            "with_descendants": false
+        },
+        {
+            "name": "Primary somatosensory area, layer 2/3",
+            "query": "SSp2/3",
+            "attribute": "acronym",
+            "with_descendants": false
+        },
+        {
+            "name": "Anterior area, layer 2/3",
+            "query": "VISa2/3",
+            "attribute": "acronym",
+            "with_descendants": false
+        },
+        {
+            "name": "Temporal association areas, layer 2/3",
+            "query": "TEa2/3",
+            "attribute": "acronym",
+            "with_descendants": false
+        },
+        {
+            "name": "Orbital area, layer 2/3",
+            "query": "ORB2/3",
+            "attribute": "acronym",
+            "with_descendants": false
+        },
+        {
+            "name": "Primary somatosensory area, lower limb, layer 2/3",
+            "query": "SSp-ll2/3",
+            "attribute": "acronym",
+            "with_descendants": false
+        },
+        {
+            "name": "Posterior parietal association areas, layer 2/3",
+            "query": "PTLp2/3",
+            "attribute": "acronym",
+            "with_descendants": false
+        },
+        {
+            "name": "Ventral auditory area, layer 2/3",
+            "query": "AUDv2/3",
+            "attribute": "acronym",
+            "with_descendants": false
+        },
+        {
+            "name": "Laterolateral anterior visual area, layer 2/3",
+            "query": "VISlla2/3",
+            "attribute": "acronym",
+            "with_descendants": false
+        },
+        {
+            "name": "Laterointermediate area, layer 2/3",
+            "query": "VISli2/3",
+            "attribute": "acronym",
+            "with_descendants": false
+        },
+        {
+            "name": "Perirhinal area, layer 2/3",
+            "query": "PERI2/3",
+            "attribute": "acronym",
+            "with_descendants": false
+        },
+        {
+            "name": "Primary auditory area, layer 2/3",
+            "query": "AUDp2/3",
+            "attribute": "acronym",
+            "with_descendants": false
+        }
+    ]
 }

@@ -55,16 +55,15 @@ def create_from_probability_map(
         annotation: VoxelData holding an int array of shape (W, H, D) where W, H and D are integer
             dimensions; this array is the annotated volume of the brain region of interest.
         region_map: RegionMap object to navigate the brain regions hierarchy.
-        metadata: dict describing the region of interest and its layers. See `app/datat/metadata`
+        metadata: dict describing the regions of interest. See `app/data/metadata`
             for examples.
         molecular_type_densities: dict whose keys are molecular types (equivalently, gene markers)
             and whose values are 3D float arrays holding the density fields of the cells of the
             corresponding types (i.e., those cells reacting to the corresponding gene markers).
             Example: {"pv": "pv.nrrd", "sst": "sst.nrd", "vip": "vip.nrrd", "gad67": "gad67.nrrd"}
         probability_map:
-            data frame whose rows are labeled by molecular types and layers (e.g., "layer_23_pv",
-            "layer_5_sst") and whose columns are labeled by mtypes (morphological types, e.g.,
-            "ngc_sa", "chc", "lac").
+            data frame whose rows are labeled by regions and molecular types and whose columns are
+            labeled by mtypes.
         output_dirpath: path of the directory where to save the volumetric density nrrd files.
             It will be created if it doesn't exist already. It will contain a volumetric density
             file of each mtype appearing as column label of `probability_map`.
