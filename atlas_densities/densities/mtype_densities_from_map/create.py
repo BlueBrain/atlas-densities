@@ -118,7 +118,6 @@ def create_from_probability_map(
     Path(output_dirpath).mkdir(exist_ok=True, parents=True)
 
     for mtype in tqdm(probability_map.columns):
-        mtype_density = np.zeros(annotation.shape, dtype=float)
 
         coefficients: Dict[str, Dict[str, Any]] = {}
         for region_acronym in region_acronyms:
@@ -128,15 +127,16 @@ def create_from_probability_map(
                 if (region_acronym, molecular_type) in probability_map.index
             }
 
+        mtype_density = np.zeros(annotation.shape, dtype=float)
         for region_acronym in region_acronyms:
-            mtype_density[region_masks[region_acronym]] = sum(
-                density[region_masks[region_acronym]] * coefficients[region_acronym][molecular_type]
-                for molecular_type, density in molecular_type_densities.items()
-                if molecular_type in coefficients[region_acronym]
-            )
+            region_mask = region_masks[region_acronym]
+            for molecular_type, coefficient in coefficients[region_acronym].items():
+                if coefficient <= 0.:
+                    continue
+                density = molecular_type_densities[molecular_type]
+                mtype_density[region_mask] += density[region_mask] * coefficient
 
-        mtype_filename = f"{mtype.replace('_', '-')}_densities.nrrd"  # do we need this?
-
-        if not np.isclose(np.sum(mtype_density), 0.0):
+        if np.any(mtype_density):
+            mtype_filename = f"{mtype.replace('_', '-')}_densities.nrrd"  # do we need this?
             filepath = str(Path(output_dirpath) / mtype_filename)
             annotation.with_data(mtype_density).save_nrrd(filepath)
