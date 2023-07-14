@@ -26,7 +26,7 @@ if TYPE_CHECKING:  # pragma: no cover
     import pandas as pd
     from voxcell import RegionMap, VoxelData  # type: ignore
 
-logger = logging.getLogger(__name__)
+L = logging.getLogger(__name__)
 
 
 def create_from_probability_map(
@@ -121,7 +121,7 @@ def create_from_probability_map(
         (Path(output_dirpath) / "no_layers").mkdir(exist_ok=True, parents=True)
         if not np.isclose(np.sum(mtype_density), 0.0):
             filepath = str(Path(output_dirpath) / "no_layers" / mtype_filename)
-            logger.info("Saving %s ...", filepath)
+            L.info("Saving %s ...", filepath)
             annotation.with_data(mtype_density).save_nrrd(filepath)
 
         (Path(output_dirpath) / "with_layers").mkdir(exist_ok=True, parents=True)
@@ -131,13 +131,13 @@ def create_from_probability_map(
             filename = f"L{layer_name.split('_')[-1]}_{mtype_filename}"
             if not np.isclose(np.sum(layer_density), 0.0):
                 filepath = str(Path(output_dirpath) / "with_layers" / filename)
-                logger.info("Saving %s ...", filepath)
+                L.info("Saving %s ...", filepath)
                 annotation.with_data(layer_density).save_nrrd(filepath)
             else:
                 zero_density_mtypes.append(filename.replace("_densities.nrrd", ""))
 
     if zero_density_mtypes:
-        logger.info(
+        L.info(
             "Found %d (layer, mtype) pairs with zero densities: %s",
             len(zero_density_mtypes),
             zero_density_mtypes,
