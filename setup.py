@@ -17,7 +17,7 @@ setup(
     python_requires=">=3.7.0",
     install_requires=[
         "atlas-commons>=0.1.4",
-        "click>=7.0",
+        "click>=7.0,<=8.1.3",
         "cgal-pybind>=0.1.1",
         "numpy>=1.15.0",
         "openpyxl>=3.0.3",
