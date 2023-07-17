@@ -25,9 +25,9 @@ if TYPE_CHECKING:  # pragma: no cover
     from voxcell import RegionMap, VoxelData  # type: ignore
 
 
-def _create_mtype_(output_dirpath, region_info, region_masks, probability_map, molecular_type_densities, annotation, mtype):
+def _create_mtype_(output_dirpath, region_acronyms, region_masks, probability_map, molecular_type_densities, annotation, mtype):
     coefficients: Dict[str, Dict[str, Any]] = {}
-    for region_acronym in region_info.region:
+    for region_acronym in region_acronyms:
         coefficients[region_acronym] = {
             molecular_type: probability_map.at[(region_acronym, molecular_type), mtype]
             for molecular_type in list(molecular_type_densities.keys())
@@ -35,10 +35,10 @@ def _create_mtype_(output_dirpath, region_info, region_masks, probability_map, m
         }
 
     mtype_density = np.zeros(annotation.shape, dtype=float)
-    for region_acronym in region_info.region:
+    for region_acronym in region_acronyms:
         region_mask = region_masks[region_acronym]
         for molecular_type, coefficient in coefficients[region_acronym].items():
-            if coefficient <= 0.:
+            if coefficient <= 0.0:
                 continue
             density = molecular_type_densities[molecular_type]
             mtype_density[region_mask] += density[region_mask] * coefficient
