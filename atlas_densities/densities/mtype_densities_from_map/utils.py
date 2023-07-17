@@ -11,7 +11,7 @@ from atlas_densities.exceptions import AtlasDensitiesError
 if TYPE_CHECKING:  # pragma: no cover
     import pandas as pd
 
-logger = logging.getLogger(__name__)
+L = logging.getLogger(__name__)
 
 
 def check_probability_map_sanity(probability_map: "pd.DataFrame") -> None:

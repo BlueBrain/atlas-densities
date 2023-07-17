@@ -24,7 +24,7 @@ if TYPE_CHECKING:  # pragma: no cover
     import pandas as pd
     from voxcell import RegionMap, VoxelData  # type: ignore
 
-logger = logging.getLogger(__name__)
+L = logging.getLogger(__name__)
 
 
 def create_from_probability_map(
