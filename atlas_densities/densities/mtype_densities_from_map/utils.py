@@ -54,7 +54,7 @@ def _check_probability_map_consistency(
     _, df_molecular_types = zip(*probability_map.index)
     molecular_types_diff = molecular_types - set(df_molecular_types)
     if molecular_types_diff:
-        logger.info(
+        L.info(
             "The following molecular types are missing in the probability map: %s",
             molecular_types_diff,
         )
