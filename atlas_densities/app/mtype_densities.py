@@ -202,16 +202,15 @@ def _check_config_sanity(config: dict) -> None:
 @click.option(
     "--probability-map",
     type=EXISTING_FILE_PATH,
-    required=False,
-    #TODOhelp=,
-    default=str(METADATA_PATH / "isocortex_metadata.json"),  #TODO
+    required=True,
+    help=("Path to the probability map csv file."),
 )
 @click.option(
     "--marker",
     type=(str, EXISTING_FILE_PATH),
     multiple=True,
     required=True,
-    help="Name and path to marker: ex: --marker pv path/pv.nrrd"
+    help="Name and path to marker: ex: --marker pv path/pv.nrrd",
 )
 @click.option(
     "--output-dir",
@@ -253,8 +252,7 @@ def create_from_probability_map(
 
     L.info("Loading volumetric densities of molecular types ...")
     molecular_type_densities = {
-        molecular_type: VoxelData.load_nrrd(density_path)
-        for molecular_type, density_path in marker
+        molecular_type: VoxelData.load_nrrd(density_path) for molecular_type, density_path in marker
     }
 
     # Check metadata consistency

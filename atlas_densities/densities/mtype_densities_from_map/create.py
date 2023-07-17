@@ -8,7 +8,6 @@ Volumetric density nrrd files are created for each mtype listed `probability_map
 This module re-uses the computation of the densities of the neurons reacting to PV, SST, VIP
 and GAD67, see mod:`app/cell_densities`.
 """
-import logging
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict
 
@@ -24,8 +23,6 @@ from atlas_densities.densities.mtype_densities_from_map.utils import (
 if TYPE_CHECKING:  # pragma: no cover
     import pandas as pd
     from voxcell import RegionMap, VoxelData  # type: ignore
-
-logger = logging.getLogger(__name__)
 
 
 def _create_mtype_(output_dirpath, region_info, region_masks, probability_map, molecular_type_densities, annotation, mtype):
@@ -97,16 +94,16 @@ def create_from_probability_map(
             or contain some white spaces.
     """
     # pylint: disable=too-many-locals
-    region_info = region_map.as_dataframe().reset_index().set_index('acronym')
-    region_info = region_info.loc[probability_map.index.get_level_values('region')]
-    region_info = region_info.reset_index()[['region', 'id']]
+    region_info = (
+        region_map.as_dataframe()
+        .reset_index()
+        .set_index("acronym")
+        .loc[probability_map.index.get_level_values("region")]
+        .reset_index()[["region", "id"]]
+    )
+    region_acronyms = set(region_info.region)
 
-    molecular_type_densities = {
-        key: value
-        for key, value in molecular_type_densities.items()
-        #TODO: need to check consistency of available markers, and what is needed
-        #if key not in molecular_types_diff
-    }
+    _check_probability_map_consistency(probability_map, set(molecular_type_densities.keys()))
 
     region_masks = {
         region_acronym: annotation.raw == region_id
@@ -115,9 +112,26 @@ def create_from_probability_map(
 
     Path(output_dirpath).mkdir(exist_ok=True, parents=True)
 
-    delayed = joblib.delayed(_create_mtype_)
-    work = [
-        delayed(output_dirpath, region_info, region_masks, probability_map, molecular_type_densities, annotation, mtype)
-        for mtype in probability_map.columns
-        ]
-    joblib.Parallel(n_jobs=-2, verbose=150, backend='threading')(work)
+    for mtype in tqdm(probability_map.columns):
+
+        coefficients: Dict[str, Dict[str, Any]] = {}
+        for region_acronym in region_acronyms:
+            coefficients[region_acronym] = {
+                molecular_type: probability_map.at[(region_acronym, molecular_type), mtype]
+                for molecular_type in list(molecular_type_densities.keys())
+                if (region_acronym, molecular_type) in probability_map.index
+            }
+
+        mtype_density = np.zeros(annotation.shape, dtype=float)
+        for region_acronym in region_acronyms:
+            region_mask = region_masks[region_acronym]
+            for molecular_type, coefficient in coefficients[region_acronym].items():
+                if coefficient <= 0.0:
+                    continue
+                density = molecular_type_densities[molecular_type]
+                mtype_density[region_mask] += density[region_mask] * coefficient
+
+        if np.any(mtype_density):
+            mtype_filename = f"{mtype.replace('_', '-')}_densities.nrrd"  # do we need this?
+            filepath = str(Path(output_dirpath) / mtype_filename)
+            annotation.with_data(mtype_density).save_nrrd(filepath)
