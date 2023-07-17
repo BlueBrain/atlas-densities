@@ -125,8 +125,8 @@ class Test_create_from_probability_map:
     def test_output_values(self):
         tmpdir = self.tmpdir.name
         expected_densities = {
-            "ChC": np.array([[[0.0, 0.0, 0.0, 8.0, 0.0]]], dtype=float),
-            "LAC": np.array([[[6.0, 0.0, 0.0, 0.0, 4.0]]], dtype=float),
+            "ChC": np.array([[[0.0, 0.0, 0.0, 2.0, 0.0]]], dtype=float),
+            "LAC": np.array([[[1.5, 0.0, 0.0, 0.0, 1.0]]], dtype=float),
         }
         for mtype in ["ChC", "LAC"]:
             filepath = str(Path(tmpdir) / f"{mtype}_densities.nrrd")
