@@ -8,7 +8,6 @@ Volumetric density nrrd files are created for each mtype listed `probability_map
 This module re-uses the computation of the densities of the neurons reacting to PV, SST, VIP
 and GAD67, see mod:`app/cell_densities`.
 """
-import logging
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict
 
@@ -23,8 +22,6 @@ from atlas_densities.densities.mtype_densities_from_map.utils import (
 if TYPE_CHECKING:  # pragma: no cover
     import pandas as pd
     from voxcell import RegionMap, VoxelData  # type: ignore
-
-L = logging.getLogger(__name__)
 
 
 def create_from_probability_map(
