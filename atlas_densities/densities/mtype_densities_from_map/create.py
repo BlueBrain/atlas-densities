@@ -30,7 +30,6 @@ logger = logging.getLogger(__name__)
 def create_from_probability_map(
     annotation: "VoxelData",
     region_map: "RegionMap",
-    metadata: Dict,
     molecular_type_densities: Dict[str, FloatArray],
     probability_map: "pd.DataFrame",
     output_dirpath: str,
@@ -55,8 +54,6 @@ def create_from_probability_map(
         annotation: VoxelData holding an int array of shape (W, H, D) where W, H and D are integer
             dimensions; this array is the annotated volume of the brain region of interest.
         region_map: RegionMap object to navigate the brain regions hierarchy.
-        metadata: dict describing the regions of interest. See `app/data/metadata`
-            for examples.
         molecular_type_densities: dict whose keys are molecular types (equivalently, gene markers)
             and whose values are 3D float arrays holding the density fields of the cells of the
             corresponding types (i.e., those cells reacting to the corresponding gene markers).
@@ -73,46 +70,22 @@ def create_from_probability_map(
             - the sum of each row of the probability map is different from 1.0
             - the labels of the rows and columns of `probablity_map` are not all lowercase
             or contain some white spaces.
-            - the layer names appearing in the row labels of `probability_map` are not those
-            described in `metadata`
     """
     # pylint: disable=too-many-locals
-    region_ids = []
-    for region in metadata["regions"]:
-        region_ids.extend(
-            [
-                region_id
-                for region_id in region_map.find(
-                    region["query"], region["attribute"], with_descendants=True
-                )
-                if region_map.is_leaf_id(region_id)
-            ]
-        )
-    region_acronyms = [region_map.get(region_id, "acronym") for region_id in region_ids]
-
-    regions_acronyms_diff, molecular_types_diff = _check_probability_map_consistency(
-        probability_map, set(region_acronyms), set(molecular_type_densities.keys())
+    region_info = (
+        region_map.as_dataframe()
+        .reset_index()
+        .set_index("acronym")
+        .loc[probability_map.index.get_level_values("region")]
+        .reset_index()[["region", "id"]]
     )
-    region_ids = [
-        region_id
-        for region_acronym, region_id in zip(region_acronyms, region_ids)
-        if region_acronym not in regions_acronyms_diff
-    ]
-    region_acronyms = [
-        region_acronym
-        for region_acronym in region_acronyms
-        if region_acronym not in regions_acronyms_diff
-    ]
+    region_acronyms = set(region_info.region)
 
-    molecular_type_densities = {
-        key: value
-        for key, value in molecular_type_densities.items()
-        if key not in molecular_types_diff
-    }
+    _check_probability_map_consistency(probability_map, set(molecular_type_densities.keys()))
 
     region_masks = {
         region_acronym: annotation.raw == region_id
-        for region_acronym, region_id in zip(region_acronyms, region_ids)
+        for _, region_acronym, region_id in region_info.itertuples()
     }
 
     Path(output_dirpath).mkdir(exist_ok=True, parents=True)

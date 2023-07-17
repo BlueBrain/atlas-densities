@@ -2,7 +2,7 @@
 Utilities for creating the density field.
 """
 import logging
-from typing import TYPE_CHECKING, Set, Tuple
+from typing import TYPE_CHECKING, Set
 
 import numpy as np
 
@@ -37,8 +37,8 @@ def check_probability_map_sanity(probability_map: "pd.DataFrame") -> None:
 
 
 def _check_probability_map_consistency(
-    probability_map: "pd.DataFrame", regions: Set[str], molecular_types: Set[str]
-) -> Tuple[Set[str], Set[str]]:
+    probability_map: "pd.DataFrame", molecular_types: Set[str]
+) -> None:
     """
     Check `probabibility_map` sanity and its consistency with `regions` and `molecular_types`.
 
@@ -46,20 +46,15 @@ def _check_probability_map_consistency(
         probability_map:
             data frame whose rows are labeled by regions and molecular types and whose columns are
             labeled by mtypes.
-        regions: set of region names specified in the metadata json file.
         molecular_types: set of molecular types a.k.a gene marker types,
             e.g., "pv", "sst", "vip", "gad67", "htr3a".
     """
     check_probability_map_sanity(probability_map)
 
-    df_regions, df_molecular_types = zip(*probability_map.index)
+    _, df_molecular_types = zip(*probability_map.index)
     molecular_types_diff = molecular_types - set(df_molecular_types)
     if molecular_types_diff:
         logger.info(
             "The following molecular types are missing in the probability map: %s",
             molecular_types_diff,
         )
-    regions_diff = regions - set(df_regions)
-    if regions_diff:
-        logger.info("The following regions are missing in the probability map: %s", regions_diff)
-    return regions_diff, molecular_types_diff

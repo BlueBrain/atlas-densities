@@ -200,21 +200,17 @@ def _check_config_sanity(config: dict) -> None:
 @app.command()
 @common_atlas_options
 @click.option(
-    "--metadata-path",
-    type=EXISTING_FILE_PATH,
-    required=False,
-    help=(
-        "(Optional) Path to the metadata json file. Defaults to "
-        f"`{str(METADATA_REL_PATH / 'isocortex_metadata.json')}`"
-    ),
-    default=str(METADATA_PATH / "isocortex_metadata.json"),
-)
-@click.option(
-    "--mtypes-config-path",
+    "--probability-map",
     type=EXISTING_FILE_PATH,
     required=True,
-    help="Path to the yaml configuration file. "
-    f"See `{str(MTYPES_PROBABILITY_MAP_REL_PATH / 'README.rst')}` for an example.",
+    help=("Path to the probability map csv file."),
+)
+@click.option(
+    "--marker",
+    type=(str, EXISTING_FILE_PATH),
+    multiple=True,
+    required=True,
+    help="Name and path to marker: ex: --marker pv path/pv.nrrd",
 )
 @click.option(
     "--output-dir",
@@ -225,8 +221,8 @@ def _check_config_sanity(config: dict) -> None:
 def create_from_probability_map(
     annotation_path,
     hierarchy_path,
-    metadata_path,
-    mtypes_config_path,
+    probability_map,
+    marker,
     output_dir,
 ):  # pylint: disable=too-many-locals
     """
@@ -242,20 +238,11 @@ def create_from_probability_map(
 
     Note: this command does not generate volumetric density files for excitatory neurons.
     """
-    L.info("Loading configuration file ...")
-    with open(mtypes_config_path, "r", encoding="utf-8") as file_:
-        config = yaml.load(file_, Loader=yaml.FullLoader)
-    _check_config_sanity(config)
-
     L.info("Loading probability mapping ...")
-    probability_map = pd.DataFrame(pd.read_csv(config["probabilityMapPath"]))
+    probability_map = pd.read_csv(probability_map)
     probability_map.set_index(["region", "molecular_type"], inplace=True)
 
     check_probability_map_sanity(probability_map)
-
-    L.info("Loading brain region metadata ...")
-    with open(metadata_path, "r", encoding="utf-8") as file_:
-        metadata = json.load(file_)
 
     L.info("Loading hierarchy json file ...")
     region_map = RegionMap.load_json(hierarchy_path)
@@ -265,8 +252,7 @@ def create_from_probability_map(
 
     L.info("Loading volumetric densities of molecular types ...")
     molecular_type_densities = {
-        molecular_type: VoxelData.load_nrrd(density_path)
-        for (molecular_type, density_path) in config["molecularTypeDensityPaths"].items()
+        molecular_type: VoxelData.load_nrrd(density_path) for molecular_type, density_path in marker
     }
 
     # Check metadata consistency
@@ -277,7 +263,6 @@ def create_from_probability_map(
     create_from_map(
         annotation,
         region_map,
-        metadata,
         {
             molecular_type: density.raw
             for (molecular_type, density) in molecular_type_densities.items()

@@ -98,10 +98,23 @@ def get_result_from_probablity_map_(runner):
             "annotation.nrrd",
             "--hierarchy-path",
             "hierarchy.json",
-            "--metadata-path",
-            "metadata.json",
-            "--mtypes-config-path",
-            "config.yaml",
+            "--probability-map",
+            "probability_map.csv",
+            "--marker",
+            "pv",
+            "pv.nrrd",
+            "--marker",
+            "sst",
+            "sst.nrrd",
+            "--marker",
+            "vip",
+            "vip.nrrd",
+            "--marker",
+            "gad67",
+            "gad67.nrrd",
+            "--marker",
+            "approx_lamp5",
+            "approx_lamp5.nrrd",
             "--output-dir",
             "output_dir",
         ],
@@ -114,29 +127,16 @@ class Test_mtype_densities_from_probability_map:
 
     def save_input_data_to_file(self):
         self.data["annotation"].save_nrrd("annotation.nrrd")
-        with open("metadata.json", "w", encoding="utf-8") as file_:
-            json.dump(self.data["metadata"], file_)
         with open("hierarchy.json", "w", encoding="utf-8") as file_:
             json.dump(self.data["hierarchy"], file_)
-        with open("config.yaml", "w", encoding="utf-8") as file_:
-            config = {
-                "probabilityMapPath": "probability_map.csv",
-                "molecularTypeDensityPaths": {
-                    "pv": "pv.nrrd",
-                    "sst": "sst.nrrd",
-                    "vip": "vip.nrrd",
-                    "gad67": "gad67.nrrd",
-                    "approx_lamp5": "approx_lamp5.nrrd",
-                },
-            }
-            yaml.dump(config, file_)
+
         self.data["probability_map"].to_csv("probability_map.csv", index=True)
 
-        for type_, filepath in config["molecularTypeDensityPaths"].items():
+        for molecular_type, data in self.data["molecular_type_densities"].items():
             VoxelData(
-                self.data["molecular_type_densities"][type_],
+                data,
                 voxel_dimensions=self.data["annotation"].voxel_dimensions,
-            ).save_nrrd(filepath)
+            ).save_nrrd(f"{molecular_type}.nrrd")
 
     def test_output(self):
         runner = CliRunner()
@@ -148,21 +148,6 @@ class Test_mtype_densities_from_probability_map:
             chc = VoxelData.load_nrrd(str(Path("output_dir") / "ChC_densities.nrrd"))
             assert chc.raw.dtype == float
             npt.assert_array_equal(chc.voxel_dimensions, self.data["annotation"].voxel_dimensions)
-
-    def test_wrong_config(self):
-        runner = CliRunner()
-        with runner.isolated_filesystem():
-            self.save_input_data_to_file()
-
-            # No input density nrrd files
-            with open("config.yaml", "w", encoding="utf-8") as file_:
-                config = {}
-                yaml.dump(config, file_)
-
-            result = get_result_from_probablity_map_(runner)
-            assert result.exit_code == 1
-            assert "missing" in str(result.exception)
-            assert "probabilityMapPath" in str(result.exception)
 
     class Test_mtype_densities_from_composition:
         @pytest.fixture(scope="session")
