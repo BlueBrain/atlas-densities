@@ -104,7 +104,7 @@ def create_from_probability_map(
         for region_acronym in region_info.region:
             region_mask = region_masks[region_acronym]
             for molecular_type, coefficient in coefficients[region_acronym].items():
-                if coefficient <= 0.:
+                if coefficient <= 0.0:
                     continue
                 density = molecular_type_densities[molecular_type]
                 mtype_density[region_mask] += density[region_mask] * coefficient
