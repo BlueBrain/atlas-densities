@@ -81,9 +81,7 @@ def create_from_probability_map(
     )
     region_acronyms = set(region_info.region)
 
-    _check_probability_map_consistency(
-        probability_map, set(molecular_type_densities.keys())
-    )
+    _check_probability_map_consistency(probability_map, set(molecular_type_densities.keys()))
 
     region_masks = {
         region_acronym: annotation.raw == region_id

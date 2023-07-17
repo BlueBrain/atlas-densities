@@ -203,7 +203,7 @@ def _check_config_sanity(config: dict) -> None:
     "--probability-map",
     type=EXISTING_FILE_PATH,
     required=True,
-        help=("Path to the probability map csv file."),
+    help=("Path to the probability map csv file."),
 )
 @click.option(
     "--marker",

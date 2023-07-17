@@ -2,7 +2,7 @@
 Utilities for creating the density field.
 """
 import logging
-from typing import TYPE_CHECKING, Set, Tuple
+from typing import TYPE_CHECKING, Set
 
 import numpy as np
 

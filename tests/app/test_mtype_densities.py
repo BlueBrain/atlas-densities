@@ -101,15 +101,20 @@ def get_result_from_probablity_map_(runner):
             "--probability-map",
             "probability_map.csv",
             "--marker",
-            "pv", "pv.nrrd",
+            "pv",
+            "pv.nrrd",
             "--marker",
-            "sst", "sst.nrrd",
+            "sst",
+            "sst.nrrd",
             "--marker",
-            "vip", "vip.nrrd",
+            "vip",
+            "vip.nrrd",
             "--marker",
-            "gad67", "gad67.nrrd",
+            "gad67",
+            "gad67.nrrd",
             "--marker",
-            "approx_lamp5", "approx_lamp5.nrrd",
+            "approx_lamp5",
+            "approx_lamp5.nrrd",
             "--output-dir",
             "output_dir",
         ],
@@ -143,7 +148,6 @@ class Test_mtype_densities_from_probability_map:
             chc = VoxelData.load_nrrd(str(Path("output_dir") / "ChC_densities.nrrd"))
             assert chc.raw.dtype == float
             npt.assert_array_equal(chc.voxel_dimensions, self.data["annotation"].voxel_dimensions)
-
 
     class Test_mtype_densities_from_composition:
         @pytest.fixture(scope="session")
