@@ -79,6 +79,7 @@ def create_from_probability_map(
         .loc[probability_map.index.get_level_values("region")]
         .reset_index()[["region", "id"]]
     )
+    region_acronyms = set(region_info.region)
 
     _check_probability_map_consistency(
         probability_map, set(molecular_type_densities.keys())
@@ -94,7 +95,7 @@ def create_from_probability_map(
     for mtype in tqdm(probability_map.columns):
 
         coefficients: Dict[str, Dict[str, Any]] = {}
-        for region_acronym in region_info.region:
+        for region_acronym in region_acronyms:
             coefficients[region_acronym] = {
                 molecular_type: probability_map.at[(region_acronym, molecular_type), mtype]
                 for molecular_type in list(molecular_type_densities.keys())
@@ -102,7 +103,7 @@ def create_from_probability_map(
             }
 
         mtype_density = np.zeros(annotation.shape, dtype=float)
-        for region_acronym in region_info.region:
+        for region_acronym in region_acronyms:
             region_mask = region_masks[region_acronym]
             for molecular_type, coefficient in coefficients[region_acronym].items():
                 if coefficient <= 0.0:
