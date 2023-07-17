@@ -13,16 +13,6 @@ from atlas_densities.exceptions import AtlasDensitiesError
 
 
 def create_from_probability_map_data():
-    metadata = {
-        "regions": [
-            {
-                "name": "Dorsal auditory area",
-                "query": "AUDd",
-                "attribute": "acronym",
-            },
-        ],
-    }
-
     raw_probability_map = pd.DataFrame(
         {
             "region": [
@@ -100,7 +90,6 @@ def create_from_probability_map_data():
         ),
         "hierarchy": json.load(open("tests/1.json", "r")),
         "region_map": RegionMap.load_json("tests/1.json"),
-        "metadata": metadata,
         "molecular_type_densities": {
             "pv": np.array([[[1.0, 0.0, 0.0, 1.0, 1.0]]], dtype=float),
             "sst": np.array([[[0.0, 1.0, 1.0, 0.0, 0.0]]], dtype=float),
@@ -120,7 +109,6 @@ class Test_create_from_probability_map:
         tested.create.create_from_probability_map(
             self.data["annotation"],
             self.data["region_map"],
-            self.data["metadata"],
             self.data["molecular_type_densities"],
             self.data["probability_map"],
             self.tmpdir.name,
@@ -137,8 +125,8 @@ class Test_create_from_probability_map:
     def test_output_values(self):
         tmpdir = self.tmpdir.name
         expected_densities = {
-            "ChC": np.array([[[0.0, 0.0, 0.0, 2.0, 0.0]]], dtype=float),
-            "LAC": np.array([[[1.5, 0.0, 0.0, 0.0, 1.0]]], dtype=float),
+            "ChC": np.array([[[0.0, 0.0, 0.0, 8.0, 0.0]]], dtype=float),
+            "LAC": np.array([[[6.0, 0.0, 0.0, 0.0, 4.0]]], dtype=float),
         }
         for mtype in ["ChC", "LAC"]:
             filepath = str(Path(tmpdir) / f"{mtype}_densities.nrrd")
@@ -159,7 +147,6 @@ class Test_create_from_probability_map_exceptions:
         tested.create.create_from_probability_map(
             self.data["annotation"],
             self.data["region_map"],
-            self.data["metadata"],
             self.data["molecular_type_densities"],
             self.data["probability_map"],
             self.tmpdir.name,

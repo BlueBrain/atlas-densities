@@ -72,16 +72,17 @@ def create_from_probability_map(
             or contain some white spaces.
     """
     # pylint: disable=too-many-locals
-    region_info = region_map.as_dataframe().reset_index().set_index('acronym')
-    region_info = region_info.loc[probability_map.index.get_level_values('region')]
-    region_info = region_info.reset_index()[['region', 'id']]
+    region_info = (
+        region_map.as_dataframe()
+        .reset_index()
+        .set_index("acronym")
+        .loc[probability_map.index.get_level_values("region")]
+        .reset_index()[["region", "id"]]
+    )
 
-    molecular_type_densities = {
-        key: value
-        for key, value in molecular_type_densities.items()
-        #TODO: need to check consistency of available markers, and what is needed
-        #if key not in molecular_types_diff
-    }
+    _check_probability_map_consistency(
+        probability_map, set(molecular_type_densities.keys())
+    )
 
     region_masks = {
         region_acronym: annotation.raw == region_id
