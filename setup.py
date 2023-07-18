@@ -29,7 +29,6 @@ setup(
         "scipy>=1.6.0",
         "tqdm>=4.44.1",
         "voxcell>=3.0.0",
-        "joblib",
     ],
     extras_require={
         "tests": [
