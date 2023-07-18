@@ -13,8 +13,8 @@ from typing import TYPE_CHECKING, Any, Dict
 
 import numpy as np
 from atlas_commons.typing import FloatArray
+from joblib import Parallel, delayed
 from tqdm import tqdm
-import joblib
 
 from atlas_densities.densities.mtype_densities_from_map.utils import (
     _check_probability_map_consistency,
@@ -25,36 +25,13 @@ if TYPE_CHECKING:  # pragma: no cover
     from voxcell import RegionMap, VoxelData  # type: ignore
 
 
-def _create_mtype_(output_dirpath, region_acronyms, region_masks, probability_map, molecular_type_densities, annotation, mtype):
-    coefficients: Dict[str, Dict[str, Any]] = {}
-    for region_acronym in region_acronyms:
-        coefficients[region_acronym] = {
-            molecular_type: probability_map.at[(region_acronym, molecular_type), mtype]
-            for molecular_type in list(molecular_type_densities.keys())
-            if (region_acronym, molecular_type) in probability_map.index
-        }
-
-    mtype_density = np.zeros(annotation.shape, dtype=float)
-    for region_acronym in region_acronyms:
-        region_mask = region_masks[region_acronym]
-        for molecular_type, coefficient in coefficients[region_acronym].items():
-            if coefficient <= 0.0:
-                continue
-            density = molecular_type_densities[molecular_type]
-            mtype_density[region_mask] += density[region_mask] * coefficient
-
-    if np.any(mtype_density):
-        mtype_filename = f"{mtype.replace('_', '-')}_densities.nrrd"  # do we need this?
-        filepath = str(Path(output_dirpath) / mtype_filename)
-        annotation.with_data(mtype_density).save_nrrd(filepath)
-
-
 def create_from_probability_map(
     annotation: "VoxelData",
     region_map: "RegionMap",
     molecular_type_densities: Dict[str, FloatArray],
     probability_map: "pd.DataFrame",
     output_dirpath: str,
+    joblib_n_jobs: int,
 ) -> None:
     """
     Create a density field for each mtype listed in `probability_map.csv`.
@@ -112,8 +89,7 @@ def create_from_probability_map(
 
     Path(output_dirpath).mkdir(exist_ok=True, parents=True)
 
-    for mtype in tqdm(probability_map.columns):
-
+    def _create_densities_for_mtype_(mtype):
         coefficients: Dict[str, Dict[str, Any]] = {}
         for region_acronym in region_acronyms:
             coefficients[region_acronym] = {
@@ -135,3 +111,9 @@ def create_from_probability_map(
             mtype_filename = f"{mtype.replace('_', '-')}_densities.nrrd"  # do we need this?
             filepath = str(Path(output_dirpath) / mtype_filename)
             annotation.with_data(mtype_density).save_nrrd(filepath)
+
+    returns = Parallel(n_jobs=joblib_n_jobs, return_as="generator")(
+        delayed(_create_densities_for_mtype_)(mtype) for mtype in probability_map.columns
+    )
+    for _ in tqdm(returns, total=len(probability_map.columns)):
+        pass
