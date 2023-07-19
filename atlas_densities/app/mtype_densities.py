@@ -202,6 +202,7 @@ def _check_config_sanity(config: dict) -> None:
 @click.option(
     "--probability-map",
     type=EXISTING_FILE_PATH,
+    multiple=True,
     required=True,
     help=("Path to the probability map csv file."),
 )
@@ -246,11 +247,13 @@ def create_from_probability_map(
 
     Note: this command does not generate volumetric density files for excitatory neurons.
     """
-    L.info("Loading probability mapping ...")
-    probability_map = pd.read_csv(probability_map)
-    probability_map.set_index(["region", "molecular_type"], inplace=True)
-
-    check_probability_map_sanity(probability_map)
+    probability_maps = []
+    for probability_map_path in probability_map:
+        L.info("Loading probability map %s", probability_map_path)
+        loaded_probability_map = pd.read_csv(probability_map_path)
+        loaded_probability_map.set_index(["region", "molecular_type"], inplace=True)
+        check_probability_map_sanity(loaded_probability_map)
+        probability_maps.append(loaded_probability_map)
 
     L.info("Loading hierarchy json file ...")
     region_map = RegionMap.load_json(hierarchy_path)
@@ -275,7 +278,7 @@ def create_from_probability_map(
             molecular_type: density.raw
             for (molecular_type, density) in molecular_type_densities.items()
         },
-        probability_map,
+        probability_maps,
         output_dir,
         joblib_n_jobs,
     )

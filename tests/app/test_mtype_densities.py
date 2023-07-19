@@ -2,6 +2,8 @@
 import json
 import os
 from copy import deepcopy
+from glob import glob
+from itertools import chain
 from pathlib import Path
 
 import numpy as np
@@ -91,6 +93,9 @@ def test_mtype_densities_from_profiles():
 
 
 def get_result_from_probablity_map_(runner):
+    probability_map_args = chain.from_iterable(
+        ("--probability-map", filename) for filename in glob("probability_map*.csv")
+    )
     return runner.invoke(
         tested.create_from_probability_map,
         [
@@ -98,8 +103,7 @@ def get_result_from_probablity_map_(runner):
             "annotation.nrrd",
             "--hierarchy-path",
             "hierarchy.json",
-            "--probability-map",
-            "probability_map.csv",
+            *probability_map_args,
             "--marker",
             "pv",
             "pv.nrrd",
@@ -130,7 +134,8 @@ class Test_mtype_densities_from_probability_map:
         with open("hierarchy.json", "w", encoding="utf-8") as file_:
             json.dump(self.data["hierarchy"], file_)
 
-        self.data["probability_map"].to_csv("probability_map.csv", index=True)
+        for index, probability_map in enumerate(self.data["probability_maps"]):
+            probability_map.to_csv(f"probability_map{index}.csv", index=True)
 
         for molecular_type, data in self.data["molecular_type_densities"].items():
             VoxelData(
@@ -233,7 +238,14 @@ class Test_mtype_densities_from_probability_map:
                     "with_descendants": True,
                 },
                 "layers": {
-                    "names": ["layer_1", "layer_2", "layer_3", "layer_4", "layer_5", "layer_6"],
+                    "names": [
+                        "layer_1",
+                        "layer_2",
+                        "layer_3",
+                        "layer_4",
+                        "layer_5",
+                        "layer_6",
+                    ],
                     "queries": [
                         "@.*1[ab]?$",
                         "@.*2[ab]?$",
@@ -269,7 +281,14 @@ class Test_mtype_densities_from_probability_map:
         def taxonomy(self):
             return pd.DataFrame(
                 {
-                    "mtype": ["L3_TPC:A", "L3_TPC:B", "L23_MC", "L4_TPC", "L4_LBC", "L4_UPC"],
+                    "mtype": [
+                        "L3_TPC:A",
+                        "L3_TPC:B",
+                        "L23_MC",
+                        "L4_TPC",
+                        "L4_LBC",
+                        "L4_UPC",
+                    ],
                     "mClass": ["PYR", "PYR", "INT", "PYR", "INT", "PYR"],
                     "sClass": ["EXC", "EXC", "INH", "EXC", "INH", "EXC"],
                 },
@@ -288,9 +307,30 @@ class Test_mtype_densities_from_probability_map:
         def composition(self):
             return pd.DataFrame(
                 {
-                    "density": [51750.099, 14785.743, 2779.081, 62321.137, 2103.119, 25921.181],
-                    "layer": ["layer_3", "layer_3", "layer_3", "layer_4", "layer_4", "layer_4"],
-                    "mtype": ["L3_TPC:A", "L3_TPC:B", "L23_MC", "L4_TPC", "L4_LBC", "L4_UPC"],
+                    "density": [
+                        51750.099,
+                        14785.743,
+                        2779.081,
+                        62321.137,
+                        2103.119,
+                        25921.181,
+                    ],
+                    "layer": [
+                        "layer_3",
+                        "layer_3",
+                        "layer_3",
+                        "layer_4",
+                        "layer_4",
+                        "layer_4",
+                    ],
+                    "mtype": [
+                        "L3_TPC:A",
+                        "L3_TPC:B",
+                        "L23_MC",
+                        "L4_TPC",
+                        "L4_LBC",
+                        "L4_UPC",
+                    ],
                 },
                 columns=["density", "layer", "mtype"],
             )
