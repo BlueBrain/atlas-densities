@@ -86,8 +86,7 @@ def create_from_probability_map_data():
 
     return {
         "annotation": VoxelData(
-            np.array([[[678, 527, 243, 252, 600]]], dtype=int),
-            voxel_dimensions=[25] * 3,
+            np.array([[[678, 527, 243, 252, 600]]], dtype=int), voxel_dimensions=[25] * 3
         ),
         "hierarchy": json.load(open("tests/1.json", "r")),
         "region_map": RegionMap.load_json("tests/1.json"),
