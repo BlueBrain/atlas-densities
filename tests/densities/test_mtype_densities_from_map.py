@@ -13,7 +13,7 @@ from atlas_densities.exceptions import AtlasDensitiesError
 
 
 def create_from_probability_map_data():
-    raw_probability_map = pd.DataFrame(
+    raw_probability_map01 = pd.DataFrame(
         {
             "region": [
                 "AUDd2/3",
@@ -24,6 +24,42 @@ def create_from_probability_map_data():
                 "AUDd4",
                 "AUDd4",
                 "AUDd4",
+            ],
+            "molecular_type": [
+                "approx_lamp5",
+                "pv",
+                "sst",
+                "vip",
+                "approx_lamp5",
+                "pv",
+                "sst",
+                "vip",
+            ],
+            "ChC": [
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+            ],
+            "LAC": [
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+            ],
+        },
+    )
+    raw_probability_map02 = pd.DataFrame(
+        {
+            "region": [
                 "AUDd5",
                 "AUDd5",
                 "AUDd5",
@@ -37,25 +73,9 @@ def create_from_probability_map_data():
                 "sst",
                 "vip",
                 "approx_lamp5",
-                "pv",
-                "sst",
-                "vip",
-                "approx_lamp5",
-                "pv",
-                "sst",
-                "vip",
-                "approx_lamp5",
                 "approx_lamp5",
             ],
             "ChC": [
-                0.0,
-                0.0,
-                0.0,
-                0.0,
-                0.0,
-                0.0,
-                0.0,
-                0.0,
                 0.0,
                 1.0,
                 1.0,
@@ -65,14 +85,6 @@ def create_from_probability_map_data():
             ],
             "LAC": [
                 1.0,
-                1.0,
-                1.0,
-                1.0,
-                1.0,
-                1.0,
-                1.0,
-                1.0,
-                1.0,
                 0.0,
                 0.0,
                 0.0,
@@ -81,8 +93,10 @@ def create_from_probability_map_data():
             ],
         },
     )
-    probability_map = raw_probability_map.copy()
-    probability_map.set_index(["region", "molecular_type"], inplace=True)
+    probability_map01 = raw_probability_map01.copy()
+    probability_map02 = raw_probability_map02.copy()
+    probability_map01.set_index(["region", "molecular_type"], inplace=True)
+    probability_map02.set_index(["region", "molecular_type"], inplace=True)
 
     return {
         "annotation": VoxelData(
@@ -97,8 +111,10 @@ def create_from_probability_map_data():
             "gad67": np.array([[[1.5, 2.0, 1.0, 2.0, 1.0]]], dtype=float),
             "approx_lamp5": np.array([[[0.5, 0.0, 0.0, 0.0, 0.0]]]),
         },
-        "raw_probability_map": raw_probability_map,
-        "probability_maps": [probability_map],
+        "raw_probability_map01": raw_probability_map01,
+        "raw_probability_map02": raw_probability_map02,
+        "probability_map01": probability_map01,
+        "probability_map02": probability_map02,
     }
 
 
@@ -110,7 +126,7 @@ class Test_create_from_probability_map:
             self.data["annotation"],
             self.data["region_map"],
             self.data["molecular_type_densities"],
-            self.data["probability_maps"],
+            [self.data["probability_map01"], self.data["probability_map02"]],
             self.tmpdir.name,
             1,
         )
@@ -149,20 +165,20 @@ class Test_create_from_probability_map_exceptions:
             self.data["annotation"],
             self.data["region_map"],
             self.data["molecular_type_densities"],
-            self.data["probability_maps"],
+            [self.data["probability_map01"], self.data["probability_map02"]],
             self.tmpdir.name,
             1,
         )
 
     def test_probability_map_sanity_negative_probability(self):
-        for probability_map in self.data["probability_maps"]:
-            probability_map.at[("AUDd4", "sst"), "ChC"] = -0.0025
+        self.data["probability_map01"].at[("AUDd4", "sst"), "ChC"] = -0.0025
+        self.data["probability_map02"].at[("AUDd5", "sst"), "ChC"] = -0.0025
         with pytest.raises(AtlasDensitiesError):
             self.create_densities()
 
     def test_probability_map_sanity_row_sum_is_1(self):
-        for probability_map in self.data["probability_maps"]:
-            probability_map.at[("AUDd4", "sst"), "ChC"] = 2.0
+        self.data["probability_map01"].at[("AUDd4", "sst"), "ChC"] = 2.0
+        self.data["probability_map02"].at[("AUDd5", "sst"), "ChC"] = 2.0
         with pytest.raises(AtlasDensitiesError):
             self.create_densities()
 
@@ -180,55 +196,22 @@ class Test__merge_probability_maps:
                     "region": [
                         "regionA",
                         "regionA",
+                        "regionB",  # regionB is in both maps
                         "regionB",
-                        "regionB",
-                        "regionC",
-                        "regionC",
                     ],
-                    "molecular_type": [
-                        "pv",
-                        "sst",
-                        "vip",
-                        "pv",
-                        "sst",
-                        "vip",
-                    ],
-                    "mtype01": [
-                        0.0,
-                        0.0,
-                        0.0,
-                        0.5,
-                        0.5,
-                        0.5,
-                    ],
+                    "molecular_type": ["pv", "sst", "vip", "pv"],
+                    "mtype01": [0.0, 0.0, 0.0, 0.5],
                 },
             ),
             self.create_probability_map(
                 {
                     "region": [
-                        "regionB",
+                        "regionB",  # regionB is in both maps
                         "regionD",
                         "regionD",
-                        "regionD",
-                        "regionE",
-                        "regionE",
                     ],
-                    "molecular_type": [
-                        "pv",
-                        "sst",
-                        "vip",
-                        "pv",
-                        "sst",
-                        "vip",
-                    ],
-                    "mtype01": [
-                        0.0,
-                        0.0,
-                        0.0,
-                        0.5,
-                        0.5,
-                        0.5,
-                    ],
+                    "molecular_type": ["pv", "sst", "vip"],
+                    "mtype01": [0.0, 0.5, 0.5],
                 },
             ),
         ]

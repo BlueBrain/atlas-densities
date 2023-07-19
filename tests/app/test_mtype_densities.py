@@ -2,8 +2,6 @@
 import json
 import os
 from copy import deepcopy
-from glob import glob
-from itertools import chain
 from pathlib import Path
 
 import numpy as np
@@ -93,9 +91,6 @@ def test_mtype_densities_from_profiles():
 
 
 def get_result_from_probablity_map_(runner):
-    probability_map_args = chain.from_iterable(
-        ("--probability-map", filename) for filename in glob("probability_map*.csv")
-    )
     return runner.invoke(
         tested.create_from_probability_map,
         [
@@ -103,7 +98,10 @@ def get_result_from_probablity_map_(runner):
             "annotation.nrrd",
             "--hierarchy-path",
             "hierarchy.json",
-            *probability_map_args,
+            "--probability-map",
+            "probability_map01.csv",
+            "--probability-map",
+            "probability_map02.csv",
             "--marker",
             "pv",
             "pv.nrrd",
@@ -134,8 +132,8 @@ class Test_mtype_densities_from_probability_map:
         with open("hierarchy.json", "w", encoding="utf-8") as file_:
             json.dump(self.data["hierarchy"], file_)
 
-        for index, probability_map in enumerate(self.data["probability_maps"]):
-            probability_map.to_csv(f"probability_map{index}.csv", index=True)
+        self.data["probability_map01"].to_csv(f"probability_map01.csv", index=True)
+        self.data["probability_map02"].to_csv(f"probability_map02.csv", index=True)
 
         for molecular_type, data in self.data["molecular_type_densities"].items():
             VoxelData(
