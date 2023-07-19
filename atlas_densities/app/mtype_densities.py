@@ -218,7 +218,7 @@ def _check_config_sanity(config: dict) -> None:
     help="Path to output directory. It will be created if it doesn't exist already.",
 )
 @click.option(
-    "--joblib-n-jobs",
+    "--n-jobs",
     required=False,
     default=10,
     type=int,
@@ -231,7 +231,7 @@ def create_from_probability_map(
     probability_map,
     marker,
     output_dir,
-    joblib_n_jobs,
+    n_jobs,
 ):  # pylint: disable=too-many-locals
     """
     Create neuron density nrrd files for the mtypes listed in the probability mapping csv file.
@@ -277,7 +277,7 @@ def create_from_probability_map(
         },
         probability_map,
         output_dir,
-        joblib_n_jobs,
+        n_jobs,
     )
 
 

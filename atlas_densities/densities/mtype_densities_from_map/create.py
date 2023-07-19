@@ -31,7 +31,7 @@ def create_from_probability_map(
     molecular_type_densities: Dict[str, FloatArray],
     probability_map: "pd.DataFrame",
     output_dirpath: str,
-    joblib_n_jobs: int,
+    n_jobs: int,
 ) -> None:
     """
     Create a density field for each mtype listed in `probability_map.csv`.
@@ -112,7 +112,7 @@ def create_from_probability_map(
             filepath = str(Path(output_dirpath) / mtype_filename)
             annotation.with_data(mtype_density).save_nrrd(filepath)
 
-    returns = Parallel(n_jobs=joblib_n_jobs, return_as="generator")(
+    returns = Parallel(n_jobs=n_jobs, return_as="generator")(
         delayed(_create_densities_for_mtype_)(mtype) for mtype in probability_map.columns
     )
     for _ in tqdm(returns, total=len(probability_map.columns)):
