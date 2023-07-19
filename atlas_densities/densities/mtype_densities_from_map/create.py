@@ -108,7 +108,7 @@ def create_from_probability_map(
                 mtype_density[region_mask] += density[region_mask] * coefficient
 
         if np.any(mtype_density):
-            mtype_filename = f"{mtype.replace('_', '-')}_densities.nrrd"  # do we need this?
+            mtype_filename = f"{mtype.replace('_', '-')}_densities.nrrd"
             filepath = str(Path(output_dirpath) / mtype_filename)
             annotation.with_data(mtype_density).save_nrrd(filepath)
 
