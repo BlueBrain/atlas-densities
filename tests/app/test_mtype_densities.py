@@ -129,8 +129,8 @@ class Test_mtype_densities_from_probability_map:
 
     def save_input_data_to_file(self):
         self.data["annotation"].save_nrrd("annotation.nrrd")
-        with open("hierarchy.json", "w", encoding="utf-8") as file_:
-            json.dump(self.data["hierarchy"], file_)
+        with open("hierarchy.json", "w", encoding="utf-8") as file:
+            json.dump(self.data["hierarchy"], file)
 
         self.data["probability_map01"].to_csv(f"probability_map01.csv", index=True)
         self.data["probability_map02"].to_csv(f"probability_map02.csv", index=True)
@@ -148,9 +148,14 @@ class Test_mtype_densities_from_probability_map:
             result = get_result_from_probablity_map_(runner)
             assert result.exit_code == 0
 
-            chc = VoxelData.load_nrrd(str(Path("output_dir") / "ChC_densities.nrrd"))
-            assert chc.raw.dtype == float
-            npt.assert_array_equal(chc.voxel_dimensions, self.data["annotation"].voxel_dimensions)
+            BPbAC = VoxelData.load_nrrd(str(Path("output_dir") / "BP|bAC_densities.nrrd"))
+            assert BPbAC.raw.dtype == float
+            npt.assert_array_equal(BPbAC.voxel_dimensions, self.data["annotation"].voxel_dimensions)
+
+            with open(str(Path("output_dir") / "output_legend.json"), "r") as file:
+                output_legend = json.load(file)
+            assert "BP" in output_legend
+            assert "bAC" in output_legend["BP"]
 
     class Test_mtype_densities_from_composition:
         @pytest.fixture(scope="session")

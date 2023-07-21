@@ -8,10 +8,11 @@ Volumetric density nrrd files are created for each metype listed `probability_ma
 This module re-uses the computation of the densities of the neurons reacting to PV, SST, VIP
 and GAD67, see mod:`app/cell_densities`.
 """
-from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, List
-from collections import defaultdict
 import json
+import logging
+from collections import defaultdict
+from pathlib import Path
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 
 import numpy as np
 from atlas_commons.typing import FloatArray
@@ -28,6 +29,8 @@ if TYPE_CHECKING:  # pragma: no cover
     from voxcell import RegionMap, VoxelData  # type: ignore
 
 SEPARATOR = "|"
+
+L = logging.getLogger(__name__)
 
 
 def create_from_probability_map(
@@ -87,7 +90,7 @@ def create_from_probability_map(
 
     Path(output_dirpath).mkdir(exist_ok=True, parents=True)
 
-    def _create_densities_for_metype(metype):
+    def _create_densities_for_metype(metype: str) -> Optional[Tuple[str, str]]:
         coefficients: Dict[str, Dict[str, Any]] = {}
         for region_acronym in region_acronyms:
             coefficients[region_acronym] = {
@@ -112,21 +115,21 @@ def create_from_probability_map(
             annotation.with_data(metype_density).save_nrrd(filepath)
 
             return metype, filepath
+        return None
 
-
+    L.info("Processing ME types.")
     returns = Parallel(n_jobs=n_jobs, return_as="generator")(
         delayed(_create_densities_for_metype)(metype) for metype in probability_map.columns
     )
-    output_legend = defaultdict(dict)
+    output_legend: Dict[str, Dict[str, str]] = defaultdict(dict)
     for return_value in tqdm(returns, total=len(probability_map.columns)):
-        print(return_value)
-        if return_value:
+        if return_value is not None:
             metype, filepath = return_value
             mtype, etype = metype.split(SEPARATOR)
             output_legend[mtype][etype] = filepath
 
-    # save output legend
+    L.info("Saving output legend.")
     output_legend_filename = "output_legend.json"
     filepath = str(Path(output_dirpath) / output_legend_filename)
-    with open(filepath, "w") as file:
+    with open(filepath, "w", encoding="utf8") as file:
         json.dump(output_legend, file, indent=4)
