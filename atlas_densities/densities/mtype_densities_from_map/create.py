@@ -10,6 +10,8 @@ and GAD67, see mod:`app/cell_densities`.
 """
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict, List
+from collections import defaultdict
+import json
 
 import numpy as np
 from atlas_commons.typing import FloatArray
@@ -24,6 +26,8 @@ from atlas_densities.densities.mtype_densities_from_map.utils import (
 if TYPE_CHECKING:  # pragma: no cover
     import pandas as pd
     from voxcell import RegionMap, VoxelData  # type: ignore
+
+SEPARATOR = "|"
 
 
 def create_from_probability_map(
@@ -102,12 +106,27 @@ def create_from_probability_map(
                 metype_density[region_mask] += density[region_mask] * coefficient
 
         if np.any(metype_density):
+            # save density file
             metype_filename = f"{metype}_densities.nrrd"
             filepath = str(Path(output_dirpath) / metype_filename)
             annotation.with_data(metype_density).save_nrrd(filepath)
 
+            return metype, filepath
+
+
     returns = Parallel(n_jobs=n_jobs, return_as="generator")(
         delayed(_create_densities_for_metype)(metype) for metype in probability_map.columns
     )
-    for _ in tqdm(returns, total=len(probability_map.columns)):
-        pass
+    output_legend = defaultdict(dict)
+    for return_value in tqdm(returns, total=len(probability_map.columns)):
+        print(return_value)
+        if return_value:
+            metype, filepath = return_value
+            mtype, etype = metype.split(SEPARATOR)
+            output_legend[mtype][etype] = filepath
+
+    # save output legend
+    output_legend_filename = "output_legend.json"
+    filepath = str(Path(output_dirpath) / output_legend_filename)
+    with open(filepath, "w") as file:
+        json.dump(output_legend, file, indent=4)
