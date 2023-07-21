@@ -189,24 +189,23 @@ class Test__merge_probability_maps:
         probability_map.set_index(["region", "molecular_type"], inplace=True)
         return probability_map
 
-    def test_region_intersection(self):
+    def test_index_intersection_success(self):
         probability_maps = [
             self.create_probability_map(
                 {
                     "region": [
                         "regionA",
                         "regionA",
-                        "regionB",  # regionB is in both maps
                         "regionB",
                     ],
-                    "molecular_type": ["pv", "sst", "vip", "pv"],
-                    "mtype01": [0.0, 0.0, 0.0, 0.5],
+                    "molecular_type": ["pv", "sst", "vip"],
+                    "mtype01": [0.0, 0.0, 0.0],
                 },
             ),
             self.create_probability_map(
                 {
                     "region": [
-                        "regionB",  # regionB is in both maps
+                        "regionB",
                         "regionD",
                         "regionD",
                     ],
@@ -215,7 +214,34 @@ class Test__merge_probability_maps:
                 },
             ),
         ]
-        with pytest.raises(ValueError, match="regionB"):
+        tested.utils._merge_probability_maps(probability_maps)
+
+    def test_index_intersection_fail(self):
+        probability_maps = [
+            self.create_probability_map(
+                {
+                    "region": [
+                        "regionA",
+                        "regionA",
+                        "regionB",  # regionB, pv is in both maps
+                    ],
+                    "molecular_type": ["pv", "sst", "pv"],
+                    "mtype01": [0.0, 0.0, 0.5],
+                },
+            ),
+            self.create_probability_map(
+                {
+                    "region": [
+                        "regionB",  # regionB, pv is in both maps
+                        "regionD",
+                        "regionD",
+                    ],
+                    "molecular_type": ["pv", "sst", "vip"],
+                    "mtype01": [0.0, 0.5, 0.5],
+                },
+            ),
+        ]
+        with pytest.raises(ValueError):
             tested.utils._merge_probability_maps(probability_maps)
 
     def test_merge(self):

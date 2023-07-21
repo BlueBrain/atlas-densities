@@ -59,15 +59,11 @@ def _check_probability_map_consistency(
 
 
 def _merge_probability_maps(probability_maps: List["pd.Dataframe"]) -> "pd.Dataframe":
-    occupied_region_acronyms: Set[str] = set()
-    for probability_map in probability_maps:
-        region_acronyms = {region for region, _ in probability_map.index}
-        if intersection := occupied_region_acronyms & region_acronyms:
-            raise ValueError(
-                "Two probability maps have regions in common. "
-                "Each region can only be defined in a single probability map. "
-                f"Regions in common: {intersection}",
-            )
-        occupied_region_acronyms = occupied_region_acronyms.union(region_acronyms)
+    result = pd.concat(probability_maps, sort=False).fillna(0)
 
-    return pd.concat(probability_maps, sort=False).fillna(0)
+    if result.index.duplicated().any():
+        raise ValueError(
+            "Two probability maps have index values in common. "
+            "Each row header can only appear in one probability map. ",
+        )
+    return result
