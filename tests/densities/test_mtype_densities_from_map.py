@@ -189,7 +189,6 @@ class Test__merge_probability_maps:
         probability_map.set_index(["region", "molecular_type"], inplace=True)
         return probability_map
 
-
     def test_index_intersection_success(self):
 
         probability_maps = [
@@ -200,7 +199,6 @@ class Test__merge_probability_maps:
                         "regionA",
                         "regionB",
                     ],
-
                     "molecular_type": ["pv", "sst", "vip"],
                     "mtype01": [0.0, 0.0, 0.0],
                 },
