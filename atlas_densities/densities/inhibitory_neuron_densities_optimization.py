@@ -143,7 +143,7 @@ def set_known_values(
     # Set delta_{r, m} with `SKIP` if the corresponding cell count estimate is missing.
     # This means that the region r won't impose any constraint wrt to the marker m in the linear
     # program, i. e., the delta_{r, m} variable is omitted for such r and m.
-    for (id_, region_name) in zip(hierarchy_info.index, region_counts.index):
+    for id_, region_name in zip(hierarchy_info.index, region_counts.index):
         for cell_type in cell_types:
             # A region without cell count estimate for `cell_type` adds no constraint
             # to the linear program.
@@ -160,7 +160,7 @@ def set_known_values(
                 _zero_descendants(id_, cell_type, x_result, deltas, hierarchy_info)
 
     # Set the (possibly non-zero) cell count estimates which are given with certainty.
-    for (id_, region_name) in zip(hierarchy_info.index, region_counts.index):
+    for id_, region_name in zip(hierarchy_info.index, region_counts.index):
         for cell_type in cell_types:
             if np.isclose(
                 region_counts.at[region_name, cell_type + "_standard_deviation"],
@@ -319,7 +319,7 @@ def create_aub_and_bub(
     b_ub = []
     variable_count = len(x_map) + len(deltas_map)
     cell_types = get_cell_types(region_counts)
-    for (id_, region_name, set_) in zip(
+    for id_, region_name, set_ in zip(
         hierarchy_info.index, hierarchy_info["brain_region"], hierarchy_info["descendant_id_set"]
     ):
         for cell_type in cell_types:

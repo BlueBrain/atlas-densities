@@ -329,13 +329,24 @@ mapping csv file (see also `mtypes_probability_map_config.yaml`_).
 
 .. code-block:: bash
 
-    DATA=atlas-densities/atlas_densities/app/data
     atlas-densities mtype-densities create-from-probability-map              \
         --hierarchy-path=data/1.json                                         \
         --annotation-path=data/ccfv2/annotation_25.nrrd                      \
-        --metadata-path=$DATA/metadata/isocortex_23_metadata.json            \
-        --mtypes-config-path=$DATA/mtypes/mtypes_probability_map_config.yaml \
+        --probability-map data/probability_map.csv                           \
+        --marker gad67 data/molecular_densities/gad67.nrrd                   \
+        --marker pv data/molecular_densities/pv.nrrd                         \
+        --marker sst data/molecular_densities/sst.nrrd                       \
+        --marker vip data/molecular_densities/vip.nrrd                       \
+        --marker approx_lamp5 data/molecular_densities/approx_lamp5.nrrd     \
         --output-dir=data/ccfv2/me-types/
+
+The molecular density of approx_lamp5 was calculated from the other molecular densities as 
+
+.. code-block:: math
+
+    approx_lamp5 = gad67 - vip - sst - pv
+
+which approximates the molecular density of lamp5.
 
 Subdivide excitatory files into pyramidal subtypes
 --------------------------------------------------

@@ -4,3 +4,4 @@ molecularTypeDensityPaths:
     pv: where/you/put/your/files/pv.nrrd
     sst: where/you/put/your/files/sst.nrrd
     vip: where/you/put/your/files/vip.nrrd
+    approx_lamp5: where/you/put/your/files/approx_lamp5.nrrd

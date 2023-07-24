@@ -136,7 +136,6 @@ def density(annotation):
 
 
 def test_create_from_composition(annotation, region_map, metadata, density, taxonomy, composition):
-
     per_mtype_density = {
         mtype: mtype_density
         for mtype, mtype_density in tested.create_from_composition(
@@ -151,7 +150,6 @@ def test_create_from_composition(annotation, region_map, metadata, density, taxo
     expected_layers = (3, 3, 4, 4)
 
     for mtype, layer in zip(expected_mtypes, expected_layers):
-
         layer_sum = composition[
             (composition["layer"] == f"layer_{layer}")
             & (composition["mtype"].isin(expected_mtypes))

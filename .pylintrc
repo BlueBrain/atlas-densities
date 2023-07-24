@@ -1,5 +1,5 @@
 [MESSAGES CONTROL]
-disable=invalid-name
+disable=invalid-name,fixme
 
 [SIMILARITIES]
 # Minimum lines number of a similarity.
