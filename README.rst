@@ -332,7 +332,8 @@ mapping csv file (see also `mtypes_probability_map_config.yaml`_).
     atlas-densities mtype-densities create-from-probability-map              \
         --hierarchy-path=data/1.json                                         \
         --annotation-path=data/ccfv2/annotation_25.nrrd                      \
-        --probability-map data/probability_map.csv                           \
+        --probability-map data/probability_map01.csv                         \
+        --probability-map data/probability_map02.csv                         \
         --marker gad67 data/molecular_densities/gad67.nrrd                   \
         --marker pv data/molecular_densities/pv.nrrd                         \
         --marker sst data/molecular_densities/sst.nrrd                       \

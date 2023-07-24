@@ -99,7 +99,9 @@ def get_result_from_probablity_map_(runner):
             "--hierarchy-path",
             "hierarchy.json",
             "--probability-map",
-            "probability_map.csv",
+            "probability_map01.csv",
+            "--probability-map",
+            "probability_map02.csv",
             "--marker",
             "pv",
             "pv.nrrd",
@@ -130,7 +132,8 @@ class Test_mtype_densities_from_probability_map:
         with open("hierarchy.json", "w", encoding="utf-8") as file_:
             json.dump(self.data["hierarchy"], file_)
 
-        self.data["probability_map"].to_csv("probability_map.csv", index=True)
+        self.data["probability_map01"].to_csv(f"probability_map01.csv", index=True)
+        self.data["probability_map02"].to_csv(f"probability_map02.csv", index=True)
 
         for molecular_type, data in self.data["molecular_type_densities"].items():
             VoxelData(

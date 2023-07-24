@@ -2,14 +2,12 @@
 Utilities for creating the density field.
 """
 import logging
-from typing import TYPE_CHECKING, Set
+from typing import List, Set
 
 import numpy as np
+import pandas as pd
 
 from atlas_densities.exceptions import AtlasDensitiesError
-
-if TYPE_CHECKING:  # pragma: no cover
-    import pandas as pd
 
 L = logging.getLogger(__name__)
 
@@ -58,3 +56,14 @@ def _check_probability_map_consistency(
             "The following molecular types are missing in the probability map: %s",
             molecular_types_diff,
         )
+
+
+def _merge_probability_maps(probability_maps: List["pd.Dataframe"]) -> "pd.Dataframe":
+    result = pd.concat(probability_maps, sort=False).fillna(0)
+
+    if result.index.duplicated().any():
+        raise ValueError(
+            "Two probability maps have index values in common. "
+            "Each row header can only appear in one probability map. ",
+        )
+    return result

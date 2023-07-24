@@ -8,7 +8,7 @@ NSETM-2196 - Update atlas-density creation to be more universal
  * Update the probability map to support regions
  * Simplify the create-from-probability-map API
  * Compute densities in parallel
-
+ * Support multiple probability maps
 
 Version 0.1.4
 -------------

@@ -9,7 +9,7 @@ This module re-uses the computation of the densities of the neurons reacting to 
 and GAD67, see mod:`app/cell_densities`.
 """
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict
+from typing import TYPE_CHECKING, Any, Dict, List
 
 import numpy as np
 from atlas_commons.typing import FloatArray
@@ -18,6 +18,7 @@ from tqdm import tqdm
 
 from atlas_densities.densities.mtype_densities_from_map.utils import (
     _check_probability_map_consistency,
+    _merge_probability_maps,
 )
 
 if TYPE_CHECKING:  # pragma: no cover
@@ -29,7 +30,7 @@ def create_from_probability_map(
     annotation: "VoxelData",
     region_map: "RegionMap",
     molecular_type_densities: Dict[str, FloatArray],
-    probability_map: "pd.DataFrame",
+    probability_maps: List["pd.DataFrame"],
     output_dirpath: str,
     n_jobs: int,
 ) -> None:
@@ -71,6 +72,8 @@ def create_from_probability_map(
             or contain some white spaces.
     """
     # pylint: disable=too-many-locals
+    probability_map = _merge_probability_maps(probability_maps)
+
     region_info = (
         region_map.as_dataframe()
         .reset_index()
