@@ -340,6 +340,14 @@ mapping csv file (see also `mtypes_probability_map_config.yaml`_).
         --marker approx_lamp5 data/molecular_densities/approx_lamp5.nrrd     \
         --output-dir=data/ccfv2/me-types/
 
+The molecular density of approx_lamp5 was calculated from the other molecular densities as 
+
+.. code-block:: math
+
+    approx_lamp5 = gad67 - vip - sst - pv
+
+which approximates the molecular density of lamp5.
+
 Subdivide excitatory files into pyramidal subtypes
 --------------------------------------------------
 
