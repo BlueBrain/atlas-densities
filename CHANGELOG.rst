@@ -1,6 +1,14 @@
 Changelog
 =========
 
+Version 0.2.0
+-------------
+
+NSETM-2196 - Update atlas-density creation to be more universal
+ * Update the probability map to support regions
+ * Simplify the create-from-probability-map API
+
+
 Version 0.1.4
 -------------
 
