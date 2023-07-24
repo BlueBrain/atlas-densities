@@ -6,6 +6,7 @@ logs
 venv/
 old/
 *.egg-info
+.eggs
 **/.vscode
 .tox
 .coverage

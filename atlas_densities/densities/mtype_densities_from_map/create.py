@@ -13,6 +13,7 @@ from typing import TYPE_CHECKING, Any, Dict
 
 import numpy as np
 from atlas_commons.typing import FloatArray
+from joblib import Parallel, delayed
 from tqdm import tqdm
 
 from atlas_densities.densities.mtype_densities_from_map.utils import (
@@ -30,6 +31,7 @@ def create_from_probability_map(
     molecular_type_densities: Dict[str, FloatArray],
     probability_map: "pd.DataFrame",
     output_dirpath: str,
+    n_jobs: int,
 ) -> None:
     """
     Create a density field for each mtype listed in `probability_map.csv`.
@@ -87,8 +89,7 @@ def create_from_probability_map(
 
     Path(output_dirpath).mkdir(exist_ok=True, parents=True)
 
-    for mtype in tqdm(probability_map.columns):
-
+    def _create_densities_for_mtype_(mtype):
         coefficients: Dict[str, Dict[str, Any]] = {}
         for region_acronym in region_acronyms:
             coefficients[region_acronym] = {
@@ -110,3 +111,9 @@ def create_from_probability_map(
             mtype_filename = f"{mtype.replace('_', '-')}_densities.nrrd"
             filepath = str(Path(output_dirpath) / mtype_filename)
             annotation.with_data(mtype_density).save_nrrd(filepath)
+
+    returns = Parallel(n_jobs=n_jobs, return_as="generator")(
+        delayed(_create_densities_for_mtype_)(mtype) for mtype in probability_map.columns
+    )
+    for _ in tqdm(returns, total=len(probability_map.columns)):
+        pass

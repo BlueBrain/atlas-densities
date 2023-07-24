@@ -338,6 +338,7 @@ mapping csv file (see also `mtypes_probability_map_config.yaml`_).
         --marker sst data/molecular_densities/sst.nrrd                       \
         --marker vip data/molecular_densities/vip.nrrd                       \
         --marker approx_lamp5 data/molecular_densities/approx_lamp5.nrrd     \
+        --n-jobs 8                                                           \
         --output-dir=data/ccfv2/me-types/
 
 The molecular density of approx_lamp5 was calculated from the other molecular densities as 

@@ -217,6 +217,13 @@ def _check_config_sanity(config: dict) -> None:
     required=True,
     help="Path to output directory. It will be created if it doesn't exist already.",
 )
+@click.option(
+    "--n-jobs",
+    required=False,
+    default=10,
+    type=int,
+    help="Number of jobs to run in parallel.",
+)
 @log_args(L)
 def create_from_probability_map(
     annotation_path,
@@ -224,6 +231,7 @@ def create_from_probability_map(
     probability_map,
     marker,
     output_dir,
+    n_jobs,
 ):  # pylint: disable=too-many-locals
     """
     Create neuron density nrrd files for the mtypes listed in the probability mapping csv file.
@@ -269,6 +277,7 @@ def create_from_probability_map(
         },
         probability_map,
         output_dir,
+        n_jobs,
     )
 
 

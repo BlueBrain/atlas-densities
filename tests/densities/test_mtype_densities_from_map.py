@@ -112,6 +112,7 @@ class Test_create_from_probability_map:
             self.data["molecular_type_densities"],
             self.data["probability_map"],
             self.tmpdir.name,
+            1,
         )
 
     def teardown_method(self, method):
@@ -150,6 +151,7 @@ class Test_create_from_probability_map_exceptions:
             self.data["molecular_type_densities"],
             self.data["probability_map"],
             self.tmpdir.name,
+            1,
         )
 
     def test_probability_map_sanity_negative_probability(self):
