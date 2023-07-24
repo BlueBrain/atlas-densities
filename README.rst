@@ -350,6 +350,23 @@ The molecular density of approx_lamp5 was calculated from the other molecular de
 
 which approximates the molecular density of lamp5.
 
+The command outputs the density files in the output-dir and a legend json file:
+
+.. code-block:: json
+
+{
+    "SLAC": {
+        "bNAC": "data/ccfv2/test_regions_me-types/SLAC|bNAC_densities.nrrd",
+        "cAC": "data/ccfv2/test_regions_me-types/SLAC|cAC_densities.nrrd",
+        "cNAC": "data/ccfv2/test_regions_me-types/SLAC|cNAC_densities.nrrd"
+    },
+    "NGC-SA": {
+        "cNAC": "data/ccfv2/test_regions_me-types/NGC-SA|cNAC_densities.nrrd",
+        ...
+    },
+    ...
+}
+
 Subdivide excitatory files into pyramidal subtypes
 --------------------------------------------------
 
