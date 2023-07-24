@@ -48,10 +48,10 @@ from atlas_densities.app.utils import AD_PATH, DATA_PATH
 from atlas_densities.densities.mtype_densities_from_composition import (
     create_from_composition as _create_from_composition,
 )
-from atlas_densities.densities.mtype_densities_from_map import check_probability_map_sanity
-from atlas_densities.densities.mtype_densities_from_map import (
+from atlas_densities.densities.mtype_densities_from_map.create import (
     create_from_probability_map as create_from_map,
 )
+from atlas_densities.densities.mtype_densities_from_map.utils import check_probability_map_sanity
 from atlas_densities.densities.mtype_densities_from_profiles import DensityProfileCollection
 from atlas_densities.exceptions import AtlasDensitiesError
 
@@ -500,7 +500,6 @@ def _load_neuronal_mtype_composition(filename: str) -> pd.DataFrame:
     composition_dict: Dict[str, List] = {"density": [], "layer": [], "mtype": []}
 
     for entry in composition:
-
         traits = entry["traits"]
         composition_dict["density"].append(entry["density"])
         composition_dict["layer"].append(f"layer_{traits['layer']}")
