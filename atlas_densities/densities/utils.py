@@ -361,7 +361,7 @@ def get_group_ids(region_map: "RegionMap", cleanup_rest: bool = False) -> Dict[s
     molecular_layer_ids = cerebellar_cortex_ids & region_map.find(
         "@.*molecular layer", attr="name", with_descendants=True
     )
-    rest_ids = region_map.find("root", attr="name", with_descendants=True)
+    rest_ids = region_map.find("root", attr="acronym", with_descendants=True)
     rest_ids -= cerebellum_group_ids | isocortex_group_ids
 
     if cleanup_rest:
@@ -482,7 +482,7 @@ def get_hierarchy_info(
         every region name.
 
     """
-    region_ids = list(region_map.find(root, attr="name", with_descendants=True))
+    region_ids = list(region_map.find(root, attr="acronym", with_descendants=True))
     region_ids.sort()
     descendant_id_sets = [
         region_map.find(id_, attr="id", with_descendants=True) for id_ in region_ids
