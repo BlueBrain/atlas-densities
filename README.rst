@@ -350,7 +350,7 @@ The molecular density of approx_lamp5 was calculated from the other molecular de
 
 which approximates the molecular density of lamp5.
 
-The command outputs the density files in the output-dir and a legend json file:
+The command outputs the density files in the output-dir and a metadata json file:
 
 .. code-block:: json
 

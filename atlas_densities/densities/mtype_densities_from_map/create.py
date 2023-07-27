@@ -22,6 +22,7 @@ from tqdm import tqdm
 from atlas_densities.densities.mtype_densities_from_map.utils import (
     _check_probability_map_consistency,
     _merge_probability_maps,
+    SYNAPSE_CLASSES,
 )
 
 if TYPE_CHECKING:  # pragma: no cover
@@ -38,6 +39,7 @@ def create_from_probability_map(
     region_map: "RegionMap",
     molecular_type_densities: Dict[str, FloatArray],
     probability_maps: List["pd.DataFrame"],
+    synapse_class: str,
     output_dirpath: str,
     n_jobs: int,
 ) -> None:
@@ -72,6 +74,14 @@ def create_from_probability_map(
     # pylint: disable=too-many-locals
     probability_map = _merge_probability_maps(probability_maps)
 
+    _check_probability_map_consistency(probability_map, set(molecular_type_densities.keys()))
+
+    # filter by synapse class
+    if synapse_class in SYNAPSE_CLASSES:
+        probability_map = probability_map[probability_map.index.get_level_values("synapse_class") == synapse_class]
+    probability_map.index = probability_map.index.droplevel("synapse_class")
+
+    # get info on regions
     region_info = (
         region_map.as_dataframe()
         .reset_index()
@@ -81,13 +91,12 @@ def create_from_probability_map(
     )
     region_acronyms = set(region_info.region)
 
-    _check_probability_map_consistency(probability_map, set(molecular_type_densities.keys()))
-
     region_masks = {
         region_acronym: annotation.raw == region_id
         for _, region_acronym, region_id in region_info.itertuples()
     }
 
+    # ensure output directory exists
     Path(output_dirpath).mkdir(exist_ok=True, parents=True)
 
     def _create_densities_for_metype(metype: str) -> Optional[Tuple[str, str]]:
@@ -110,7 +119,7 @@ def create_from_probability_map(
 
         if np.any(metype_density):
             # save density file
-            metype_filename = f"{metype}_densities.nrrd"
+            metype_filename = f"{metype}_{synapse_class}_densities.nrrd"
             filepath = str(Path(output_dirpath) / metype_filename)
             annotation.with_data(metype_density).save_nrrd(filepath)
 
@@ -127,9 +136,14 @@ def create_from_probability_map(
             metype, filepath = return_value
             mtype, etype = metype.split(SEPARATOR)
             output_legend[mtype][etype] = filepath
+    
+    metadata = {
+        "synapse_class": synapse_class,
+        "density_files": output_legend,
+    }
 
-    L.info("Saving output legend.")
-    output_legend_filename = "output_legend.json"
-    filepath = str(Path(output_dirpath) / output_legend_filename)
+    L.info("Saving metadata.")
+    metadata_filename = "metadata.json"
+    filepath = str(Path(output_dirpath) / metadata_filename)
     with open(filepath, "w", encoding="utf8") as file:
-        json.dump(output_legend, file, indent=4)
+        json.dump(metadata, file, indent=4)

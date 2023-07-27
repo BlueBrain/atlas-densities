@@ -152,10 +152,10 @@ class Test_mtype_densities_from_probability_map:
             assert BPbAC.raw.dtype == float
             npt.assert_array_equal(BPbAC.voxel_dimensions, self.data["annotation"].voxel_dimensions)
 
-            with open(str(Path("output_dir") / "output_legend.json"), "r") as file:
-                output_legend = json.load(file)
-            assert "BP" in output_legend
-            assert "bAC" in output_legend["BP"]
+            with open(str(Path("output_dir") / "metadata.json"), "r") as file:
+                metadata = json.load(file)
+            assert "BP" in metadata
+            assert "bAC" in metadata["BP"]
 
     class Test_mtype_densities_from_composition:
         @pytest.fixture(scope="session")
