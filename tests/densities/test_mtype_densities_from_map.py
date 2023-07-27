@@ -35,7 +35,7 @@ def create_from_probability_map_data():
                 "sst",
                 "vip",
             ],
-            "ChC": [
+            "BP|bAC": [
                 0.0,
                 0.0,
                 0.0,
@@ -45,7 +45,7 @@ def create_from_probability_map_data():
                 0.0,
                 0.0,
             ],
-            "LAC": [
+            "BP|bIR": [
                 1.0,
                 1.0,
                 1.0,
@@ -75,7 +75,7 @@ def create_from_probability_map_data():
                 "approx_lamp5",
                 "approx_lamp5",
             ],
-            "ChC": [
+            "BP|bAC": [
                 0.0,
                 1.0,
                 1.0,
@@ -83,7 +83,7 @@ def create_from_probability_map_data():
                 1.0,
                 0.4,
             ],
-            "LAC": [
+            "BP|bIR": [
                 1.0,
                 0.0,
                 0.0,
@@ -137,15 +137,15 @@ class Test_create_from_probability_map:
     def test_filenames(self):
         tmpdir = self.tmpdir.name
         filepaths = {Path.resolve(f).name for f in Path(tmpdir).glob("*.nrrd")}
-        assert filepaths == {"LAC_densities.nrrd", "ChC_densities.nrrd"}
+        assert filepaths == {"BP|bIR_densities.nrrd", "BP|bAC_densities.nrrd"}
 
     def test_output_values(self):
         tmpdir = self.tmpdir.name
         expected_densities = {
-            "ChC": np.array([[[0.0, 0.0, 0.0, 2.0, 0.0]]], dtype=float),
-            "LAC": np.array([[[1.5, 0.0, 0.0, 0.0, 1.0]]], dtype=float),
+            "BP|bAC": np.array([[[0.0, 0.0, 0.0, 2.0, 0.0]]], dtype=float),
+            "BP|bIR": np.array([[[1.5, 0.0, 0.0, 0.0, 1.0]]], dtype=float),
         }
-        for mtype in ["ChC", "LAC"]:
+        for mtype in ["BP|bAC", "BP|bIR"]:
             filepath = str(Path(tmpdir) / f"{mtype}_densities.nrrd")
             npt.assert_array_almost_equal(
                 VoxelData.load_nrrd(filepath).raw, expected_densities[mtype]
@@ -171,14 +171,14 @@ class Test_create_from_probability_map_exceptions:
         )
 
     def test_probability_map_sanity_negative_probability(self):
-        self.data["probability_map01"].at[("AUDd4", "sst"), "ChC"] = -0.0025
-        self.data["probability_map02"].at[("AUDd5", "sst"), "ChC"] = -0.0025
+        self.data["probability_map01"].at[("AUDd4", "sst"), "BP|bAC"] = -0.0025
+        self.data["probability_map02"].at[("AUDd5", "sst"), "BP|bAC"] = -0.0025
         with pytest.raises(AtlasDensitiesError):
             self.create_densities()
 
     def test_probability_map_sanity_row_sum_is_1(self):
-        self.data["probability_map01"].at[("AUDd4", "sst"), "ChC"] = 2.0
-        self.data["probability_map02"].at[("AUDd5", "sst"), "ChC"] = 2.0
+        self.data["probability_map01"].at[("AUDd4", "sst"), "BP|bAC"] = 2.0
+        self.data["probability_map02"].at[("AUDd5", "sst"), "BP|bAC"] = 2.0
         with pytest.raises(AtlasDensitiesError):
             self.create_densities()
 
@@ -190,6 +190,7 @@ class Test__merge_probability_maps:
         return probability_map
 
     def test_index_intersection_success(self):
+
         probability_maps = [
             self.create_probability_map(
                 {

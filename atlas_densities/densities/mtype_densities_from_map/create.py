@@ -1,15 +1,18 @@
 """
-Create a density field for each mtype listed in
+Create a density field for each metype listed in
 `app/data/mtypes/probability_map/probability_map.csv`.
 
 This input file can be replaced by user's custom file of the same format.
 
-Volumetric density nrrd files are created for each mtype listed `probability_map.csv`.
+Volumetric density nrrd files are created for each metype listed `probability_map.csv`.
 This module re-uses the computation of the densities of the neurons reacting to PV, SST, VIP
 and GAD67, see mod:`app/cell_densities`.
 """
+import json
+import logging
+from collections import defaultdict
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, List
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 
 import numpy as np
 from atlas_commons.typing import FloatArray
@@ -25,6 +28,10 @@ if TYPE_CHECKING:  # pragma: no cover
     import pandas as pd
     from voxcell import RegionMap, VoxelData  # type: ignore
 
+SEPARATOR = "|"
+
+L = logging.getLogger(__name__)
+
 
 def create_from_probability_map(
     annotation: "VoxelData",
@@ -35,20 +42,11 @@ def create_from_probability_map(
     n_jobs: int,
 ) -> None:
     """
-    Create a density field for each mtype listed in `probability_map.csv`.
+    Create a density field for each metype listed in `probability_map.csv`.
 
-    The ouput volumetric density for the mtype named ``mtype`` is saved into
-    `<output_dirpath>/no_layers` under the name ``<mtype>_densities.nrrd`` if its sum is not too
-    close to zero, where <mtype> is dash separated.
-    Example: if mtype = "ngc_sa", then output_file_name = "NGC-SA_densities.nrrd".
-
-    The restriction of the volumetric density for the mtype named ``mtype`` to layer
-    ``layer_name`` is saved into `<output_dirpath>/with_layers` under the name
-    ``<layer_name>_<mtype>_densities.nrrd`` if its sum is not too close to zero.
-    The string <layer_name> is of the form "L<layer_index>", e,g, "L1" for "layer_1" and
-    the string <mtype> is dash-separted.
-    Example: if mtype = "ngc_sa", layer_name = "layer_23",  then
-    output_file_name = "L23_NGC-SA_densities.nrrd".
+    The ouput volumetric density for the metype named ``metype`` is saved into
+    `<output_dirpath>` under the name ``<metype>_densities.nrrd`` if its sum is not too
+    close to zero, where <metype> is '|' separated.
 
     Args:
         annotation: VoxelData holding an int array of shape (W, H, D) where W, H and D are integer
@@ -60,10 +58,10 @@ def create_from_probability_map(
             Example: {"pv": "pv.nrrd", "sst": "sst.nrd", "vip": "vip.nrrd", "gad67": "gad67.nrrd"}
         probability_map:
             data frame whose rows are labeled by regions and molecular types and whose columns are
-            labeled by mtypes.
+            labeled by metypes ('|' separated).
         output_dirpath: path of the directory where to save the volumetric density nrrd files.
             It will be created if it doesn't exist already. It will contain a volumetric density
-            file of each mtype appearing as column label of `probability_map`.
+            file of each metype appearing as column label of `probability_map`.
 
     Raises:
         AtlasBuildingTools error if
@@ -92,31 +90,46 @@ def create_from_probability_map(
 
     Path(output_dirpath).mkdir(exist_ok=True, parents=True)
 
-    def _create_densities_for_mtype_(mtype):
+    def _create_densities_for_metype(metype: str) -> Optional[Tuple[str, str]]:
         coefficients: Dict[str, Dict[str, Any]] = {}
         for region_acronym in region_acronyms:
             coefficients[region_acronym] = {
-                molecular_type: probability_map.at[(region_acronym, molecular_type), mtype]
+                molecular_type: probability_map.at[(region_acronym, molecular_type), metype]
                 for molecular_type in list(molecular_type_densities.keys())
                 if (region_acronym, molecular_type) in probability_map.index
             }
 
-        mtype_density = np.zeros(annotation.shape, dtype=float)
+        metype_density = np.zeros(annotation.shape, dtype=float)
         for region_acronym in region_acronyms:
             region_mask = region_masks[region_acronym]
             for molecular_type, coefficient in coefficients[region_acronym].items():
                 if coefficient <= 0.0:
                     continue
                 density = molecular_type_densities[molecular_type]
-                mtype_density[region_mask] += density[region_mask] * coefficient
+                metype_density[region_mask] += density[region_mask] * coefficient
 
-        if np.any(mtype_density):
-            mtype_filename = f"{mtype.replace('_', '-')}_densities.nrrd"
-            filepath = str(Path(output_dirpath) / mtype_filename)
-            annotation.with_data(mtype_density).save_nrrd(filepath)
+        if np.any(metype_density):
+            # save density file
+            metype_filename = f"{metype}_densities.nrrd"
+            filepath = str(Path(output_dirpath) / metype_filename)
+            annotation.with_data(metype_density).save_nrrd(filepath)
 
+            return metype, filepath
+        return None
+
+    L.info("Processing ME types.")
     returns = Parallel(n_jobs=n_jobs, return_as="generator")(
-        delayed(_create_densities_for_mtype_)(mtype) for mtype in probability_map.columns
+        delayed(_create_densities_for_metype)(metype) for metype in probability_map.columns
     )
-    for _ in tqdm(returns, total=len(probability_map.columns)):
-        pass
+    output_legend: Dict[str, Dict[str, str]] = defaultdict(dict)
+    for return_value in tqdm(returns, total=len(probability_map.columns)):
+        if return_value is not None:
+            metype, filepath = return_value
+            mtype, etype = metype.split(SEPARATOR)
+            output_legend[mtype][etype] = filepath
+
+    L.info("Saving output legend.")
+    output_legend_filename = "output_legend.json"
+    filepath = str(Path(output_dirpath) / output_legend_filename)
+    with open(filepath, "w", encoding="utf8") as file:
+        json.dump(output_legend, file, indent=4)
