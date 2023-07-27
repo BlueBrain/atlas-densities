@@ -361,7 +361,7 @@ def get_group_ids(region_map: "RegionMap", cleanup_rest: bool = False) -> Dict[s
     molecular_layer_ids = cerebellar_cortex_ids & region_map.find(
         "@.*molecular layer", attr="name", with_descendants=True
     )
-    rest_ids = region_map.find("root", attr="acronym", with_descendants=True)
+    rest_ids = region_map.find("root", attr="name", with_descendants=True)
     rest_ids -= cerebellum_group_ids | isocortex_group_ids
 
     if cleanup_rest:
@@ -456,7 +456,7 @@ def get_aibs_region_names(region_map: "RegionMap") -> Set[str]:
 
 def get_hierarchy_info(
     region_map: "RegionMap",
-    root: str = "Basic cell groups and regions",
+    root: str = "grey",
 ) -> "pd.DataFrame":
     """
     Returns the name and the descendant_id_set of each region that can be found by `region_map`.
