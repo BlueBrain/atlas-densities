@@ -31,9 +31,7 @@ def cell_densities():
 
 
 def test_get_hierarchy_info(region_map):
-    pdt.assert_frame_equal(
-        get_hierarchy_info(), tested.get_hierarchy_info(region_map, root="CENT")
-    )
+    pdt.assert_frame_equal(get_hierarchy_info(), tested.get_hierarchy_info(region_map, root="CENT"))
 
 
 def test_get_parent_region(region_map):
