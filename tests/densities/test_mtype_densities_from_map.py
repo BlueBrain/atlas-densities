@@ -35,6 +35,16 @@ def create_from_probability_map_data():
                 "sst",
                 "vip",
             ],
+            "synapse_class": [
+                "EXC",
+                "INH",
+                "EXC",
+                "INH",
+                "EXC",
+                "INH",
+                "EXC",
+                "INH",
+            ],
             "BP|bAC": [
                 0.0,
                 0.0,
@@ -75,6 +85,14 @@ def create_from_probability_map_data():
                 "approx_lamp5",
                 "approx_lamp5",
             ],
+            "synapse_class": [
+                "EXC",
+                "INH",
+                "EXC",
+                "INH",
+                "EXC",
+                "INH",
+            ],
             "BP|bAC": [
                 0.0,
                 1.0,
@@ -95,8 +113,8 @@ def create_from_probability_map_data():
     )
     probability_map01 = raw_probability_map01.copy()
     probability_map02 = raw_probability_map02.copy()
-    probability_map01.set_index(["region", "molecular_type"], inplace=True)
-    probability_map02.set_index(["region", "molecular_type"], inplace=True)
+    probability_map01.set_index(["region", "molecular_type", "synapse_class"], inplace=True)
+    probability_map02.set_index(["region", "molecular_type", "synapse_class"], inplace=True)
 
     return {
         "annotation": VoxelData(
@@ -127,6 +145,7 @@ class Test_create_from_probability_map:
             self.data["region_map"],
             self.data["molecular_type_densities"],
             [self.data["probability_map01"], self.data["probability_map02"]],
+            "all",
             self.tmpdir.name,
             1,
         )
@@ -137,7 +156,7 @@ class Test_create_from_probability_map:
     def test_filenames(self):
         tmpdir = self.tmpdir.name
         filepaths = {Path.resolve(f).name for f in Path(tmpdir).glob("*.nrrd")}
-        assert filepaths == {"BP|bIR_densities.nrrd", "BP|bAC_densities.nrrd"}
+        assert filepaths == {"BP|bIR_all_densities.nrrd", "BP|bAC_all_densities.nrrd"}
 
     def test_output_values(self):
         tmpdir = self.tmpdir.name
@@ -146,7 +165,7 @@ class Test_create_from_probability_map:
             "BP|bIR": np.array([[[1.5, 0.0, 0.0, 0.0, 1.0]]], dtype=float),
         }
         for mtype in ["BP|bAC", "BP|bIR"]:
-            filepath = str(Path(tmpdir) / f"{mtype}_densities.nrrd")
+            filepath = str(Path(tmpdir) / f"{mtype}_all_densities.nrrd")
             npt.assert_array_almost_equal(
                 VoxelData.load_nrrd(filepath).raw, expected_densities[mtype]
             )
@@ -166,6 +185,7 @@ class Test_create_from_probability_map_exceptions:
             self.data["region_map"],
             self.data["molecular_type_densities"],
             [self.data["probability_map01"], self.data["probability_map02"]],
+            "all",
             self.tmpdir.name,
             1,
         )

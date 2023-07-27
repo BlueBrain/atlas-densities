@@ -39,7 +39,8 @@ def check_probability_map_sanity(probability_map: "pd.DataFrame") -> None:
         )
     if not {synapse_class for _, _, synapse_class in probability_map.index} <= SYNAPSE_CLASSES:
         raise AtlasDensitiesError(
-            "The probability map has invalid value for synapse class. Only 'INH' and 'EXC' are allowed."
+            "The probability map has invalid value for synapse class."
+            "Only 'INH' and 'EXC' are allowed."
         )
 
 

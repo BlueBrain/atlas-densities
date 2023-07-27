@@ -20,9 +20,9 @@ from joblib import Parallel, delayed
 from tqdm import tqdm
 
 from atlas_densities.densities.mtype_densities_from_map.utils import (
+    SYNAPSE_CLASSES,
     _check_probability_map_consistency,
     _merge_probability_maps,
-    SYNAPSE_CLASSES,
 )
 
 if TYPE_CHECKING:  # pragma: no cover
@@ -78,7 +78,9 @@ def create_from_probability_map(
 
     # filter by synapse class
     if synapse_class in SYNAPSE_CLASSES:
-        probability_map = probability_map[probability_map.index.get_level_values("synapse_class") == synapse_class]
+        probability_map = probability_map[
+            probability_map.index.get_level_values("synapse_class") == synapse_class
+        ]
     probability_map.index = probability_map.index.droplevel("synapse_class")
 
     # get info on regions
@@ -136,7 +138,7 @@ def create_from_probability_map(
             metype, filepath = return_value
             mtype, etype = metype.split(SEPARATOR)
             output_legend[mtype][etype] = filepath
-    
+
     metadata = {
         "synapse_class": synapse_class,
         "density_files": output_legend,

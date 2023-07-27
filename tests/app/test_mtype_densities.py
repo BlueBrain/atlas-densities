@@ -117,6 +117,8 @@ def get_result_from_probablity_map_(runner):
             "--marker",
             "approx_lamp5",
             "approx_lamp5.nrrd",
+            "--synapse-class",
+            "all",
             "--output-dir",
             "output_dir",
         ],
@@ -148,14 +150,15 @@ class Test_mtype_densities_from_probability_map:
             result = get_result_from_probablity_map_(runner)
             assert result.exit_code == 0
 
-            BPbAC = VoxelData.load_nrrd(str(Path("output_dir") / "BP|bAC_densities.nrrd"))
+            BPbAC = VoxelData.load_nrrd(str(Path("output_dir") / "BP|bAC_all_densities.nrrd"))
             assert BPbAC.raw.dtype == float
             npt.assert_array_equal(BPbAC.voxel_dimensions, self.data["annotation"].voxel_dimensions)
 
             with open(str(Path("output_dir") / "metadata.json"), "r") as file:
                 metadata = json.load(file)
-            assert "BP" in metadata
-            assert "bAC" in metadata["BP"]
+            assert "BP" in metadata["density_files"]
+            assert "bAC" in metadata["density_files"]["BP"]
+            assert "all" == metadata["synapse_class"]
 
     class Test_mtype_densities_from_composition:
         @pytest.fixture(scope="session")

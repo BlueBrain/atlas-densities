@@ -49,7 +49,10 @@ from atlas_densities.densities.mtype_densities_from_composition import (
 from atlas_densities.densities.mtype_densities_from_map.create import (
     create_from_probability_map as create_from_map,
 )
-from atlas_densities.densities.mtype_densities_from_map.utils import check_probability_map_sanity, SYNAPSE_CLASSES
+from atlas_densities.densities.mtype_densities_from_map.utils import (
+    SYNAPSE_CLASSES,
+    check_probability_map_sanity,
+)
 from atlas_densities.densities.mtype_densities_from_profiles import DensityProfileCollection
 from atlas_densities.exceptions import AtlasDensitiesError
 
@@ -215,9 +218,9 @@ def _check_config_sanity(config: dict) -> None:
 )
 @click.option(
     "--synapse-class",
-    type=click.Choice(SYNAPSE_CLASSES | {"all"}, case_sensitive=False),
+    type=click.Choice(list(SYNAPSE_CLASSES) + ["all"], case_sensitive=False),
     required=True,
-    help=f"Target synapse class, the other will be skipped.",
+    help="Target synapse class, the other will be skipped.",
 )
 @click.option(
     "--output-dir",
@@ -258,7 +261,9 @@ def create_from_probability_map(
     for probability_map_path in probability_map:
         L.info("Loading probability map %s", probability_map_path)
         loaded_probability_map = pd.read_csv(probability_map_path)
-        loaded_probability_map.set_index(["region", "molecular_type", "synapse_class"], inplace=True)
+        loaded_probability_map.set_index(
+            ["region", "molecular_type", "synapse_class"], inplace=True
+        )
         check_probability_map_sanity(loaded_probability_map)
         probability_maps.append(loaded_probability_map)
 
