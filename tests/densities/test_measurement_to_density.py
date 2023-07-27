@@ -32,7 +32,7 @@ def cell_densities():
 
 def test_get_hierarchy_info(region_map):
     pdt.assert_frame_equal(
-        get_hierarchy_info(), tested.get_hierarchy_info(region_map, root="Central lobule")
+        get_hierarchy_info(), tested.get_hierarchy_info(region_map, root="CENT")
     )
 
 

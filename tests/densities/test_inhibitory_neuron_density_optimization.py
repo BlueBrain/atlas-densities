@@ -33,6 +33,7 @@ def get_initialization_data_1():
     hierarchy = {
         "id": 1,
         "name": "root",
+        "acronym": "root",
         "children": [],
     }
 
@@ -84,6 +85,7 @@ def get_initialization_data_2():
     hierarchy = {
         "id": 1,
         "name": "root",
+        "acronym": "root",
         "children": [],
     }
 
@@ -149,9 +151,10 @@ def get_initialization_data_3():
     hierarchy = {
         "id": 8,
         "name": "root",
+        "acronym": "root",
         "children": [
-            {"id": 1, "name": "A", "children": []},
-            {"id": 2, "name": "B", "children": []},
+            {"id": 1, "name": "A", "acronym": "A", "children": []},
+            {"id": 2, "name": "B", "acronym": "B", "children": []},
         ],
     }
 
@@ -218,13 +221,15 @@ def get_initialization_data_4():
     hierarchy = {
         "id": 8,
         "name": "root",
+        "acronym": "root",
         "children": [
             {
                 "id": 1,
                 "name": "A",
+                "acronym": "A",
                 "children": [
-                    {"id": 2, "name": "B", "children": []},
-                    {"id": 3, "name": "C", "children": []},
+                    {"id": 2, "name": "B", "acronym": "B", "children": []},
+                    {"id": 3, "name": "C", "acronym": "C", "children": []},
                 ],
             }
         ],
@@ -275,13 +280,15 @@ def get_initialization_data():
     hierarchy = {
         "id": 8,
         "name": "root",
+        "acronym": "root",
         "children": [
             {
                 "id": 1,
                 "name": "A",
+                "acronym": "A",
                 "children": [
-                    {"id": 2, "name": "B", "children": []},
-                    {"id": 3, "name": "C", "children": []},
+                    {"id": 2, "name": "B", "acronym": "B", "children": []},
+                    {"id": 3, "name": "C", "acronym": "C", "children": []},
                 ],
             }
         ],

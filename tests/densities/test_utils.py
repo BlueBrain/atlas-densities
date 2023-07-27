@@ -341,7 +341,7 @@ def get_hierarchy_info():
 
 def test_get_hierarchy(region_map):
     pdt.assert_frame_equal(
-        pd.DataFrame(tested.get_hierarchy_info(region_map, root="Central lobule")),
+        pd.DataFrame(tested.get_hierarchy_info(region_map, root="CENT")),
         get_hierarchy_info(),
     )
 

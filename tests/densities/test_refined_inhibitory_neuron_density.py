@@ -334,15 +334,18 @@ def get_inhibitory_neuron_densities_data():
     return {
         "hierarchy": {
             "name": "root",
+            "acronym": "root",
             "id": 3,
             "children": [
                 {
                     "name": "A",
+                    "acronym": "A",
                     "id": 1,
                     "children": [],
                 },
                 {
                     "name": "B",
+                    "acronym": "B",
                     "id": 2,
                 },
             ],
