@@ -24,6 +24,7 @@ from atlas_densities.densities.mtype_densities_from_map.utils import (
     _check_probability_map_consistency,
     _merge_probability_maps,
 )
+from atlas_densities.exceptions import AtlasDensitiesError
 
 if TYPE_CHECKING:  # pragma: no cover
     import pandas as pd
@@ -84,7 +85,12 @@ def create_from_probability_map(  # pylint: disable=too-many-arguments
         probability_map = probability_map[
             probability_map.index.get_level_values("synapse_class") == synapse_class
         ]
+    synapse_classes_in_data = set(probability_map.index.get_level_values("synapse_class"))
     probability_map.index = probability_map.index.droplevel("synapse_class")
+    if probability_map.empty:
+        raise AtlasDensitiesError(
+            f"Filtering probability map by requested synapse_class resulted in empty probability map."
+        )
 
     # get info on regions
     region_info = (
@@ -135,6 +141,8 @@ def create_from_probability_map(  # pylint: disable=too-many-arguments
     returns = Parallel(n_jobs=n_jobs, return_as="generator")(
         delayed(_create_densities_for_metype)(metype) for metype in probability_map.columns
     )
+
+    # construct metadata
     output_legend: Dict[str, Dict[str, str]] = defaultdict(dict)
     for return_value in tqdm(returns, total=len(probability_map.columns)):
         if return_value is not None:
@@ -143,7 +151,8 @@ def create_from_probability_map(  # pylint: disable=too-many-arguments
             output_legend[mtype][etype] = filepath
 
     metadata = {
-        "synapse_class": synapse_class,
+        "requested_synapse_class": synapse_class,
+        "synapse_classes_in_data": list(synapse_classes_in_data),
         "density_files": output_legend,
     }
 

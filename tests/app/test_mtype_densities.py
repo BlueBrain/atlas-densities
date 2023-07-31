@@ -160,7 +160,8 @@ class Test_mtype_densities_from_probability_map:
                 metadata = json.load(file)
             assert "BP" in metadata["density_files"]
             assert "bAC" in metadata["density_files"]["BP"]
-            assert "all" == metadata["synapse_class"]
+            assert "all" == metadata["requested_synapse_class"]
+            assert ["EXC", "INH"] == sorted(metadata["synapse_classes_in_data"])
 
     class Test_mtype_densities_from_composition:
         @pytest.fixture(scope="session")

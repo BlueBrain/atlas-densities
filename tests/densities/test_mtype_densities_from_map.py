@@ -37,13 +37,13 @@ def create_from_probability_map_data():
             ],
             "synapse_class": [
                 "EXC",
-                "INH",
                 "EXC",
-                "INH",
                 "EXC",
-                "INH",
                 "EXC",
-                "INH",
+                "EXC",
+                "EXC",
+                "EXC",
+                "EXC",
             ],
             "BP|bAC": [
                 0.0,
@@ -136,7 +136,7 @@ def create_from_probability_map_data():
     }
 
 
-class Test_create_from_probability_map:
+class Test_create_from_probability_map_all:
     def setup_method(self, method):
         self.tmpdir = tempfile.TemporaryDirectory()
         self.data = create_from_probability_map_data()
@@ -169,6 +169,73 @@ class Test_create_from_probability_map:
             filepath = str(Path(tmpdir) / f"{mtype}_densities_suffix.nrrd")
             npt.assert_array_almost_equal(
                 VoxelData.load_nrrd(filepath).raw, expected_densities[mtype]
+            )
+        # metadata
+        with open(str(Path(tmpdir) / "metadata.json"), "r") as file:
+            metadata = json.load(file)
+        assert "BP" in metadata["density_files"]
+        assert "bAC" in metadata["density_files"]["BP"]
+        assert "all" == metadata["requested_synapse_class"]
+        assert ["EXC", "INH"] == sorted(metadata["synapse_classes_in_data"])
+
+
+class Test_create_from_probability_map_EXC:
+    def setup_method(self, method):
+        self.tmpdir = tempfile.TemporaryDirectory()
+        self.data = create_from_probability_map_data()
+        tested.create.create_from_probability_map(
+            self.data["annotation"],
+            self.data["region_map"],
+            self.data["molecular_type_densities"],
+            [self.data["probability_map01"]],
+            "all",
+            self.tmpdir.name,
+            "suffix",
+            1,
+        )
+
+    def teardown_method(self, method):
+        self.tmpdir.cleanup()
+
+    def test_filenames(self):
+        tmpdir = self.tmpdir.name
+        filepaths = {Path.resolve(f).name for f in Path(tmpdir).glob("*.nrrd")}
+        assert filepaths == {"BP|bIR_densities_suffix.nrrd"}
+
+    def test_output_values(self):
+        tmpdir = self.tmpdir.name
+        expected_densities = {
+            "BP|bIR": np.array([[[1.5, 0.0, 0.0, 0.0, 1.0]]], dtype=float),
+        }
+
+        for mtype in ["BP|bIR"]:
+            filepath = str(Path(tmpdir) / f"{mtype}_densities_suffix.nrrd")
+            npt.assert_array_almost_equal(
+                VoxelData.load_nrrd(filepath).raw, expected_densities[mtype]
+            )
+        # metadata
+        with open(str(Path(tmpdir) / "metadata.json"), "r") as file:
+            metadata = json.load(file)
+        assert "BP" in metadata["density_files"]
+        assert "bIR" in metadata["density_files"]["BP"]
+        assert "all" == metadata["requested_synapse_class"]
+        assert ["EXC"] == sorted(metadata["synapse_classes_in_data"])
+
+
+class Test_create_from_probability_map_empty:
+    def test_empty_exception(self):
+        self.tmpdir = tempfile.TemporaryDirectory()
+        self.data = create_from_probability_map_data()
+        with pytest.raises(AtlasDensitiesError):
+            tested.create.create_from_probability_map(
+                self.data["annotation"],
+                self.data["region_map"],
+                self.data["molecular_type_densities"],
+                [self.data["probability_map01"]],
+                "INH",
+                self.tmpdir.name,
+                "suffix",
+                1,
             )
 
 
