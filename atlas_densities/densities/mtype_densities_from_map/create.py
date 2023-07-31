@@ -20,7 +20,6 @@ from joblib import Parallel, delayed
 from tqdm import tqdm
 
 from atlas_densities.densities.mtype_densities_from_map.utils import (
-    SYNAPSE_CLASSES,
     _check_probability_map_consistency,
     _merge_probability_maps,
 )
@@ -81,16 +80,15 @@ def create_from_probability_map(  # pylint: disable=too-many-arguments
     _check_probability_map_consistency(probability_map, set(molecular_type_densities.keys()))
 
     # filter by synapse class
-    if synapse_class in SYNAPSE_CLASSES:
-        probability_map = probability_map[
-            probability_map.index.get_level_values("synapse_class") == synapse_class
-        ]
-    synapse_classes_in_data = set(probability_map.index.get_level_values("synapse_class"))
-    probability_map.index = probability_map.index.droplevel("synapse_class")
+    probability_map = probability_map[
+        probability_map.index.get_level_values("synapse_class") == synapse_class
+    ]
     if probability_map.empty:
         raise AtlasDensitiesError(
-            f"Filtering probability map by requested synapse_class resulted in empty probability map."
+            f"Filtering probability map by requested synapse_class {synapse_class} "
+            "resulted in empty probability map."
         )
+    probability_map.index = probability_map.index.droplevel("synapse_class")
 
     # get info on regions
     region_info = (
@@ -151,8 +149,7 @@ def create_from_probability_map(  # pylint: disable=too-many-arguments
             output_legend[mtype][etype] = filepath
 
     metadata = {
-        "requested_synapse_class": synapse_class,
-        "synapse_classes_in_data": list(synapse_classes_in_data),
+        "synapse_class": synapse_class,
         "density_files": output_legend,
     }
 

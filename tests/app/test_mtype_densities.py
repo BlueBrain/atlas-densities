@@ -119,7 +119,7 @@ def get_result_from_probablity_map_(runner):
             "approx_lamp5",
             "approx_lamp5.nrrd",
             "--synapse-class",
-            "all",
+            "EXC",
             "--output-dir",
             "output_dir",
         ],
@@ -160,8 +160,7 @@ class Test_mtype_densities_from_probability_map:
                 metadata = json.load(file)
             assert "BP" in metadata["density_files"]
             assert "bAC" in metadata["density_files"]["BP"]
-            assert "all" == metadata["requested_synapse_class"]
-            assert ["EXC", "INH"] == sorted(metadata["synapse_classes_in_data"])
+            assert "EXC" == metadata["synapse_class"]
 
     class Test_mtype_densities_from_composition:
         @pytest.fixture(scope="session")

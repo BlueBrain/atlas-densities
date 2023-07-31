@@ -219,7 +219,7 @@ def _check_config_sanity(config: dict) -> None:
 )
 @click.option(
     "--synapse-class",
-    type=click.Choice(list(SYNAPSE_CLASSES) + ["all"], case_sensitive=False),
+    type=click.Choice(list(SYNAPSE_CLASSES), case_sensitive=False),
     required=True,
     help="Target synapse class, the other will be skipped.",
 )
