@@ -147,6 +147,7 @@ class Test_create_from_probability_map:
             [self.data["probability_map01"], self.data["probability_map02"]],
             "all",
             self.tmpdir.name,
+            "suffix",
             1,
         )
 
@@ -156,7 +157,7 @@ class Test_create_from_probability_map:
     def test_filenames(self):
         tmpdir = self.tmpdir.name
         filepaths = {Path.resolve(f).name for f in Path(tmpdir).glob("*.nrrd")}
-        assert filepaths == {"BP|bIR_all_densities.nrrd", "BP|bAC_all_densities.nrrd"}
+        assert filepaths == {"BP|bIR_densities_suffix.nrrd", "BP|bAC_densities_suffix.nrrd"}
 
     def test_output_values(self):
         tmpdir = self.tmpdir.name
@@ -165,7 +166,7 @@ class Test_create_from_probability_map:
             "BP|bIR": np.array([[[1.5, 0.0, 0.0, 0.0, 1.0]]], dtype=float),
         }
         for mtype in ["BP|bAC", "BP|bIR"]:
-            filepath = str(Path(tmpdir) / f"{mtype}_all_densities.nrrd")
+            filepath = str(Path(tmpdir) / f"{mtype}_densities_suffix.nrrd")
             npt.assert_array_almost_equal(
                 VoxelData.load_nrrd(filepath).raw, expected_densities[mtype]
             )
@@ -187,6 +188,7 @@ class Test_create_from_probability_map_exceptions:
             [self.data["probability_map01"], self.data["probability_map02"]],
             "all",
             self.tmpdir.name,
+            "suffix",
             1,
         )
 

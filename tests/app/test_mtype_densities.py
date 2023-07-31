@@ -3,6 +3,7 @@ import json
 import os
 from copy import deepcopy
 from pathlib import Path
+from unittest.mock import patch
 
 import numpy as np
 import numpy.testing as npt
@@ -143,14 +144,15 @@ class Test_mtype_densities_from_probability_map:
                 voxel_dimensions=self.data["annotation"].voxel_dimensions,
             ).save_nrrd(f"{molecular_type}.nrrd")
 
-    def test_output(self):
+    @patch("atlas_densities.app.mtype_densities.time", return_value=12345)
+    def test_output(self, mock_time):
         runner = CliRunner()
         with runner.isolated_filesystem():
             self.save_input_data_to_file()
             result = get_result_from_probablity_map_(runner)
             assert result.exit_code == 0
 
-            BPbAC = VoxelData.load_nrrd(str(Path("output_dir") / "BP|bAC_all_densities.nrrd"))
+            BPbAC = VoxelData.load_nrrd(str(Path("output_dir") / "BP|bAC_densities_12345.nrrd"))
             assert BPbAC.raw.dtype == float
             npt.assert_array_equal(BPbAC.voxel_dimensions, self.data["annotation"].voxel_dimensions)
 

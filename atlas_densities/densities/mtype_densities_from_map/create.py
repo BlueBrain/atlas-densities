@@ -34,13 +34,14 @@ SEPARATOR = "|"
 L = logging.getLogger(__name__)
 
 
-def create_from_probability_map(
+def create_from_probability_map(  # pylint: disable=too-many-arguments
     annotation: "VoxelData",
     region_map: "RegionMap",
     molecular_type_densities: Dict[str, FloatArray],
     probability_maps: List["pd.DataFrame"],
     synapse_class: str,
     output_dirpath: str,
+    filename_suffix: str,
     n_jobs: int,
 ) -> None:
     """
@@ -58,12 +59,14 @@ def create_from_probability_map(
             and whose values are 3D float arrays holding the density fields of the cells of the
             corresponding types (i.e., those cells reacting to the corresponding gene markers).
             Example: {"pv": "pv.nrrd", "sst": "sst.nrd", "vip": "vip.nrrd", "gad67": "gad67.nrrd"}
-        probability_map:
-            data frame whose rows are labeled by regions and molecular types and whose columns are
-            labeled by metypes ('|' separated).
+        probability_maps: list of data frames whose rows are labeled by regions and molecular
+            types and whose columns are labeled by metypes ('|' separated).
+        synapse_class: synapse class to use for density calculation
         output_dirpath: path of the directory where to save the volumetric density nrrd files.
             It will be created if it doesn't exist already. It will contain a volumetric density
             file of each metype appearing as column label of `probability_map`.
+        filename_suffix: suffix to add at the end of filenames
+        n_jobs: number of jobs to run in parallel
 
     Raises:
         AtlasBuildingTools error if
@@ -121,7 +124,7 @@ def create_from_probability_map(
 
         if np.any(metype_density):
             # save density file
-            metype_filename = f"{metype}_{synapse_class}_densities.nrrd"
+            metype_filename = f"{metype}_densities_{filename_suffix}.nrrd"
             filepath = str(Path(output_dirpath) / metype_filename)
             annotation.with_data(metype_density).save_nrrd(filepath)
 
