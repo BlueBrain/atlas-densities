@@ -26,7 +26,6 @@ Note that excitatory mtypes are handled in the first but not in the second case.
 import json
 import logging
 from pathlib import Path
-from time import time
 from typing import Dict, List
 
 import click
@@ -229,10 +228,6 @@ def _check_config_sanity(config: dict) -> None:
     help="Path to output directory. It will be created if it doesn't exist already.",
 )
 @click.option(
-    "--filename-suffix",
-    help="Suffix to add at the end of filenames. Timestamp used by default.",
-)
-@click.option(
     "--n-jobs",
     required=False,
     default=10,
@@ -247,7 +242,6 @@ def create_from_probability_map(  # pylint: disable=too-many-arguments
     marker,
     synapse_class,
     output_dir,
-    filename_suffix,
     n_jobs,
 ):  # pylint: disable=too-many-locals
     """
@@ -284,9 +278,6 @@ def create_from_probability_map(  # pylint: disable=too-many-arguments
         molecular_type: VoxelData.load_nrrd(density_path) for molecular_type, density_path in marker
     }
 
-    if filename_suffix is None:
-        filename_suffix = str(int(time()))
-
     # Check metadata consistency
     voxeldata = [annotation] + list(molecular_type_densities.values())
     assert_meta_properties(voxeldata)
@@ -302,7 +293,6 @@ def create_from_probability_map(  # pylint: disable=too-many-arguments
         probability_maps,
         synapse_class,
         output_dir,
-        filename_suffix,
         n_jobs,
     )
 

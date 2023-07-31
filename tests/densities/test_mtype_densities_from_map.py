@@ -169,7 +169,6 @@ class Test_create_from_probability_map:
             [self.data[key] for key in probability_maps_keys],
             synapse_class,
             self.tmpdir.name,
-            "suffix",
             1,
         )
 
@@ -180,7 +179,7 @@ class Test_create_from_probability_map:
         self.call_create(probability_maps_keys, synapse_class)
         tmpdir = self.tmpdir.name
         filepaths = {Path.resolve(f).name for f in Path(tmpdir).glob("*.nrrd")}
-        assert filepaths == {f"{metype}_densities_suffix.nrrd" for metype in metypes}
+        assert filepaths == {f"{metype}_{synapse_class}_densities.nrrd" for metype in metypes}
 
     def test_output_values(self, probability_maps_keys, synapse_class, metypes):
         self.call_create(probability_maps_keys, synapse_class)
@@ -190,7 +189,7 @@ class Test_create_from_probability_map:
             "BP|bIR": np.array([[[1.5, 0.0, 0.0, 0.0, 1.0]]], dtype=float),
         }
         for metype in metypes:
-            filepath = str(Path(tmpdir) / f"{metype}_densities_suffix.nrrd")
+            filepath = str(Path(tmpdir) / f"{metype}_{synapse_class}_densities.nrrd")
             npt.assert_array_almost_equal(
                 VoxelData.load_nrrd(filepath).raw, expected_densities[metype]
             )
@@ -216,7 +215,6 @@ class Test_create_from_probability_map_empty:
                 [self.data["probability_map01"]],
                 "INH",
                 self.tmpdir.name,
-                "suffix",
                 1,
             )
 
@@ -237,7 +235,6 @@ class Test_create_from_probability_map_exceptions:
             [self.data["probability_map01"], self.data["probability_map02"]],
             "all",
             self.tmpdir.name,
-            "suffix",
             1,
         )
 

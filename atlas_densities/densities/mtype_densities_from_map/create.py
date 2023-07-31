@@ -41,7 +41,6 @@ def create_from_probability_map(  # pylint: disable=too-many-arguments
     probability_maps: List["pd.DataFrame"],
     synapse_class: str,
     output_dirpath: str,
-    filename_suffix: str,
     n_jobs: int,
 ) -> None:
     """
@@ -65,7 +64,6 @@ def create_from_probability_map(  # pylint: disable=too-many-arguments
         output_dirpath: path of the directory where to save the volumetric density nrrd files.
             It will be created if it doesn't exist already. It will contain a volumetric density
             file of each metype appearing as column label of `probability_map`.
-        filename_suffix: suffix to add at the end of filenames
         n_jobs: number of jobs to run in parallel
 
     Raises:
@@ -128,7 +126,7 @@ def create_from_probability_map(  # pylint: disable=too-many-arguments
 
         if np.any(metype_density):
             # save density file
-            metype_filename = f"{metype}_densities_{filename_suffix}.nrrd"
+            metype_filename = f"{metype}_{synapse_class}_densities.nrrd"
             filepath = str(Path(output_dirpath) / metype_filename)
             annotation.with_data(metype_density).save_nrrd(filepath)
 
