@@ -526,7 +526,7 @@ def _check_average_densities_sanity(average_densities: pd.DataFrame) -> None:
         )
 
 
-def linear_fitting(
+def linear_fitting(  # pylint: disable=too-many-arguments
     region_map: "RegionMap",
     annotation: AnnotationT,
     neuron_density: FloatArray,
@@ -534,6 +534,7 @@ def linear_fitting(
     average_densities: pd.DataFrame,
     homogenous_regions: pd.DataFrame,
     cell_density_stddevs: Optional[Dict[str, float]] = None,
+    region_name: str = "root",
 ) -> pd.DataFrame:
     """
     Estimate the average densities of every region in `region_map` using a linear fitting
@@ -571,6 +572,7 @@ def linear_fitting(
             its synonym "gad67+" in the output data frame.
         cell_density_stddevs: dict whose keys are brain regions names and whose values are
             standard deviations of average cell densities of the corresponding regions.
+        region_name: (str) name of the root region of interest
 
     Returns:
         tuple (densities, fitting_coefficients)
@@ -585,7 +587,7 @@ def linear_fitting(
     _check_average_densities_sanity(average_densities)
     _check_homogenous_regions_sanity(homogenous_regions)
 
-    hierarchy_info = get_hierarchy_info(region_map, root="root")
+    hierarchy_info = get_hierarchy_info(region_map, root=region_name)
     L.info("Creating a data frame from known densities ...")
     densities = create_dataframe_from_known_densities(
         hierarchy_info["brain_region"].to_list(), average_densities
