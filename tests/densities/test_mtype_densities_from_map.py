@@ -198,8 +198,9 @@ class Test_create_from_probability_map:
             metadata = json.load(file)
         for metype in metypes:
             mtype, etype = metype.split(tested.create.SEPARATOR)
-            assert mtype in metadata["density_files"]
-            assert etype in metadata["density_files"][mtype]
+            assert mtype in metadata["metype2file"]
+            assert etype in metadata["metype2file"][mtype]
+            assert metadata["file2metype"][metadata["metype2file"][mtype][etype]] == [mtype, etype]
         assert synapse_class == metadata["synapse_class"]
 
 

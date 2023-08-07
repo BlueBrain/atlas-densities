@@ -148,7 +148,12 @@ def create_from_probability_map(  # pylint: disable=too-many-arguments
 
     metadata = {
         "synapse_class": synapse_class,
-        "density_files": output_legend,
+        "metype2file": output_legend,
+        "file2metype": {
+            filename: (mtype, etype)
+            for mtype, etypes in output_legend.items()
+            for etype, filename in etypes.items()
+        },
     }
 
     L.info("Saving metadata.")

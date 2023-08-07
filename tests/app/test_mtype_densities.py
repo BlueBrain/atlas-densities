@@ -157,8 +157,9 @@ class Test_mtype_densities_from_probability_map:
 
             with open(str(Path("output_dir") / "metadata.json"), "r") as file:
                 metadata = json.load(file)
-            assert "BP" in metadata["density_files"]
-            assert "bAC" in metadata["density_files"]["BP"]
+            assert "BP" in metadata["metype2file"]
+            assert "bAC" in metadata["metype2file"]["BP"]
+            assert metadata["file2metype"][metadata["metype2file"]["BP"]["bAC"]] == ["BP", "bAC"]
             assert "EXC" == metadata["synapse_class"]
 
     class Test_mtype_densities_from_composition:
