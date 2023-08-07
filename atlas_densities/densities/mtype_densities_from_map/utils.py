@@ -37,7 +37,7 @@ def check_probability_map_sanity(probability_map: "pd.DataFrame") -> None:
             "The sum of each row is not 1.0. Consider renormalizing your input data frame with:\n"
             "df = df.div(np.sum(df, axis=1), axis=0)"
         )
-    if not {synapse_class for _, _, synapse_class in probability_map.index} <= SYNAPSE_CLASSES:
+    if not set(probability_map.index.get_level_values("synapse_class")) <= SYNAPSE_CLASSES:
         raise AtlasDensitiesError(
             "The probability map has invalid value for synapse class."
             f"Only {SYNAPSE_CLASSES} are allowed."
@@ -59,8 +59,8 @@ def _check_probability_map_consistency(
     """
     check_probability_map_sanity(probability_map)
 
-    _, df_molecular_types, _ = zip(*probability_map.index)
-    molecular_types_diff = molecular_types - set(df_molecular_types)
+    df_molecular_types = set(probability_map.index.get_level_values("molecular_type"))
+    molecular_types_diff = molecular_types - df_molecular_types
     if molecular_types_diff:
         L.info(
             "The following molecular types are missing in the probability map: %s",
