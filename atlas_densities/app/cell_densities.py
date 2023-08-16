@@ -668,6 +668,12 @@ def measurements_to_average_densities(
 @app.command()
 @common_atlas_options
 @click.option(
+    "--region-name",
+    type=str,
+    default="root",
+    help="Name of the region in the hierarchy",
+)
+@click.option(
     "--neuron-density-path",
     type=EXISTING_FILE_PATH,
     required=True,
@@ -722,6 +728,7 @@ def measurements_to_average_densities(
 def fit_average_densities(
     hierarchy_path,
     annotation_path,
+    region_name,
     neuron_density_path,
     gene_config_path,
     average_densities_path,
@@ -807,8 +814,8 @@ def fit_average_densities(
         cell_density_stddev = {
             # Use the AIBS name attribute as key (this is a unique identifier in 1.json)
             # (Ex: former key "|root|Basic cell groups and regions|Cerebrum" -> new key: "Cerebrum")
-            region_name.split("|")[-1]: stddev
-            for (region_name, stddev) in cell_density_stddev.items()
+            name.split("|")[-1]: stddev
+            for (name, stddev) in cell_density_stddev.items()
         }
 
     gene_marker_volumes = {
@@ -832,6 +839,7 @@ def fit_average_densities(
         average_densities_df,
         homogenous_regions_df,
         cell_density_stddev,
+        region_name=region_name,
     )
 
     # Turn index into column so as to ease off the save and load operations on csv files
