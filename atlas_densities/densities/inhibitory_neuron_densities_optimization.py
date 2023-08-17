@@ -552,6 +552,7 @@ def create_inhibitory_neuron_densities(  # pylint: disable=too-many-locals
     voxel_volume: float,
     neuron_density: FloatArray,
     average_densities: pd.DataFrame,
+    region_name: str = "root",
 ) -> Dict[str, FloatArray]:
     """
     Create a 3D float array for each cell type that labels a column of `average_densities`.
@@ -598,6 +599,7 @@ def create_inhibitory_neuron_densities(  # pylint: disable=too-many-locals
             cell densities of brain regions and their associated standard deviations. Columns are
             labelled by T and T_standard_deviation for various cell types T. The index of
             `average_densities` is a list of region names.
+        region_name: (str) name of the root region of interest
 
     Returns:
         a dict whose keys are cell types (e.g., "gad67+", "pv+", "sst+" and "vip+") and whose
@@ -609,7 +611,7 @@ def create_inhibitory_neuron_densities(  # pylint: disable=too-many-locals
         linear program cannot be solved.
     """
 
-    hierarchy_info = get_hierarchy_info(RegionMap.from_dict(hierarchy), root="root")
+    hierarchy_info = get_hierarchy_info(RegionMap.from_dict(hierarchy), root=region_name)
     average_densities = resize_average_densities(average_densities, hierarchy_info)
 
     L.info("Initialization of the linear program: started")
@@ -646,9 +648,9 @@ def create_inhibitory_neuron_densities(  # pylint: disable=too-many-locals
     L.info("Initialization of the linear program: finished.")
     if variable_count != 0:  # linprog raises a ValueError if c_row is empty
         c_row = np.zeros((variable_count,), dtype=float)
-        for (region_name, cell_type), index in deltas_map.items():
+        for (name, cell_type), index in deltas_map.items():
             std_name = cell_type + "_standard_deviation"
-            c_row[index] = 1.0 / region_counts.at[region_name, std_name]
+            c_row[index] = 1.0 / region_counts.at[name, std_name]
             assert c_row[index] > 0.0
 
         L.info(

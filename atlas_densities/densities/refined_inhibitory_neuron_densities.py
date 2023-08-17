@@ -369,6 +369,7 @@ def create_inhibitory_neuron_densities(  # pylint: disable=too-many-locals
     voxel_volume: float,
     neuron_density: FloatArray,
     average_densities: "pd.DataFrame",
+    region_name: str = "root",
 ) -> Dict[str, FloatArray]:
     """
     Create a 3D float array for each cell type labelling the columns of `average_densities`.
@@ -409,6 +410,7 @@ def create_inhibitory_neuron_densities(  # pylint: disable=too-many-locals
             cell densities of brain regions and their associated standard deviations. Columns are
             labelled by T and T_standard_deviation for various cell types T. The index of
             `average_densities` is a list of region names.
+        region_name: (str) name of the root region of interest
 
     Returns:
         a dict whose keys are cell types (e.g., "gad67+", "pv+", "sst+" and "vip+") and whose
@@ -418,7 +420,7 @@ def create_inhibitory_neuron_densities(  # pylint: disable=too-many-locals
     """
 
     region_map = RegionMap.from_dict(hierarchy)
-    hierarchy_info = get_hierarchy_info(region_map, root="root")
+    hierarchy_info = get_hierarchy_info(region_map, root=region_name)
     L.info("Computing region volumes ...")
     volumes = compute_region_volumes(annotation, voxel_volume, hierarchy_info)
 
@@ -452,13 +454,13 @@ def create_inhibitory_neuron_densities(  # pylint: disable=too-many-locals
 
     L.info("Filling leaf region volumetric densities ...")
     for region_id in tqdm(hierarchy_leaf_info.index):
-        region_name = hierarchy_leaf_info.brain_region[region_id]
-        if region_name in leaf_region_counts:  # Some leaf regions may be missing
-            density_helper.fill_volumetric_densities(region_id, leaf_region_counts[region_name])
+        name = hierarchy_leaf_info.brain_region[region_id]
+        if name in leaf_region_counts:  # Some leaf regions may be missing
+            density_helper.fill_volumetric_densities(region_id, leaf_region_counts[name])
 
     L.info("Filling remaining volumetric densities ...")
-    for region_name in tqdm(nomansland_counts):
-        region_id = region_map.find(region_name, attr="name").pop()
-        density_helper.fill_volumetric_densities(region_id, nomansland_counts[region_name])
+    for name in tqdm(nomansland_counts):
+        region_id = region_map.find(name, attr="name").pop()
+        density_helper.fill_volumetric_densities(region_id, nomansland_counts[name])
 
     return density_helper.volumetric_densities
