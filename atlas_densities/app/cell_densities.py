@@ -856,6 +856,12 @@ def fit_average_densities(
 @app.command()
 @common_atlas_options
 @click.option(
+    "--region-name",
+    type=str,
+    default="root",
+    help="Name of the region in the hierarchy",
+)
+@click.option(
     "--neuron-density-path",
     type=EXISTING_FILE_PATH,
     required=True,
@@ -888,6 +894,7 @@ def fit_average_densities(
 def inhibitory_neuron_densities(
     hierarchy_path,
     annotation_path,
+    region_name,
     neuron_density_path,
     average_densities_path,
     algorithm,
@@ -953,6 +960,7 @@ def inhibitory_neuron_densities(
         _get_voxel_volume_in_mm3(annotation),
         neuron_density.raw,
         average_densities_df,
+        region_name=region_name,
     )
 
     L.info("Create inhibitory neuron densities: finished")
