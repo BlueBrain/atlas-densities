@@ -9,6 +9,10 @@ import pandas as pd
 
 from atlas_densities.exceptions import AtlasDensitiesError
 
+SYNAPSE_CLASS_INH = "INH"
+SYNAPSE_CLASS_EXC = "EXC"
+SYNAPSE_CLASSES = {SYNAPSE_CLASS_INH, SYNAPSE_CLASS_EXC}
+
 L = logging.getLogger(__name__)
 
 
@@ -23,6 +27,7 @@ def check_probability_map_sanity(probability_map: "pd.DataFrame") -> None:
     Raises:
         AtlasDensitiesError if the sum of each row is not (close to) 1.0 or if `probability_map`
         holds a negative value.
+        AtlasDensitiesError if the synapse_class is not just "INH" or "EXC".
     """
     if not np.all(probability_map >= 0.0):
         raise AtlasDensitiesError("The probability map has negative values.")
@@ -31,6 +36,11 @@ def check_probability_map_sanity(probability_map: "pd.DataFrame") -> None:
         raise AtlasDensitiesError(
             "The sum of each row is not 1.0. Consider renormalizing your input data frame with:\n"
             "df = df.div(np.sum(df, axis=1), axis=0)"
+        )
+    if not set(probability_map.index.get_level_values("synapse_class")) <= SYNAPSE_CLASSES:
+        raise AtlasDensitiesError(
+            "The probability map has invalid value for synapse class."
+            f"Only {SYNAPSE_CLASSES} are allowed."
         )
 
 
@@ -49,8 +59,8 @@ def _check_probability_map_consistency(
     """
     check_probability_map_sanity(probability_map)
 
-    _, df_molecular_types = zip(*probability_map.index)
-    molecular_types_diff = molecular_types - set(df_molecular_types)
+    df_molecular_types = set(probability_map.index.get_level_values("molecular_type"))
+    molecular_types_diff = molecular_types - df_molecular_types
     if molecular_types_diff:
         L.info(
             "The following molecular types are missing in the probability map: %s",

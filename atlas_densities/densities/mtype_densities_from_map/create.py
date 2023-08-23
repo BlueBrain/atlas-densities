@@ -23,6 +23,7 @@ from atlas_densities.densities.mtype_densities_from_map.utils import (
     _check_probability_map_consistency,
     _merge_probability_maps,
 )
+from atlas_densities.exceptions import AtlasDensitiesError
 
 if TYPE_CHECKING:  # pragma: no cover
     import pandas as pd
@@ -33,11 +34,12 @@ SEPARATOR = "|"
 L = logging.getLogger(__name__)
 
 
-def create_from_probability_map(
+def create_from_probability_map(  # pylint: disable=too-many-arguments
     annotation: "VoxelData",
     region_map: "RegionMap",
     molecular_type_densities: Dict[str, FloatArray],
     probability_maps: List["pd.DataFrame"],
+    synapse_class: str,
     output_dirpath: str,
     n_jobs: int,
 ) -> None:
@@ -56,12 +58,13 @@ def create_from_probability_map(
             and whose values are 3D float arrays holding the density fields of the cells of the
             corresponding types (i.e., those cells reacting to the corresponding gene markers).
             Example: {"pv": "pv.nrrd", "sst": "sst.nrd", "vip": "vip.nrrd", "gad67": "gad67.nrrd"}
-        probability_map:
-            data frame whose rows are labeled by regions and molecular types and whose columns are
-            labeled by metypes ('|' separated).
+        probability_maps: list of data frames whose rows are labeled by regions and molecular
+            types and whose columns are labeled by metypes ('|' separated).
+        synapse_class: synapse class to use for density calculation
         output_dirpath: path of the directory where to save the volumetric density nrrd files.
             It will be created if it doesn't exist already. It will contain a volumetric density
             file of each metype appearing as column label of `probability_map`.
+        n_jobs: number of jobs to run in parallel
 
     Raises:
         AtlasBuildingTools error if
@@ -72,6 +75,20 @@ def create_from_probability_map(
     # pylint: disable=too-many-locals
     probability_map = _merge_probability_maps(probability_maps)
 
+    _check_probability_map_consistency(probability_map, set(molecular_type_densities.keys()))
+
+    # filter by synapse class
+    probability_map = probability_map[
+        probability_map.index.get_level_values("synapse_class") == synapse_class
+    ]
+    if probability_map.empty:
+        raise AtlasDensitiesError(
+            f"Filtering probability map by requested synapse_class {synapse_class} "
+            "resulted in empty probability map."
+        )
+    probability_map.index = probability_map.index.droplevel("synapse_class")
+
+    # get info on regions
     region_info = (
         region_map.as_dataframe()
         .reset_index()
@@ -81,13 +98,12 @@ def create_from_probability_map(
     )
     region_acronyms = set(region_info.region)
 
-    _check_probability_map_consistency(probability_map, set(molecular_type_densities.keys()))
-
     region_masks = {
         region_acronym: annotation.raw == region_id
         for _, region_acronym, region_id in region_info.itertuples()
     }
 
+    # ensure output directory exists
     Path(output_dirpath).mkdir(exist_ok=True, parents=True)
 
     def _create_densities_for_metype(metype: str) -> Optional[Tuple[str, str]]:
@@ -110,7 +126,7 @@ def create_from_probability_map(
 
         if np.any(metype_density):
             # save density file
-            metype_filename = f"{metype}_densities.nrrd"
+            metype_filename = f"{metype}_{synapse_class}_densities.nrrd"
             filepath = str(Path(output_dirpath) / metype_filename)
             annotation.with_data(metype_density).save_nrrd(filepath)
 
@@ -121,6 +137,8 @@ def create_from_probability_map(
     returns = Parallel(n_jobs=n_jobs, return_as="generator")(
         delayed(_create_densities_for_metype)(metype) for metype in probability_map.columns
     )
+
+    # construct metadata
     output_legend: Dict[str, Dict[str, str]] = defaultdict(dict)
     for return_value in tqdm(returns, total=len(probability_map.columns)):
         if return_value is not None:
@@ -128,8 +146,13 @@ def create_from_probability_map(
             mtype, etype = metype.split(SEPARATOR)
             output_legend[mtype][etype] = filepath
 
-    L.info("Saving output legend.")
-    output_legend_filename = "output_legend.json"
-    filepath = str(Path(output_dirpath) / output_legend_filename)
+    metadata = {
+        "synapse_class": synapse_class,
+        "density_files": output_legend,
+    }
+
+    L.info("Saving metadata.")
+    metadata_filename = "metadata.json"
+    filepath = str(Path(output_dirpath) / metadata_filename)
     with open(filepath, "w", encoding="utf8") as file:
-        json.dump(output_legend, file, indent=4)
+        json.dump(metadata, file, indent=4)

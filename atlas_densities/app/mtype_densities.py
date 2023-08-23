@@ -49,7 +49,10 @@ from atlas_densities.densities.mtype_densities_from_composition import (
 from atlas_densities.densities.mtype_densities_from_map.create import (
     create_from_probability_map as create_from_map,
 )
-from atlas_densities.densities.mtype_densities_from_map.utils import check_probability_map_sanity
+from atlas_densities.densities.mtype_densities_from_map.utils import (
+    SYNAPSE_CLASSES,
+    check_probability_map_sanity,
+)
 from atlas_densities.densities.mtype_densities_from_profiles import DensityProfileCollection
 from atlas_densities.exceptions import AtlasDensitiesError
 
@@ -214,6 +217,12 @@ def _check_config_sanity(config: dict) -> None:
     help="Name and path to marker: ex: --marker pv path/pv.nrrd",
 )
 @click.option(
+    "--synapse-class",
+    type=click.Choice(list(SYNAPSE_CLASSES), case_sensitive=False),
+    required=True,
+    help="Target synapse class, the other will be skipped.",
+)
+@click.option(
     "--output-dir",
     required=True,
     help="Path to output directory. It will be created if it doesn't exist already.",
@@ -226,11 +235,12 @@ def _check_config_sanity(config: dict) -> None:
     help="Number of jobs to run in parallel.",
 )
 @log_args(L)
-def create_from_probability_map(
+def create_from_probability_map(  # pylint: disable=too-many-arguments
     annotation_path,
     hierarchy_path,
     probability_map,
     marker,
+    synapse_class,
     output_dir,
     n_jobs,
 ):  # pylint: disable=too-many-locals
@@ -251,7 +261,9 @@ def create_from_probability_map(
     for probability_map_path in probability_map:
         L.info("Loading probability map %s", probability_map_path)
         loaded_probability_map = pd.read_csv(probability_map_path)
-        loaded_probability_map.set_index(["region", "molecular_type"], inplace=True)
+        loaded_probability_map.set_index(
+            ["region", "molecular_type", "synapse_class"], inplace=True
+        )
         check_probability_map_sanity(loaded_probability_map)
         probability_maps.append(loaded_probability_map)
 
@@ -279,6 +291,7 @@ def create_from_probability_map(
             for (molecular_type, density) in molecular_type_densities.items()
         },
         probability_maps,
+        synapse_class,
         output_dir,
         n_jobs,
     )

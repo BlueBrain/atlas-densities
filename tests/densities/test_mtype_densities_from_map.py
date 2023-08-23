@@ -35,6 +35,16 @@ def create_from_probability_map_data():
                 "sst",
                 "vip",
             ],
+            "synapse_class": [
+                "EXC",
+                "EXC",
+                "EXC",
+                "EXC",
+                "EXC",
+                "EXC",
+                "EXC",
+                "EXC",
+            ],
             "BP|bAC": [
                 0.0,
                 0.0,
@@ -60,7 +70,7 @@ def create_from_probability_map_data():
     raw_probability_map02 = pd.DataFrame(
         {
             "region": [
-                "AUDd5",
+                "AUDd4",
                 "AUDd5",
                 "AUDd5",
                 "AUDd5",
@@ -68,15 +78,23 @@ def create_from_probability_map_data():
                 "AUDd6b",
             ],
             "molecular_type": [
-                "approx_lamp5",
+                "vip",
                 "pv",
                 "sst",
                 "vip",
                 "approx_lamp5",
                 "approx_lamp5",
             ],
+            "synapse_class": [
+                "INH",
+                "EXC",
+                "INH",
+                "EXC",
+                "INH",
+                "EXC",
+            ],
             "BP|bAC": [
-                0.0,
+                0.2,
                 1.0,
                 1.0,
                 1.0,
@@ -84,7 +102,7 @@ def create_from_probability_map_data():
                 0.4,
             ],
             "BP|bIR": [
-                1.0,
+                0.8,
                 0.0,
                 0.0,
                 0.0,
@@ -95,8 +113,8 @@ def create_from_probability_map_data():
     )
     probability_map01 = raw_probability_map01.copy()
     probability_map02 = raw_probability_map02.copy()
-    probability_map01.set_index(["region", "molecular_type"], inplace=True)
-    probability_map02.set_index(["region", "molecular_type"], inplace=True)
+    probability_map01.set_index(["region", "molecular_type", "synapse_class"], inplace=True)
+    probability_map02.set_index(["region", "molecular_type", "synapse_class"], inplace=True)
 
     return {
         "annotation": VoxelData(
@@ -118,15 +136,38 @@ def create_from_probability_map_data():
     }
 
 
+@pytest.mark.parametrize(
+    "probability_maps_keys, synapse_class, metypes",
+    [
+        (
+            ["probability_map01", "probability_map02"],
+            "EXC",
+            ["BP|bAC", "BP|bIR"],
+        ),
+        (
+            ["probability_map01", "probability_map02"],
+            "INH",
+            [],
+        ),
+        (
+            ["probability_map01"],
+            "EXC",
+            ["BP|bIR"],
+        ),
+    ],
+)
 class Test_create_from_probability_map:
     def setup_method(self, method):
         self.tmpdir = tempfile.TemporaryDirectory()
         self.data = create_from_probability_map_data()
+
+    def call_create(self, probability_maps_keys, synapse_class):
         tested.create.create_from_probability_map(
             self.data["annotation"],
             self.data["region_map"],
             self.data["molecular_type_densities"],
-            [self.data["probability_map01"], self.data["probability_map02"]],
+            [self.data[key] for key in probability_maps_keys],
+            synapse_class,
             self.tmpdir.name,
             1,
         )
@@ -134,21 +175,47 @@ class Test_create_from_probability_map:
     def teardown_method(self, method):
         self.tmpdir.cleanup()
 
-    def test_filenames(self):
+    def test_filenames(self, probability_maps_keys, synapse_class, metypes):
+        self.call_create(probability_maps_keys, synapse_class)
         tmpdir = self.tmpdir.name
         filepaths = {Path.resolve(f).name for f in Path(tmpdir).glob("*.nrrd")}
-        assert filepaths == {"BP|bIR_densities.nrrd", "BP|bAC_densities.nrrd"}
+        assert filepaths == {f"{metype}_{synapse_class}_densities.nrrd" for metype in metypes}
 
-    def test_output_values(self):
+    def test_output_values(self, probability_maps_keys, synapse_class, metypes):
+        self.call_create(probability_maps_keys, synapse_class)
         tmpdir = self.tmpdir.name
         expected_densities = {
             "BP|bAC": np.array([[[0.0, 0.0, 0.0, 2.0, 0.0]]], dtype=float),
             "BP|bIR": np.array([[[1.5, 0.0, 0.0, 0.0, 1.0]]], dtype=float),
         }
-        for mtype in ["BP|bAC", "BP|bIR"]:
-            filepath = str(Path(tmpdir) / f"{mtype}_densities.nrrd")
+        for metype in metypes:
+            filepath = str(Path(tmpdir) / f"{metype}_{synapse_class}_densities.nrrd")
             npt.assert_array_almost_equal(
-                VoxelData.load_nrrd(filepath).raw, expected_densities[mtype]
+                VoxelData.load_nrrd(filepath).raw, expected_densities[metype]
+            )
+        # metadata
+        with open(str(Path(tmpdir) / "metadata.json"), "r") as file:
+            metadata = json.load(file)
+        for metype in metypes:
+            mtype, etype = metype.split(tested.create.SEPARATOR)
+            assert mtype in metadata["density_files"]
+            assert etype in metadata["density_files"][mtype]
+        assert synapse_class == metadata["synapse_class"]
+
+
+class Test_create_from_probability_map_empty:
+    def test_empty_exception(self):
+        self.tmpdir = tempfile.TemporaryDirectory()
+        self.data = create_from_probability_map_data()
+        with pytest.raises(AtlasDensitiesError):
+            tested.create.create_from_probability_map(
+                self.data["annotation"],
+                self.data["region_map"],
+                self.data["molecular_type_densities"],
+                [self.data["probability_map01"]],
+                "INH",
+                self.tmpdir.name,
+                1,
             )
 
 
@@ -166,6 +233,7 @@ class Test_create_from_probability_map_exceptions:
             self.data["region_map"],
             self.data["molecular_type_densities"],
             [self.data["probability_map01"], self.data["probability_map02"]],
+            "all",
             self.tmpdir.name,
             1,
         )
