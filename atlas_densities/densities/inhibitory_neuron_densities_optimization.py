@@ -513,6 +513,7 @@ def _check_variables_consistency(
                             raise AtlasDensitiesError(
                                 f"Cell count estimate of region named '{region_name}' for cell type "
                                 f"{cell_type} was given for certain whereas the cell count of "
+                                f"descendant id {desc_id} is not certain."
                             )
             neuron_count = neuron_counts.loc[id_, "cell_count"]
             if (
