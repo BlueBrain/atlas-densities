@@ -481,7 +481,8 @@ def _check_variables_consistency(
         AtlasDensitiesError if on the the following assumptions is violated:
         - if cell count estimate of a region is known with certainty for a given cell type,
         then the cell count of every descendant region is also known with certainty.
-        - a cell count estimate which is given for certain does not
+        - a neuron subtype count estimate which is given for certain is greater than 
+        its total neuron count estimate counterpart.
     """
     cell_count_tolerance = 1e-2  # absolute tolerance to rule out round-off errors
     for region_name, id_, id_set in zip(
