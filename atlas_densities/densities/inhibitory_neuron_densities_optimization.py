@@ -493,7 +493,7 @@ def _check_variables_consistency(
                 for desc_id in id_set:
                     if np.isnan(x_result.loc[desc_id, cell_type]):
                         if ((deltas.loc[region_name, cell_type] in [0.0, np.inf]) and  
-                           (x_result.loc[id_, cell_type] == 0.0) or (np.isnan(x_result.loc[id_, cell_type]))
+                           ((x_result.loc[id_, cell_type] == 0.0) or (np.isnan(x_result.loc[id_, cell_type])))
                            ): 
                             # If the region's cell count value was set to 0 because the region does 
                             # not exist we don't have to raise an error. Instead of x_result
