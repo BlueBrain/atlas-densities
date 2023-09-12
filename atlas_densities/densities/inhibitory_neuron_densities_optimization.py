@@ -492,21 +492,20 @@ def _check_variables_consistency(
             if np.isfinite(deltas.loc[region_name, cell_type]):
                 for desc_id in id_set:
                     if np.isnan(x_result.loc[desc_id, cell_type]):
-                        if ((deltas.loc[region_name, cell_type] in [0.0, np.inf]) & 
-                           (x_result.loc[id_, cell_type] == 0.0) or 
-                           (np.isnan(x_result.loc[id_, cell_type]))):
-                            ''' 
-                            If the region's cell count value was set to 0 because the region does 
-                            not exist we don't have to raise an error. Instead of x_result
-                            volumes.loc[id_, 'volume'] == 0.0 would be a better condition.. '''
+                        if ((deltas.loc[region_name, cell_type] in [0.0, np.inf]) and  
+                           (x_result.loc[id_, cell_type] == 0.0) or (np.isnan(x_result.loc[id_, cell_type]))
+                           ): 
+                            # If the region's cell count value was set to 0 because the region does 
+                            # not exist we don't have to raise an error. Instead of x_result
+                            # volumes.loc[id_, 'volume'] == 0.0 would be a better condition..
                             deltas.loc[region_name, cell_type] = np.inf
                             x_result.loc[id_, cell_type] = np.nan
                             warnings.warn(
-                                f"Cell count estimate of region named "
+                                "Cell count estimate of region named "
                                 f"'{region_name}' for cell type {cell_type} was given 0 for "
                                 f"its volume is 0 whereas the cell count of descendant id {desc_id} "
-                                f"is not certain. Cell count estimate for this region is thus set "
-                                f"to np.nan to avoid inconsistency.",
+                                "is not certain. Cell count estimate for this region is thus set "
+                                "to np.nan to avoid inconsistency.",
                                 AtlasDensitiesWarning,
                                 )
                             
