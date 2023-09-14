@@ -20,9 +20,9 @@ setup(
         "click>=7.0,<=8.1.3",
         "cgal-pybind>=0.1.1",
         "joblib>=1.3.0",
-        "numpy>=1.15.0",
+        "numpy>=1.15.0,<=1.24.0",  # to reduce errors when pandas uses new numpy
         "openpyxl>=3.0.3",
-        "pandas>=1.0.3",
+        "pandas>=1.0.3,<=2.0.0",  # because https://github.com/pandas-dev/pandas/pull/54954 has broken csv parsing
         "PyYAML>=5.3.1",
         # Since version 1.6.0, scipy.optimize.linprog has fast, new methods for large, sparse problems
         # from the HiGHS library. We use the "highs" method in the densities module.

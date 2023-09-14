@@ -481,10 +481,11 @@ def _check_variables_consistency(
         AtlasDensitiesError if on the the following assumptions is violated:
         - if cell count estimate of a region is known with certainty for a given cell type,
         then the cell count of every descendant region is also known with certainty.
-        - a neuron subtype count estimate which is given for certain is greater than 
+        - a neuron subtype count estimate which is given for certain is greater than
         its total neuron count estimate counterpart.
     """
     cell_count_tolerance = 1e-2  # absolute tolerance to rule out round-off errors
+    # pylint: disable=too-many-nested-blocks
     for region_name, id_, id_set in zip(
         deltas.index, hierarchy_info.index, hierarchy_info["descendant_id_set"]
     ):
@@ -492,10 +493,11 @@ def _check_variables_consistency(
             if np.isfinite(deltas.loc[region_name, cell_type]):
                 for desc_id in id_set:
                     if np.isnan(x_result.loc[desc_id, cell_type]):
-                        if ((deltas.loc[region_name, cell_type] in [0.0, np.inf]) and  
-                           ((x_result.loc[id_, cell_type] == 0.0) or (np.isnan(x_result.loc[id_, cell_type])))
-                           ): 
-                            # If the region's cell count value was set to 0 because the region does 
+                        if (deltas.loc[region_name, cell_type] in [0.0, np.inf]) and (
+                            (x_result.loc[id_, cell_type] == 0.0)
+                            or (np.isnan(x_result.loc[id_, cell_type]))
+                        ):
+                            # If the region's cell count value was set to 0 because the region does
                             # not exist we don't have to raise an error. Instead of x_result
                             # volumes.loc[id_, 'volume'] == 0.0 would be a better condition..
                             deltas.loc[region_name, cell_type] = np.inf
@@ -503,15 +505,15 @@ def _check_variables_consistency(
                             warnings.warn(
                                 "Cell count estimate of region named "
                                 f"'{region_name}' for cell type {cell_type} was given 0 for "
-                                f"its volume is 0 whereas the cell count of descendant id {desc_id} "
+                                f"its volume is 0 but the cell count of descendant id {desc_id} "
                                 "is not certain. Cell count estimate for this region is thus set "
                                 "to np.nan to avoid inconsistency.",
                                 AtlasDensitiesWarning,
-                                )
-                            
+                            )
+
                         else:
                             raise AtlasDensitiesError(
-                                f"Cell count estimate of region named '{region_name}' for cell type "
+                                f"Cell count estimate of region '{region_name}' for cell type "
                                 f"{cell_type} was given for certain whereas the cell count of "
                                 f"descendant id {desc_id} is not certain."
                             )
