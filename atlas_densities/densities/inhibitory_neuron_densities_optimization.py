@@ -190,7 +190,6 @@ def set_known_values(
                     x_result.loc[desc_only, cell_type].isnull().all() and
                     x_result.loc[id_, cell_type] == 0
                 ):
-                print(region_name, id_, cell_type, x_result.loc[id_, cell_type])
                 deltas.at[region_name, cell_type] = SKIP
                 x_result.at[id_, cell_type] = np.nan
 
