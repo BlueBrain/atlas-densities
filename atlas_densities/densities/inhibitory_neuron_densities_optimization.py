@@ -130,6 +130,7 @@ def set_known_values(
         deltas.loc[desc_names, cell_type] = 0.0
 
     L.info("Preparing variables layout ...")
+    #Create 2 df-s with only np.nans, next we will update this based on assumptions
     x_result = pd.DataFrame(
         {cell_type: np.full(len(id_counts), KEEP) for cell_type in cell_types},
         index=id_counts.index,  # indexed by integer identifiers
@@ -157,6 +158,7 @@ def set_known_values(
             region_counts.at[region_name, "gad67+_standard_deviation"], 0.0, atol=stddev_tolerance
         ) and np.isclose(region_counts.at[region_name, "gad67+"], 0.0, atol=stddev_tolerance):
             for cell_type in cell_types:
+                #(Basically, if GAD is 0 then every other inh neuron type should be zero..)
                 _zero_descendants(id_, cell_type, x_result, deltas, hierarchy_info)
 
     # Set the (possibly non-zero) cell count estimates which are given with certainty.
@@ -178,6 +180,19 @@ def set_known_values(
                 # are used as definitive estimates.
                 x_result.at[id_, cell_type] = id_counts.at[id_, cell_type]
                 deltas.at[region_name, cell_type] = 0.0
+                # IF the region is not empty of leaf regions 
+                # AND all its leaf regions are np.nan 
+                # AND the region's cell count is 0:
+                # Revert standard deviation to np.inf i.e. var is omitted
+                # Since cell count i.e. literature value was changed to 0 we change it to np.nan
+                if (
+                    not x_result.loc[desc_only, cell_type].empty and
+                    x_result.loc[desc_only, cell_type].isnull().all() and
+                    x_result.loc[id_, cell_type] == 0
+                ):
+                print(region_name, id_, cell_type, x_result.loc[id_, cell_type])
+                deltas.at[region_name, cell_type] = SKIP
+                x_result.at[id_, cell_type] = np.nan
 
     return x_result, deltas
 
@@ -493,30 +508,11 @@ def _check_variables_consistency(
             if np.isfinite(deltas.loc[region_name, cell_type]):
                 for desc_id in id_set:
                     if np.isnan(x_result.loc[desc_id, cell_type]):
-                        if (deltas.loc[region_name, cell_type] in [0.0, np.inf]) and (
-                            (x_result.loc[id_, cell_type] == 0.0)
-                            or (np.isnan(x_result.loc[id_, cell_type]))
-                        ):
-                            # If the region's cell count value was set to 0 because the region does
-                            # not exist we don't have to raise an error. Instead of x_result
-                            # volumes.loc[id_, 'volume'] == 0.0 would be a better condition..
-                            deltas.loc[region_name, cell_type] = np.inf
-                            x_result.loc[id_, cell_type] = np.nan
-                            warnings.warn(
-                                "Cell count estimate of region named "
-                                f"'{region_name}' for cell type {cell_type} was given 0 for "
-                                f"its volume is 0 but the cell count of descendant id {desc_id} "
-                                "is not certain. Cell count estimate for this region is thus set "
-                                "to np.nan to avoid inconsistency.",
-                                AtlasDensitiesWarning,
-                            )
-
-                        else:
-                            raise AtlasDensitiesError(
-                                f"Cell count estimate of region '{region_name}' for cell type "
-                                f"{cell_type} was given for certain whereas the cell count of "
-                                f"descendant id {desc_id} is not certain."
-                            )
+                        raise AtlasDensitiesError(
+                            f"Cell count estimate of region '{region_name}' for cell type "
+                            f"{cell_type} was given for certain whereas the cell count of "
+                            f"descendant id {desc_id} is not certain."
+                        )
             neuron_count = neuron_counts.loc[id_, "cell_count"]
             if (
                 not np.isnan(x_result.loc[id_, cell_type])
