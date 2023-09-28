@@ -89,6 +89,7 @@ def compute_inhibitory_neuron_density(  # pylint: disable=too-many-arguments
     neuron_density: FloatArray,
     inhibitory_proportion: Optional[float] = None,
     inhibitory_data: Optional[InhibitoryData] = None,
+    root_region_name: Optional[str] = None,
 ) -> FloatArray:
     """
     Compute the inhibitory neuron density using a prescribed neuron count and the overall neuron
@@ -115,6 +116,7 @@ def compute_inhibitory_neuron_density(  # pylint: disable=too-many-arguments
                 assigning the proportion of ihnibitory neurons in each group named by a key string.
             'neuron_count': the total number of inhibitory neurons (float).
             Used only if `inhibitory_proportion` is None.
+        root_region_name(str): Name of the root region in the hierarchy
 
     Returns:
         float64 array of shape (W, H, D) with non-negative entries.
@@ -138,7 +140,7 @@ def compute_inhibitory_neuron_density(  # pylint: disable=too-many-arguments
                 "Either inhibitory_proportion or inhibitory_data should be provided"
                 ". Both are None."
             )
-        group_ids = get_group_ids(region_map)
+        group_ids = get_group_ids(region_map, root_region_name=root_region_name)
         inhibitory_data["region_masks"] = get_region_masks(group_ids, annotation)
     else:
         inhibitory_data = {

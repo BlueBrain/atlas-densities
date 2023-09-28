@@ -101,7 +101,7 @@ def test_compensate_cell_overlap():
 
 def test_get_group_ids():
     region_map = RegionMap.load_json(Path(TESTS_PATH, "1.json"))
-    group_ids = tested.get_group_ids(region_map)
+    group_ids = tested.get_group_ids(region_map, root_region_name="root")
     for ids in group_ids.values():
         assert len(ids) > 0
     assert len(group_ids["Molecular layer"] & group_ids["Purkinje layer"]) == 0
@@ -117,7 +117,7 @@ def test_get_group_ids():
 
 def test_get_region_masks():
     region_map = RegionMap.load_json(Path(TESTS_PATH, "1.json"))
-    group_ids = tested.get_group_ids(region_map)
+    group_ids = tested.get_group_ids(region_map, root_region_name="root")
     annotation_raw = np.arange(27000).reshape(30, 30, 30)
     region_masks = tested.get_region_masks(group_ids, annotation_raw)
     brain_mask = np.logical_or(

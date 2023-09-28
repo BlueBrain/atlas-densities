@@ -97,6 +97,7 @@ def test_compute_inhibitory_neuron_density():
                     data["nrn1"],
                     neuron_density,
                     inhibitory_data=data["inhibitory_data"],
+                    root_region_name="root",
                 )
                 expected = np.array([[[0.0, 0.0, 4.0, 25.0 / 62.0, 99.0 / 62.0]]]) / voxel_volume
                 npt.assert_almost_equal(inhibitory_neuron_density, expected)
@@ -112,6 +113,7 @@ def test_compute_inhibitory_neuron_density_exception():
             np.array([[[1]]], dtype=float),
             np.array([[[1]]], dtype=float),
             np.array([[[1]]], dtype=float),
+            root_region_name="root",
         )
     assert "inhibitory_proportion" in str(error_)
     assert "inhibitory_data" in str(error_)
@@ -160,6 +162,7 @@ def test_compute_inhibitory_density_large_input():
         data["nrn1"],
         data["neuron_density"],
         inhibitory_data=data["inhibitory_data"],
+        root_region_name="root",
     )
 
     assert np.all(inhibitory_neuron_density <= data["neuron_density"])

@@ -2,7 +2,7 @@ from pathlib import Path
 
 import numpy as np
 import numpy.testing as npt
-from voxcell import RegionMap, VoxelData
+from voxcell import RegionMap
 
 import atlas_densities.densities.glia_densities as tested
 
@@ -10,15 +10,37 @@ TESTS_PATH = Path(__file__).parent.parent
 
 
 def test_compute_glia_cell_counts_per_voxel():
-    group_ids = {
-        "Purkinje layer": set({1, 2}),
-        "Fiber tracts group": set({3, 6}),
-    }
+    region_map = RegionMap.from_dict(
+        {
+            "id": 997,
+            "acronym": "root",
+            "name": "root",
+            "children": [
+                {
+                    "id": 1,
+                    "name": "1 Purkinje layer",
+                    "acronym": "pl1",
+                    "children": [
+                        {"id": 2, "name": "2 Purkinje layer", "acronym": "pl2", "children": []}
+                    ],
+                },
+                {
+                    "id": 3,
+                    "name": "3 Fiber tracts group",
+                    "acronym": "ft3",
+                    "children": [
+                        {"id": 6, "name": "6 fiber tracts group", "acronym": "tf6", "children": []}
+                    ],
+                },
+            ],
+        }
+    )
+
     annotation = np.array([[[1, 10, 10, 2, 3]]], dtype=np.uint32)
     cell_density = np.array([[[0.1, 0.5, 0.75, 0.1, 1.0]]], dtype=float)
     glia_density = np.array([[[0.15, 0.1, 0.8, 0.2, 0.8]]], dtype=float)
     corrected_glia_density = tested.compute_glia_cell_counts_per_voxel(
-        2, group_ids, annotation, glia_density, cell_density, copy=False
+        2, region_map, annotation, glia_density, cell_density, copy=False
     )
     expected = np.array([[[0.0, 0.25, 0.75, 0.0, 1.0]]], dtype=float)
     npt.assert_allclose(corrected_glia_density, expected, rtol=1e-2)
@@ -29,7 +51,7 @@ def test_compute_glia_cell_counts_per_voxel():
     glia_density = np.array([[[0.15, 0.1, 0.2, 0.8, 0.8]]], dtype=float)
     glia_density_copy = glia_density.copy()
     corrected_glia_density = tested.compute_glia_cell_counts_per_voxel(
-        2, group_ids, annotation, glia_density, cell_density
+        2, region_map, annotation, glia_density, cell_density
     )
     expected = np.array([[[0.0, 1.0 / 3.0, 2.0 / 3.0, 0.0, 1.0]]], dtype=float)
     npt.assert_allclose(corrected_glia_density, expected, rtol=1e-2)
@@ -48,14 +70,11 @@ def test_glia_cell_counts_per_voxel_input():
     glia_cell_count = 25000
     glia_density = rng.random(annotation.shape).reshape(shape)
     glia_density[0][0][0] = 0.0  # cell density outside the brain should be null.
-    group_ids = {
-        "Purkinje layer": set({1, 2, 7, 11, 20, 25, 33, 200, 1000, 31, 16}),
-        "Fiber tracts group": set({3, 6, 14, 56, 62, 88, 279, 2200, 5667, 7668}),
-    }
+    region_map = RegionMap.load_json(Path(TESTS_PATH, "1.json"))
 
     output_glia_density = tested.compute_glia_cell_counts_per_voxel(
         glia_cell_count,
-        group_ids,
+        region_map,
         annotation,
         glia_density,
         cell_density,
