@@ -1,7 +1,6 @@
 """Functions to compute the overall mouse brain cell density.
 """
-
-from typing import Dict
+from __future__ import annotations
 
 import numpy as np
 from atlas_commons.typing import AnnotationT, BoolArray, FloatArray
@@ -17,9 +16,9 @@ from atlas_densities.densities.utils import (
 
 
 def fix_purkinje_layer_intensity(
-    region_map: "RegionMap",
+    group_ids: dict[str, set[int]],
     annotation: AnnotationT,
-    region_masks: Dict[str, BoolArray],
+    region_masks: dict[str, BoolArray],
     cell_intensity: FloatArray,
 ) -> None:
     """
@@ -29,7 +28,8 @@ def fix_purkinje_layer_intensity(
     The array `cell_intensity` is modified in place.
 
     Args:
-        region_map: object to navigate the mouse brain regions hierarchy.
+        group_ids: a dictionary whose keys are group names and whose values are
+            sets of AIBS structure identifiers.
         annotation: integer array of shape (W, H, D) enclosing the AIBS annotation of
             the whole mouse brain.
         region_masks: A dictionary whose keys are region group names and whose values are
@@ -40,8 +40,8 @@ def fix_purkinje_layer_intensity(
             way that the Purkinje layer has a constant intensity value.
     """
 
-    group_ids = get_group_ids(region_map)
     purkinje_layer_mask = np.isin(annotation, list(group_ids["Purkinje layer"]))
+
     # Force Purkinje Layer regions of the Cerebellum group to have a constant intensity
     # equal to the average intensity of the complement.
     # pylint: disable=fixme
@@ -106,7 +106,7 @@ def compute_cell_density(
 
     group_ids = get_group_ids(region_map)
     region_masks = get_region_masks(group_ids, annotation)
-    fix_purkinje_layer_intensity(region_map, annotation, region_masks, nissl)
+    fix_purkinje_layer_intensity(group_ids, annotation, region_masks, nissl)
     non_zero_nissl = nissl > 0
     for group, mask in region_masks.items():
         mask = np.logical_and(non_zero_nissl, mask)

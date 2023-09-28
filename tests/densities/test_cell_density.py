@@ -89,7 +89,7 @@ def test_cell_density_options():
         actual = tested.compute_cell_density(region_map, annotation, voxel_volume, nissl)
         expected_intensity = nissl.copy()
         tested.fix_purkinje_layer_intensity(
-            region_map, annotation, cell_counts(), expected_intensity
+            group_ids, annotation, cell_counts(), expected_intensity
         )
         for group, mask in region_masks.items():
             expected_intensity[mask] = nissl[mask] * (cell_counts()[group] / np.sum(nissl[mask]))
