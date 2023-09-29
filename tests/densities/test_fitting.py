@@ -423,6 +423,25 @@ def get_hierarchy():
                 "name": "Hippocampal formation",
                 "children": [],
             },
+            {
+                "id": 42,
+                "acronym": "PKL",
+                "name": "Purkinje layer",
+                "children": [],
+            },
+            {
+                "id": 38,
+                "acronym": "CCTX",
+                "name": "Cerebellar cortex",
+                "children": [
+                    {
+                        "id": 37,
+                        "acronym": "MLL",
+                        "name": "molecular layer",
+                        "children": [],
+                    },
+                ],
+            },
         ],
     }
 
@@ -494,7 +513,7 @@ def test_linear_fitting():
         )
         warnings_ = [w for w in warnings_ if isinstance(w.message, AtlasDensitiesWarning)]
         # Three warnings for recording NaN coefficients, three warnings for using them
-        assert len(warnings_) == 6
+        assert len(warnings_) == 9
 
     assert np.allclose(fitting_maps["Rest"]["pv+"]["coefficient"], 2.0 / 3.0)
 

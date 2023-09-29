@@ -26,7 +26,7 @@ def test_compute_glia_cell_counts_per_voxel():
                 },
                 {
                     "id": 3,
-                    "name": "3 Fiber tracts group",
+                    "name": "fiber tracts",
                     "acronym": "ft3",
                     "children": [
                         {"id": 6, "name": "6 fiber tracts group", "acronym": "tf6", "children": []}

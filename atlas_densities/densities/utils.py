@@ -336,6 +336,7 @@ def get_fiber_tract_ids(region_map: "RegionMap") -> set[int]:
         | region_map.find("Basic cell groups and regions", attr="name")
         | region_map.find("Cerebellum", attr="name")
     )
+    assert fiber_tracts_ids, "Missing ids in Fiber tracts"
     return fiber_tracts_ids
 
 
@@ -345,11 +346,12 @@ def get_purkinje_layer_ids(region_map: "RegionMap") -> set[int]:
         region_map: object to navigate the mouse brain regions hierarchy
     """
     purkinje_layer_ids = region_map.find("@.*Purkinje layer", attr="name", with_descendants=True)
+    assert purkinje_layer_ids, "Missing ids in Purkinje layer"
     return purkinje_layer_ids
 
 
 def get_group_ids(
-    region_map: "RegionMap", cleanup_rest: bool = False, root_region_name: str | None = "root"
+    region_map: "RegionMap", cleanup_rest: bool = False, root_region_name: str | None = None
 ) -> dict[str, set[int]]:
     """
     Get AIBS structure ids for several region groups of interest.
@@ -368,6 +370,7 @@ def get_group_ids(
         A dictionary whose keys are region group names and whose values are
         sets of structure identifiers.
     """
+    # pylint: disable=too-many-locals
     cerebellum_group_ids = region_map.find(
         "Cerebellum", attr="name", with_descendants=True
     ) | region_map.find("arbor vitae", attr="name", with_descendants=True)
@@ -383,6 +386,7 @@ def get_group_ids(
         "@.*molecular layer", attr="name", with_descendants=True
     )
     rest_ids = region_map.find(root_region_name, attr="name", with_descendants=True)
+    assert rest_ids, f"Did not find any ids in {root_region_name}"
     rest_ids -= cerebellum_group_ids | isocortex_group_ids
 
     if cleanup_rest:
@@ -393,7 +397,7 @@ def get_group_ids(
         ascendant_ids |= set(region_map.get(cerebellum_id, attr="id", with_ascendants=True))
         rest_ids -= ascendant_ids
 
-    return {
+    ret = {
         "Cerebellum group": cerebellum_group_ids,
         "Isocortex group": isocortex_group_ids,
         "Fiber tracts group": fiber_tracts_ids,
@@ -402,6 +406,9 @@ def get_group_ids(
         "Cerebellar cortex": cerebellar_cortex_ids,
         "Rest": rest_ids,
     }
+    for name, ids in ret.items():
+        assert ids, f"Missing ids in {name}"
+    return ret
 
 
 def get_group_names(
