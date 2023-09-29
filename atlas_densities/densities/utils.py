@@ -1,6 +1,7 @@
 """Utility functions for cell density computation."""
+from __future__ import annotations
 
-from typing import TYPE_CHECKING, Dict, Set
+from typing import TYPE_CHECKING
 from warnings import warn
 
 import numpy as np
@@ -323,7 +324,35 @@ def constrain_cell_counts_per_voxel(  # pylint: disable=too-many-arguments, too-
     return cell_counts
 
 
-def get_group_ids(region_map: "RegionMap", cleanup_rest: bool = False) -> Dict[str, Set[int]]:
+def get_fiber_tract_ids(region_map: "RegionMap") -> set[int]:
+    """
+    Args:
+        region_map: object to navigate the mouse brain regions hierarchy
+    """
+    fiber_tracts_ids = (
+        region_map.find("fiber tracts", attr="name", with_descendants=True)
+        | region_map.find("grooves", attr="name", with_descendants=True)
+        | region_map.find("ventricular systems", attr="name", with_descendants=True)
+        | region_map.find("Basic cell groups and regions", attr="name")
+        | region_map.find("Cerebellum", attr="name")
+    )
+    assert fiber_tracts_ids, "Missing ids in Fiber tracts"
+    return fiber_tracts_ids
+
+
+def get_purkinje_layer_ids(region_map: "RegionMap") -> set[int]:
+    """
+    Args:
+        region_map: object to navigate the mouse brain regions hierarchy
+    """
+    purkinje_layer_ids = region_map.find("@.*Purkinje layer", attr="name", with_descendants=True)
+    assert purkinje_layer_ids, "Missing ids in Purkinje layer"
+    return purkinje_layer_ids
+
+
+def get_group_ids(
+    region_map: "RegionMap", cleanup_rest: bool = False, root_region_name: str | None = None
+) -> dict[str, set[int]]:
     """
     Get AIBS structure ids for several region groups of interest.
 
@@ -341,6 +370,7 @@ def get_group_ids(region_map: "RegionMap", cleanup_rest: bool = False) -> Dict[s
         A dictionary whose keys are region group names and whose values are
         sets of structure identifiers.
     """
+    # pylint: disable=too-many-locals
     cerebellum_group_ids = region_map.find(
         "Cerebellum", attr="name", with_descendants=True
     ) | region_map.find("arbor vitae", attr="name", with_descendants=True)
@@ -349,19 +379,14 @@ def get_group_ids(region_map: "RegionMap", cleanup_rest: bool = False) -> Dict[s
         | region_map.find("Entorhinal area", attr="name", with_descendants=True)
         | region_map.find("Piriform area", attr="name", with_descendants=True)
     )
-    purkinje_layer_ids = region_map.find("@.*Purkinje layer", attr="name", with_descendants=True)
-    fiber_tracts_ids = (
-        region_map.find("fiber tracts", attr="name", with_descendants=True)
-        | region_map.find("grooves", attr="name", with_descendants=True)
-        | region_map.find("ventricular systems", attr="name", with_descendants=True)
-        | region_map.find("Basic cell groups and regions", attr="name")
-        | region_map.find("Cerebellum", attr="name")
-    )
+    purkinje_layer_ids = get_purkinje_layer_ids(region_map)
+    fiber_tracts_ids = get_fiber_tract_ids(region_map)
     cerebellar_cortex_ids = region_map.find("Cerebellar cortex", attr="name", with_descendants=True)
     molecular_layer_ids = cerebellar_cortex_ids & region_map.find(
         "@.*molecular layer", attr="name", with_descendants=True
     )
-    rest_ids = region_map.find("root", attr="name", with_descendants=True)
+    rest_ids = region_map.find(root_region_name, attr="name", with_descendants=True)
+    assert rest_ids, f"Did not find any ids in {root_region_name}"
     rest_ids -= cerebellum_group_ids | isocortex_group_ids
 
     if cleanup_rest:
@@ -372,7 +397,7 @@ def get_group_ids(region_map: "RegionMap", cleanup_rest: bool = False) -> Dict[s
         ascendant_ids |= set(region_map.get(cerebellum_id, attr="id", with_ascendants=True))
         rest_ids -= ascendant_ids
 
-    return {
+    ret = {
         "Cerebellum group": cerebellum_group_ids,
         "Isocortex group": isocortex_group_ids,
         "Fiber tracts group": fiber_tracts_ids,
@@ -381,9 +406,14 @@ def get_group_ids(region_map: "RegionMap", cleanup_rest: bool = False) -> Dict[s
         "Cerebellar cortex": cerebellar_cortex_ids,
         "Rest": rest_ids,
     }
+    for name, ids in ret.items():
+        assert ids, f"Missing ids in {name}"
+    return ret
 
 
-def get_group_names(region_map: "RegionMap", cleanup_rest: bool = False) -> Dict[str, Set[str]]:
+def get_group_names(
+    region_map: "RegionMap", cleanup_rest: bool = False, root_region_name: str | None = None
+) -> dict[str, set[str]]:
     """
     Get AIBS names for regions in several region groups of interest.
 
@@ -399,7 +429,7 @@ def get_group_names(region_map: "RegionMap", cleanup_rest: bool = False) -> Dict
         sets of brain region names.
     """
 
-    group_ids = get_group_ids(region_map, cleanup_rest)
+    group_ids = get_group_ids(region_map, cleanup_rest, root_region_name)
 
     return {
         group_name: {region_map.get(id_, attr="name") for id_ in group_ids[group_name]}
@@ -408,8 +438,8 @@ def get_group_names(region_map: "RegionMap", cleanup_rest: bool = False) -> Dict
 
 
 def get_region_masks(
-    group_ids: Dict[str, Set[int]], annotation: FloatArray
-) -> Dict[str, BoolArray]:
+    group_ids: dict[str, set[int]], annotation: FloatArray
+) -> dict[str, BoolArray]:
     """
     Get the boolean masks of several region groups of interest.
 
@@ -434,7 +464,7 @@ def get_region_masks(
     }
 
 
-def get_aibs_region_names(region_map: "RegionMap") -> Set[str]:
+def get_aibs_region_names(region_map: "RegionMap") -> set[str]:
     """
     Retrieve the names of every region in `region_map`.
 

@@ -620,7 +620,7 @@ def linear_fitting(  # pylint: disable=too-many-arguments
 
     L.info("Getting group names ...")
     # We want group region names to be stable under taking descendants
-    groups = get_group_names(region_map, cleanup_rest=True)
+    groups = get_group_names(region_map, cleanup_rest=True, root_region_name=region_name)
 
     L.info("Computing fitting coefficients ...")
     fitting_coefficients = compute_fitting_coefficients(groups, average_intensities, densities)

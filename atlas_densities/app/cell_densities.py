@@ -140,8 +140,14 @@ def app(verbose):
     help="Path where to write the output cell density nrrd file."
     "A voxel value is a number of cells per mm^3",
 )
+@click.option(
+    "--root-region-name",
+    type=str,
+    default="root",
+    help="Name of the region in the hierarchy",
+)
 @log_args(L)
-def cell_density(annotation_path, hierarchy_path, nissl_path, output_path):
+def cell_density(annotation_path, hierarchy_path, nissl_path, output_path, root_region_name):
     """Compute and save the overall mouse brain cell density.
 
     The input Nissl stain volume of AIBS is turned into an actual density field complying with
@@ -174,6 +180,7 @@ def cell_density(annotation_path, hierarchy_path, nissl_path, output_path):
         annotation.raw,
         _get_voxel_volume_in_mm3(annotation),
         nissl.raw,
+        root_region_name=root_region_name,
     )
     nissl.with_data(overall_cell_density).save_nrrd(output_path)
 
@@ -380,6 +387,12 @@ def glia_cell_densities(
     help="Path to the directory where to write the output cell density nrrd files."
     " It will be created if it doesn't exist already.",
 )
+@click.option(
+    "--root-region-name",
+    type=str,
+    default="root",
+    help="Name of the region in the hierarchy",
+)
 @log_args(L)
 def inhibitory_and_excitatory_neuron_densities(
     annotation_path,
@@ -389,6 +402,7 @@ def inhibitory_and_excitatory_neuron_densities(
     neuron_density_path,
     inhibitory_neuron_counts_path,
     output_dir,
+    root_region_name,
 ):  # pylint: disable=too-many-arguments
     """Compute and save the inhibitory and excitatory neuron densities.
 
@@ -442,6 +456,7 @@ def inhibitory_and_excitatory_neuron_densities(
         VoxelData.load_nrrd(nrn1_path).raw,
         neuron_density.raw,
         inhibitory_data=inhibitory_data(inhibitory_df),
+        root_region_name=root_region_name,
     )
 
     if not Path(output_dir).exists():

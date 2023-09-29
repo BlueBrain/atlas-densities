@@ -25,9 +25,15 @@ def test_compute_cell_density():
     nissl = rng.random(annotation.shape)
     nissl[0][0][0] = 1e-5  # the outside voxels' intensity should be low
 
-    cell_density = tested.compute_cell_density(region_map, annotation, voxel_volume, nissl)
+    cell_density = tested.compute_cell_density(
+        region_map,
+        annotation,
+        voxel_volume,
+        nissl,
+        root_region_name="root",
+    )
     # Each group has a prescribed cell count
-    group_ids = get_group_ids(region_map)
+    group_ids = get_group_ids(region_map, root_region_name="root")
     region_masks = get_region_masks(group_ids, annotation)
     for group, mask in region_masks.items():
         npt.assert_array_almost_equal(
@@ -55,9 +61,10 @@ def test_cell_density_with_soma_correction():
         annotation,
         voxel_volume,
         nissl,
+        root_region_name="root",
     )
     # Each group has a prescribed cell count
-    group_ids = get_group_ids(region_map)
+    group_ids = get_group_ids(region_map, root_region_name="root")
     region_masks = get_region_masks(group_ids, annotation)
     for group, mask in region_masks.items():
         npt.assert_array_almost_equal(
@@ -79,17 +86,23 @@ def test_cell_density_options():
     rng = np.random.default_rng(seed=42)
     nissl = rng.random(annotation.shape)
     nissl[0][0][0] = 1e-5  # the outside voxels' intensity should be low
-    group_ids = get_group_ids(region_map)
+    group_ids = get_group_ids(region_map, root_region_name="root")
     region_masks = get_region_masks(group_ids, annotation)
 
     with patch(
-        "atlas_densities.densities.cell_density.compensate_cell_overlap",
+        "atlas_densities.densities.utils.compensate_cell_overlap",
         return_value=nissl,
     ):
-        actual = tested.compute_cell_density(region_map, annotation, voxel_volume, nissl)
+        actual = tested.compute_cell_density(
+            region_map,
+            annotation,
+            voxel_volume,
+            nissl,
+            root_region_name="root",
+        )
         expected_intensity = nissl.copy()
         tested.fix_purkinje_layer_intensity(
-            region_map, annotation, cell_counts(), expected_intensity
+            group_ids, annotation, cell_counts(), expected_intensity
         )
         for group, mask in region_masks.items():
             expected_intensity[mask] = nissl[mask] * (cell_counts()[group] / np.sum(nissl[mask]))
