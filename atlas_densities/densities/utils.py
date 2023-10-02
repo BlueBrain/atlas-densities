@@ -333,8 +333,6 @@ def get_fiber_tract_ids(region_map: "RegionMap") -> set[int]:
         region_map.find("fiber tracts", attr="name", with_descendants=True)
         | region_map.find("grooves", attr="name", with_descendants=True)
         | region_map.find("ventricular systems", attr="name", with_descendants=True)
-        | region_map.find("Basic cell groups and regions", attr="name")
-        | region_map.find("Cerebellum", attr="name")
     )
     assert fiber_tracts_ids, "Missing ids in Fiber tracts"
     return fiber_tracts_ids
