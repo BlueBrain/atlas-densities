@@ -6,6 +6,7 @@ import numpy as np
 import numpy.testing as npt
 import pandas as pd
 import pandas.testing as pdt
+import pytest
 import yaml  # type: ignore
 from click.testing import CliRunner
 from voxcell import VoxelData  # type: ignore
@@ -230,6 +231,7 @@ def _get_compile_measurements_result(runner):
     return runner.invoke(tested.app, args)
 
 
+@pytest.mark.filterwarnings("ignore::atlas_densities.exceptions.AtlasDensitiesWarning")
 def test_compile_measurements():
     runner = CliRunner()
     with runner.isolated_filesystem():
@@ -338,6 +340,7 @@ def _get_fitting_result(runner):
     return runner.invoke(tested.app, args)
 
 
+@pytest.mark.filterwarnings("ignore::atlas_densities.exceptions.AtlasDensitiesWarning")
 def test_fit_average_densities():
     runner = CliRunner()
     with runner.isolated_filesystem():
