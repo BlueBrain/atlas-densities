@@ -16,10 +16,11 @@ For each cell type, there are hence three linear fittings.
 To estimate the average density of a cell type T of a brain region R, we select the linear mapping
 obtained for T and the group R it belongs to.
 """
+from __future__ import annotations
 
 import logging
 import warnings
-from typing import TYPE_CHECKING, Dict, List, Optional, Set, Union
+from typing import TYPE_CHECKING, Optional, Union
 
 import numpy as np
 import pandas as pd
@@ -27,7 +28,7 @@ from atlas_commons.typing import AnnotationT, BoolArray, FloatArray
 from scipy.optimize import curve_fit
 from tqdm import tqdm
 
-from atlas_densities.densities.utils import get_group_names, get_hierarchy_info
+from atlas_densities.densities import utils
 from atlas_densities.exceptions import AtlasDensitiesError, AtlasDensitiesWarning
 
 if TYPE_CHECKING:  # pragma: no cover
@@ -35,11 +36,11 @@ if TYPE_CHECKING:  # pragma: no cover
 
 L = logging.getLogger(__name__)
 
-MarkerVolumes = Dict[str, Dict[str, Union[FloatArray, List[int]]]]
+MarkerVolumes = dict[str, dict[str, FloatArray | list[int]]]
 
 
 def create_dataframe_from_known_densities(
-    region_names: List[str],
+    region_names: list[str],
     average_densities: pd.DataFrame,
 ) -> pd.DataFrame:
     """
@@ -107,7 +108,7 @@ def fill_in_homogenous_regions(
     neuron_density: FloatArray,
     densities: pd.DataFrame,
     hierarchy_info: pd.DataFrame,
-    cell_density_stddevs: Optional[Dict[str, float]] = None,
+    cell_density_stddevs: Optional[dict[str, float]] = None,
 ) -> None:
     """
     Fill the average density values of every region where all neurons are either inhibitory or
@@ -171,7 +172,7 @@ def fill_in_homogenous_regions(
 
 
 def compute_average_intensity(
-    intensity: FloatArray, volume_mask: BoolArray, slices: Optional[List[int]] = None
+    intensity: FloatArray, volume_mask: BoolArray, slices: Optional[list[int]] = None
 ) -> float:
     """
     Compute the average of `intensity` within the volume defined by `volume_mask`.
@@ -230,7 +231,7 @@ def compute_average_intensities(
                 }
             where each intensity array is of shape (W, H, D) and where the items of each slice
             list range in [0, W - 1].
-        hierarchy_info: data frame with colums "descendant_id_set" (Set[int]) and "brain_region"
+        hierarchy_info: data frame with colums "descendant_id_set" (set[int]) and "brain_region"
             (str) and whose index is a list of region ids.
             See :fun:`atlas_densities.densities.utils.get_hierarchy_info`.
 
@@ -268,8 +269,8 @@ def compute_average_intensities(
 
 
 def linear_fitting_xy(
-    xdata: List[float], ydata: List[float], sigma: Union[List[float], FloatArray]
-) -> Dict[str, float]:
+    xdata: list[float], ydata: list[float], sigma: list[float] | FloatArray
+) -> dict[str, float]:
     """
     Compute the coefficient of the linear least-squares regression of the point cloud
     (`xdata`, `ydata`) and its standard deviation.
@@ -320,11 +321,11 @@ def linear_fitting_xy(
     return {"coefficient": parameters[0][0], "standard_deviation": np.sqrt(parameters[1][0][0])}
 
 
-FittingData = Dict[str, Dict[str, Dict[str, float]]]
+FittingData = dict[str, dict[str, dict[str, float]]]
 
 
 def compute_fitting_coefficients(
-    groups: Dict[str, Set[str]], average_intensities: pd.DataFrame, densities: pd.DataFrame
+    groups: dict[str, set[str]], average_intensities: pd.DataFrame, densities: pd.DataFrame
 ) -> FittingData:
     """
     Compute the linear fitting coefficient of the cloud of 2D points (average marker intensity,
@@ -391,7 +392,7 @@ def compute_fitting_coefficients(
         for group_name in groups
     }
 
-    clouds: Dict[str, Dict[str, Dict[str, List[float]]]] = {
+    clouds: dict[str, dict[str, dict[str, list[float]]]] = {
         group_name: {cell_type: {"xdata": [], "ydata": [], "sigma": []} for cell_type in cell_types}
         for group_name in groups
     }
@@ -440,7 +441,7 @@ def compute_fitting_coefficients(
 
 
 def fit_unknown_densities(
-    groups: Dict[str, Set[str]],
+    groups: dict[str, set[str]],
     average_intensities: pd.DataFrame,
     densities: pd.DataFrame,
     fitting_coefficients: FittingData,
@@ -526,6 +527,32 @@ def _check_average_densities_sanity(average_densities: pd.DataFrame) -> None:
         )
 
 
+def _get_group_names(
+    region_map: "RegionMap", cleanup_rest: bool = False, root_region_name: str | None = None
+) -> dict[str, set[str]]:
+    """
+    Get AIBS names for regions in several region groups of interest.
+
+    Args:
+        region_map: object to navigate the mouse brain regions hierarchy
+            (instantiated from AIBS 1.json).
+        cleanup_rest: (Optional) If True, the name of any ascendant region of the Cerebellum and
+            Isocortex groups are removed from the names of the Rest group. This makes sure that
+            the set of names of the Rest group is closed under taking descendants.
+
+    Returns:
+        A dictionary whose keys are region group names and whose values are
+        sets of brain region names.
+    """
+
+    group_ids = utils.get_group_ids(region_map, cleanup_rest, root_region_name)
+
+    return {
+        group_name: {region_map.get(id_, attr="name") for id_ in group_ids[group_name]}
+        for group_name in ["Cerebellum group", "Isocortex group", "Rest"]
+    }
+
+
 def linear_fitting(  # pylint: disable=too-many-arguments
     region_map: "RegionMap",
     annotation: AnnotationT,
@@ -533,7 +560,7 @@ def linear_fitting(  # pylint: disable=too-many-arguments
     gene_marker_volumes: MarkerVolumes,
     average_densities: pd.DataFrame,
     homogenous_regions: pd.DataFrame,
-    cell_density_stddevs: Optional[Dict[str, float]] = None,
+    cell_density_stddevs: Optional[dict[str, float]] = None,
     region_name: str = "root",
 ) -> pd.DataFrame:
     """
@@ -587,7 +614,7 @@ def linear_fitting(  # pylint: disable=too-many-arguments
     _check_average_densities_sanity(average_densities)
     _check_homogenous_regions_sanity(homogenous_regions)
 
-    hierarchy_info = get_hierarchy_info(region_map, root=region_name)
+    hierarchy_info = utils.get_hierarchy_info(region_map, root=region_name)
     L.info("Creating a data frame from known densities ...")
     densities = create_dataframe_from_known_densities(
         hierarchy_info["brain_region"].to_list(), average_densities
@@ -620,7 +647,7 @@ def linear_fitting(  # pylint: disable=too-many-arguments
 
     L.info("Getting group names ...")
     # We want group region names to be stable under taking descendants
-    groups = get_group_names(region_map, cleanup_rest=True, root_region_name=region_name)
+    groups = _get_group_names(region_map, cleanup_rest=True, root_region_name=region_name)
 
     L.info("Computing fitting coefficients ...")
     fitting_coefficients = compute_fitting_coefficients(groups, average_intensities, densities)
