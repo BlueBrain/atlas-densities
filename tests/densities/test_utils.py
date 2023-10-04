@@ -132,21 +132,21 @@ def test_get_region_masks():
 def test_optimize_distance_to_line_2D():
     line_direction_vector = np.array([1, 2], dtype=float)
     upper_bounds = np.array([3, 1], dtype=float)
-    optimum = tested.optimize_distance_to_line(
+    optimum = tested._optimize_distance_to_line(
         line_direction_vector, upper_bounds, 3.0, threshold=1e-7, copy=True
     )
     npt.assert_array_almost_equal(optimum, np.array([2.0, 1.0]))
 
     line_direction_vector = np.array([2, 3], dtype=float)
     upper_bounds = np.array([1, 3], dtype=float)
-    optimum = tested.optimize_distance_to_line(
+    optimum = tested._optimize_distance_to_line(
         line_direction_vector, upper_bounds, 2.0, threshold=1e-7, copy=False
     )
     npt.assert_array_almost_equal(optimum, np.array([0.8, 1.2]))
 
     line_direction_vector = np.array([1, 2], dtype=float)
     upper_bounds = np.array([3, 1], dtype=float)
-    optimum = tested.optimize_distance_to_line(
+    optimum = tested._optimize_distance_to_line(
         line_direction_vector, upper_bounds, 5.0, threshold=1e-7
     )
     npt.assert_array_almost_equal(optimum, np.array([3.0, 1.0]))
@@ -155,7 +155,7 @@ def test_optimize_distance_to_line_2D():
 def test_optimize_distance_to_line_3D():
     line_direction_vector = np.array([0.5, 2.0, 1.0], dtype=float)
     upper_bounds = np.array([1.0, 1.0, 1.0], dtype=float)
-    optimum = tested.optimize_distance_to_line(
+    optimum = tested._optimize_distance_to_line(
         line_direction_vector, upper_bounds, 2.0, threshold=1e-7, copy=True
     )
     npt.assert_array_almost_equal(optimum, np.array([1.0 / 3.0, 1.0, 2.0 / 3.0]))
@@ -251,7 +251,7 @@ def test_constrain_cell_counts_per_voxel_exceptions():
         zero_cell_counts_mask = np.array([[[True, True, False, False, False]]])
         max_cell_counts_mask = np.array([[[False, False, True, False, False]]])
         with patch(
-            "atlas_densities.densities.utils.optimize_distance_to_line",
+            "atlas_densities.densities.utils._optimize_distance_to_line",
             return_value=cell_counts,
         ):
             tested.constrain_cell_counts_per_voxel(
@@ -371,51 +371,3 @@ def test_compute_region_volumes(volumes, annotation):
             annotation, voxel_volume=2.0, hierarchy_info=get_hierarchy_info()
         ),
     )
-
-
-@pytest.fixture
-def cell_counts(voxel_volume=2):
-    counts = voxel_volume * np.array([5.0, 4.0, 1.0, 1.0, 1.0])
-    hierarchy_info = get_hierarchy_info()
-    return pd.DataFrame(
-        {"brain_region": hierarchy_info["brain_region"], "cell_count": counts},
-        index=hierarchy_info.index,
-    )
-
-
-@pytest.fixture
-def cell_density():
-    return np.array([[[1.0, 1.0 / 3.0, 1.0 / 3.0], [0.5, 0.5, 1.0], [0.5, 1.0 / 3.0, 0.5]]])
-
-
-def test_compute_cell_counts(annotation, cell_density, cell_counts):
-    pdt.assert_frame_equal(
-        cell_counts,  # expected
-        tested.compute_region_cell_counts(
-            annotation, cell_density, voxel_volume=2.0, hierarchy_info=get_hierarchy_info()
-        ),
-    )
-
-
-def test_zero_negative_values():
-    array = np.array([0, 1, -0.02], dtype=float)
-    with pytest.raises(
-        AtlasDensitiesError,
-        match="absolute value of the sum of all negative values exceeds 1 percent of the sum of all positive values",
-    ):
-        tested.zero_negative_values(array)
-
-    array = np.array([0, 1, -0.01], dtype=float)
-    with pytest.raises(
-        AtlasDensitiesError,
-        match="smallest negative value is not negligible wrt to the mean of all non-negative values",
-    ):
-        tested.zero_negative_values(array)
-
-    array = np.array([0, 1, -1e-8 / 2.0], dtype=float)
-    tested.zero_negative_values(array)
-    npt.assert_array_almost_equal(array, np.array([0, 1, 0], dtype=float))
-
-    array = np.array([0, 1, 1], dtype=float)
-    tested.zero_negative_values(array)
-    npt.assert_array_almost_equal(array, np.array([0, 1, 1], dtype=float))

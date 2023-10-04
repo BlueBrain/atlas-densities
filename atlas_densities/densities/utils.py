@@ -18,22 +18,6 @@ if TYPE_CHECKING:  # pragma: no cover
     from voxcell import RegionMap  # type: ignore
 
 
-MEASUREMENT_TYPES = {
-    # For a given brain region R and a given cell type T:
-    0: "cell density",  # number of cells of type T per mm^3 in R
-    1: "neuron proportion",  # number of cells of type T / number of neurons in R
-    2: "cell proportion",  # number of cells of type T / number of cells in R
-    3: "cell count per slice",  # number of cells of type T per slice of R, see MEASUREMENT_UNITS
-}
-
-MEASUREMENT_UNITS = {
-    "cell density": "number of cells per mm^3",
-    "neuron proportion": "None",
-    "cell proportion": "None",
-    "cell count per slice": "number of cells per 5 micrometer-thick slice",
-}
-
-
 def normalize_intensity(
     marker_intensity: FloatArray,
     annotation: AnnotationT,
@@ -148,7 +132,7 @@ def compensate_cell_overlap(
 # pylint: disable=fixme
 # TODO: Re-assess and underline each density validation criterion. Design an actual optimization
 # strategy if appropriate.
-def optimize_distance_to_line(  # pylint: disable=too-many-arguments
+def _optimize_distance_to_line(  # pylint: disable=too-many-arguments
     line_direction_vector: FloatArray,
     upper_bounds: FloatArray,
     sum_constraint: float,
@@ -304,7 +288,7 @@ def constrain_cell_counts_per_voxel(  # pylint: disable=too-many-arguments, too-
 
     # Find a cell count field respecting all the constraints and which is as close
     # as possible to the line defined by the input cell counts wrt to Euclidean norm.
-    cell_counts[complement] = optimize_distance_to_line(
+    cell_counts[complement] = _optimize_distance_to_line(
         line_direction_vector,
         upper_bound,
         target_sum - max_subsum,
@@ -411,32 +395,6 @@ def get_group_ids(
     return ret
 
 
-def get_group_names(
-    region_map: "RegionMap", cleanup_rest: bool = False, root_region_name: str | None = None
-) -> dict[str, set[str]]:
-    """
-    Get AIBS names for regions in several region groups of interest.
-
-    Args:
-        region_map: object to navigate the mouse brain regions hierarchy
-            (instantiated from AIBS 1.json).
-        cleanup_rest: (Optional) If True, the name of any ascendant region of the Cerebellum and
-            Isocortex groups are removed from the names of the Rest group. This makes sure that
-            the set of names of the Rest group is closed under taking descendants.
-
-    Returns:
-        A dictionary whose keys are region group names and whose values are
-        sets of brain region names.
-    """
-
-    group_ids = get_group_ids(region_map, cleanup_rest, root_region_name)
-
-    return {
-        group_name: {region_map.get(id_, attr="name") for id_ in group_ids[group_name]}
-        for group_name in ["Cerebellum group", "Isocortex group", "Rest"]
-    }
-
-
 def get_region_masks(
     group_ids: dict[str, set[int]], annotation: FloatArray
 ) -> dict[str, BoolArray]:
@@ -462,26 +420,6 @@ def get_region_masks(
         group_name: np.isin(annotation, list(group_ids[group_name]))
         for group_name in ["Cerebellum group", "Isocortex group", "Rest"]
     }
-
-
-def get_aibs_region_names(region_map: "RegionMap") -> set[str]:
-    """
-    Retrieve the names of every region in `region_map`.
-
-    Args:
-        region_map: RegionMap object to navigate the brain regions hierarchy
-            instantiated with the 1.json hierarchy file from AIBS.
-
-    Returns:
-        Set of strings containing the names of all regions represented in
-        `region_map`.
-
-    """
-    aibs_region_ids = region_map.find(
-        "Basic cell groups and regions", attr="name", with_descendants=True
-    )
-
-    return {region_map.get(id_, "name") for id_ in aibs_region_ids}
 
 
 def get_hierarchy_info(
@@ -575,93 +513,3 @@ def compute_region_volumes(
     result["volume"] = volumes
 
     return result
-
-
-def compute_region_cell_counts(
-    annotation: AnnotationT,
-    density: FloatArray,
-    voxel_volume: float,
-    hierarchy_info: "pd.DataFrame",
-    with_descendants: bool = True,
-) -> "pd.DataFrame":
-    """
-    Compute the cell count of every 3D region in `annotation` labeled by a unique
-    id in `ids` wrt cell `density`.
-
-    Args:
-        annotation: int array of shape (W, H, D) holding the annotation of the whole AIBS
-            mouse brain. (The integers W, H and D are the dimensions of the array).
-        density: float array of shape `annotation.shape` holding the volumetric density of a
-            given cell type. The value assigned to a voxel represents the cell density in this
-            voxel expressed in number of cells per mm^3.
-        voxel_volume: volume in mm^3 of a voxel in any of the volumetric input arrays.
-            This is (25 * 1e-6) ** 3 for an AIBS atlas nrrd file with 25um resolution.
-        hierarchy_info: data frame returned by
-            :func:`atlas_densities.densities.utils.get_hierarchy_info`.
-        with_descendants: if True, a computed cell count refers to the entire 3D region
-            designated by a region name, including all descendants subregions. Otherwise, the
-            computed cell count is the cell count of the 3D region labeled by the unique region
-            identifier. Defaults to True.
-
-    Returns:
-        DataFrame of the following form (values are fake):
-             brain_region                    cell_count
-        10   Basic cell groups and regions   200.30
-        123  Cerebrum                         75.05
-             ...                             ...
-        The index is the sorted list of all region identifiers.
-    """
-    id_counts = []
-    for id_ in tqdm(hierarchy_info.index):
-        mask = annotation == id_
-        id_counts.append(np.sum(density[mask]) * voxel_volume)
-
-    result = pd.DataFrame(
-        {"brain_region": hierarchy_info["brain_region"], "cell_count": id_counts},
-        index=hierarchy_info.index,
-    )
-
-    if with_descendants:
-        counts = []
-        for id_set in tqdm(hierarchy_info["descendant_id_set"]):
-            count = result.loc[list(id_set), "cell_count"].sum()
-            counts.append(count)
-        result["cell_count"] = counts
-
-    return result
-
-
-def zero_negative_values(array: FloatArray) -> None:
-    """
-    Zero negative values resulting from round-off errors.
-
-    Modifies `array` in place.
-
-    Args:
-        array: float numpy array. We expect most of the `array` values to be non-negative.
-            Negative values should be negligible when compared to positive values.
-
-    Raises:
-        AtlasDensitiesError if the absolute value of the sum of all negative values exceeds
-            1 percent of the sum of all positive values, or if the smallest negative value is
-            not negligible wrt to the mean of the non-negative values.
-    """
-    negative_mask = array < 0.0
-    if np.count_nonzero(negative_mask) == 0:
-        return
-
-    non_negative_mask = np.invert(negative_mask)
-
-    if np.abs(np.sum(array[negative_mask])) / np.sum(array[non_negative_mask]) > 0.01:
-        raise AtlasDensitiesError(
-            "The absolute value of the sum of all negative values exceeds"
-            " 1 percent of the sum of all positive values"
-        )
-    ratio = np.abs(np.min(array[negative_mask])) / np.mean(array[non_negative_mask])
-    if not np.isclose(ratio, 0.0, atol=1e-08):
-        raise AtlasDensitiesError(
-            "The smallest negative value is not negligible wrt to "
-            "the mean of all non-negative values."
-        )
-
-    array[negative_mask] = 0.0

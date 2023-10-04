@@ -6,6 +6,7 @@ import numpy as np
 import numpy.testing as npt
 import pandas as pd
 import pandas.testing as pdt
+import pytest
 import yaml  # type: ignore
 from click.testing import CliRunner
 from voxcell import VoxelData  # type: ignore
@@ -17,6 +18,7 @@ from atlas_densities.densities.cell_counts import (
     inhibitory_data,
 )
 from atlas_densities.densities.measurement_to_density import remove_non_density_measurements
+from atlas_densities.exceptions import AtlasDensitiesError
 from tests.densities.test_excel_reader import (
     check_columns_na,
     check_non_negative_values,
@@ -400,3 +402,27 @@ def test_fit_average_densities():
         )
         result = _get_fitting_result(runner)
         assert "Negative density value" in str(result.exception)
+
+
+def test_zero_negative_values():
+    array = np.array([0, 1, -0.02], dtype=float)
+    with pytest.raises(
+        AtlasDensitiesError,
+        match="absolute value of the sum of all negative values exceeds 1 percent of the sum of all positive values",
+    ):
+        tested._zero_negative_values(array)
+
+    array = np.array([0, 1, -0.01], dtype=float)
+    with pytest.raises(
+        AtlasDensitiesError,
+        match="smallest negative value is not negligible wrt to the mean of all non-negative values",
+    ):
+        tested._zero_negative_values(array)
+
+    array = np.array([0, 1, -1e-8 / 2.0], dtype=float)
+    tested._zero_negative_values(array)
+    npt.assert_array_almost_equal(array, np.array([0, 1, 0], dtype=float))
+
+    array = np.array([0, 1, 1], dtype=float)
+    tested._zero_negative_values(array)
+    npt.assert_array_almost_equal(array, np.array([0, 1, 1], dtype=float))
