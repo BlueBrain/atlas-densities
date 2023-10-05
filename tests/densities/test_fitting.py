@@ -568,7 +568,11 @@ def test_linear_fitting_exception_homogenous_regions():
             data["homogenous_regions"],
         )
 
+
 def test__get_group_names():
-    region_map = RegionMap.load_json(str(Path(TESTS_PATH, "1.json")))
-    ids = tested._get_group_names(region_map, root_region_name='root')
-    breakpoint() # XXX BREAKPOINT
+    region_map = RegionMap.load_json(Path(TESTS_PATH, "1.json"))
+    ret = tested._get_group_names(region_map, root_region_name='root')
+    for k, length in (('Isocortex group', 409),
+                      ('Cerebellum group', 88),
+                      ('Rest', 825)):
+        assert length == len(ret[k])
