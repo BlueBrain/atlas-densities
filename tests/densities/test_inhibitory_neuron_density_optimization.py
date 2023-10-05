@@ -310,6 +310,7 @@ def get_initialization_data():
     }
 
 
+@pytest.mark.filterwarnings("ignore::atlas_densities.exceptions.AtlasDensitiesWarning")
 def test_create_inhibitory_neuron_densities():
     data = get_initialization_data()
     densities = tested.create_inhibitory_neuron_densities(
