@@ -101,7 +101,8 @@ def test_compensate_cell_overlap():
 
 def test_get_group_ids():
     region_map = RegionMap.load_json(Path(TESTS_PATH, "1.json"))
-    group_ids = tested.get_group_ids(region_map, root_region_name="root")
+    group_ids_config = tested.load_json(tested.GROUP_IDS_PATH)
+    group_ids = tested.get_group_ids(region_map, config=group_ids_config)
     for ids in group_ids.values():
         assert len(ids) > 0
     assert len(group_ids["Molecular layer"] & group_ids["Purkinje layer"]) == 0
@@ -113,20 +114,22 @@ def test_get_group_ids():
     assert len(group_ids["Isocortex group"] & group_ids["Rest"]) == 0
     assert len(group_ids["Cerebellum group"] & group_ids["Rest"]) == 0
     assert group_ids["Cerebellar cortex"].issubset(group_ids["Cerebellum group"])
-    for k, length in (('Fiber tracts group', 227),
-                      ('Isocortex group', 409),
-                      ('Cerebellar cortex', 81),
-                      ('Cerebellum group', 88),
-                      ('Molecular layer', 19),
-                      ('Purkinje layer', 19),
-                      ('Rest', 830)):
+    for k, length in (
+        ("Fiber tracts group", 227),
+        ("Isocortex group", 409),
+        ("Cerebellar cortex", 81),
+        ("Cerebellum group", 88),
+        ("Molecular layer", 19),
+        ("Purkinje layer", 19),
+        ("Rest", 830),
+    ):
         assert length == len(group_ids[k])
-
 
 
 def test_get_region_masks():
     region_map = RegionMap.load_json(Path(TESTS_PATH, "1.json"))
-    group_ids = tested.get_group_ids(region_map, root_region_name="root")
+    group_ids_config = tested.load_json(tested.GROUP_IDS_PATH)
+    group_ids = tested.get_group_ids(region_map, config=group_ids_config)
     annotation_raw = np.arange(27000).reshape(30, 30, 30)
     region_masks = tested.get_region_masks(group_ids, annotation_raw)
     brain_mask = np.logical_or(
@@ -380,9 +383,3 @@ def test_compute_region_volumes(volumes, annotation):
             annotation, voxel_volume=2.0, hierarchy_info=get_hierarchy_info()
         ),
     )
-
-
-def test__get_group_names():
-    region_map = RegionMap.load_json(str(Path(TESTS_PATH, "1.json")))
-    ids = tested.get_group_ids(region_map, root_region_name='root')
-    breakpoint() # XXX BREAKPOINT
