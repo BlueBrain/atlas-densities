@@ -371,3 +371,9 @@ def test_compute_region_volumes(volumes, annotation):
             annotation, voxel_volume=2.0, hierarchy_info=get_hierarchy_info()
         ),
     )
+
+
+def test__get_group_names():
+    region_map = RegionMap.load_json(str(Path(TESTS_PATH, "1.json")))
+    ids = tested.get_group_ids(region_map, root_region_name='root')
+    breakpoint() # XXX BREAKPOINT

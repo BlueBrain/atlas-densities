@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 import pandas.testing as pdt
 import pytest
-from voxcell import RegionMap  # type: ignore
+from voxcell import RegionMap
 
 import atlas_densities.densities.fitting as tested
 from atlas_densities.densities.utils import get_hierarchy_info
@@ -567,3 +567,8 @@ def test_linear_fitting_exception_homogenous_regions():
             data["average_densities"],
             data["homogenous_regions"],
         )
+
+def test__get_group_names():
+    region_map = RegionMap.load_json(str(Path(TESTS_PATH, "1.json")))
+    ids = tested._get_group_names(region_map, root_region_name='root')
+    breakpoint() # XXX BREAKPOINT

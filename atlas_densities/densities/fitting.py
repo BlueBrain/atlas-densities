@@ -528,7 +528,7 @@ def _check_average_densities_sanity(average_densities: pd.DataFrame) -> None:
 
 
 def _get_group_names(
-    region_map: "RegionMap", cleanup_rest: bool = False, root_region_name: str | None = None
+    region_map: "RegionMap", root_region_name: str | None = None
 ) -> dict[str, set[str]]:
     """
     Get AIBS names for regions in several region groups of interest.
@@ -536,16 +536,25 @@ def _get_group_names(
     Args:
         region_map: object to navigate the mouse brain regions hierarchy
             (instantiated from AIBS 1.json).
-        cleanup_rest: (Optional) If True, the name of any ascendant region of the Cerebellum and
-            Isocortex groups are removed from the names of the Rest group. This makes sure that
-            the set of names of the Rest group is closed under taking descendants.
 
     Returns:
         A dictionary whose keys are region group names and whose values are
         sets of brain region names.
     """
 
-    group_ids = utils.get_group_ids(region_map, cleanup_rest, root_region_name)
+    group_ids = utils.get_group_ids(region_map, root_region_name)
+
+
+    # Make the Rest group stable under taking descendants
+    #The name of any ascendant region of the Cerebellum and
+    #    Isocortex groups are removed from the names of the Rest group. This makes sure that
+    #    the set of names of the Rest group is closed under taking descendants.
+    isocortex_id = region_map.find("Isocortex", attr="name").pop()
+    cerebellum_id = region_map.find("Cerebellum", attr="name").pop()
+    ascendant_ids = (set(region_map.get(isocortex_id, attr="id", with_ascendants=True))
+                     | set(region_map.get(cerebellum_id, attr="id",
+                                          with_ascendants=True)))
+    group_ids['Rest'] -= ascendant_ids
 
     return {
         group_name: {region_map.get(id_, attr="name") for id_ in group_ids[group_name]}
@@ -647,7 +656,7 @@ def linear_fitting(  # pylint: disable=too-many-arguments
 
     L.info("Getting group names ...")
     # We want group region names to be stable under taking descendants
-    groups = _get_group_names(region_map, cleanup_rest=True, root_region_name=region_name)
+    groups = _get_group_names(region_map, root_region_name=region_name)
 
     L.info("Computing fitting coefficients ...")
     fitting_coefficients = compute_fitting_coefficients(groups, average_intensities, densities)
