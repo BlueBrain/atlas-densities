@@ -17,6 +17,17 @@ from atlas_densities.utils import copy_array
 if TYPE_CHECKING:  # pragma: no cover
     from voxcell import RegionMap  # type: ignore
 
+# The groups below have been selected because counts are available in the scientific literature.
+
+GROUP_IDS = {
+    "Cerebellum group": cerebellum_group_ids,
+    "Isocortex group": isocortex_group_ids,
+    "Fiber tracts group": fiber_tracts_ids,
+    "Purkinje layer": purkinje_layer_ids,
+    "Molecular layer": molecular_layer_ids,
+    "Cerebellar cortex": cerebellar_cortex_ids,
+    "Rest": rest_ids,
+}
 
 def normalize_intensity(
     marker_intensity: FloatArray,
@@ -340,9 +351,6 @@ def get_group_ids(
     """
     Get AIBS structure ids for several region groups of interest.
 
-    The groups below have been selected because specific count information is available
-    in the scientific literature.
-
     Args:
         region_map: object to navigate the mouse brain regions hierarchy
             (instantied from AIBS 1.json).
@@ -382,13 +390,6 @@ def get_group_ids(
         rest_ids -= ascendant_ids
 
     ret = {
-        "Cerebellum group": cerebellum_group_ids,
-        "Isocortex group": isocortex_group_ids,
-        "Fiber tracts group": fiber_tracts_ids,
-        "Purkinje layer": purkinje_layer_ids,
-        "Molecular layer": molecular_layer_ids,
-        "Cerebellar cortex": cerebellar_cortex_ids,
-        "Rest": rest_ids,
     }
     for name, ids in ret.items():
         assert ids, f"Missing ids in {name}"
