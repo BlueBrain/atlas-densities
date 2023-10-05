@@ -5,6 +5,7 @@ import numpy.testing as npt
 from voxcell import RegionMap
 
 import atlas_densities.densities.glia_densities as tested
+from atlas_densities.densities import utils
 
 TESTS_PATH = Path(__file__).parent.parent
 
@@ -39,8 +40,16 @@ def test_compute_glia_cell_counts_per_voxel():
     annotation = np.array([[[1, 10, 10, 2, 3]]], dtype=np.uint32)
     cell_density = np.array([[[0.1, 0.5, 0.75, 0.1, 1.0]]], dtype=float)
     glia_density = np.array([[[0.15, 0.1, 0.8, 0.2, 0.8]]], dtype=float)
+    group_ids_config = utils.load_json(utils.GROUP_IDS_PATH)
+
     corrected_glia_density = tested.compute_glia_cell_counts_per_voxel(
-        2, region_map, annotation, glia_density, cell_density, copy=False
+        2,
+        region_map,
+        annotation,
+        glia_density,
+        cell_density,
+        copy=False,
+        group_ids_config=group_ids_config,
     )
     expected = np.array([[[0.0, 0.25, 0.75, 0.0, 1.0]]], dtype=float)
     npt.assert_allclose(corrected_glia_density, expected, rtol=1e-2)
@@ -51,7 +60,12 @@ def test_compute_glia_cell_counts_per_voxel():
     glia_density = np.array([[[0.15, 0.1, 0.2, 0.8, 0.8]]], dtype=float)
     glia_density_copy = glia_density.copy()
     corrected_glia_density = tested.compute_glia_cell_counts_per_voxel(
-        2, region_map, annotation, glia_density, cell_density
+        2,
+        region_map,
+        annotation,
+        glia_density,
+        cell_density,
+        group_ids_config=group_ids_config,
     )
     expected = np.array([[[0.0, 1.0 / 3.0, 2.0 / 3.0, 0.0, 1.0]]], dtype=float)
     npt.assert_allclose(corrected_glia_density, expected, rtol=1e-2)
@@ -61,6 +75,7 @@ def test_compute_glia_cell_counts_per_voxel():
 def test_glia_cell_counts_per_voxel_input():
     shape = (20, 20, 20)
     annotation = np.arange(8000).reshape(shape)
+    group_ids_config = utils.load_json(utils.GROUP_IDS_PATH)
 
     rng = np.random.default_rng(seed=42)
 
@@ -79,6 +94,7 @@ def test_glia_cell_counts_per_voxel_input():
         glia_density,
         cell_density,
         copy=False,
+        group_ids_config=group_ids_config,
     )
 
     assert np.all(output_glia_density <= cell_density)
@@ -117,6 +133,7 @@ def get_glia_input_data(glia_cell_count):
 def test_compute_glia_densities():
     glia_cell_count = 25000
     data = get_glia_input_data(glia_cell_count)
+    group_ids_config = utils.load_json(utils.GROUP_IDS_PATH)
     output_glia_densities = tested.compute_glia_densities(
         data["region_map"],
         data["annotation"],
@@ -126,7 +143,9 @@ def test_compute_glia_densities():
         data["cell_density"],
         data["glia_proportions"],
         copy=True,
+        group_ids_config=group_ids_config,
     )
+
     assert output_glia_densities["glia"].dtype == np.float64
     assert np.all(output_glia_densities["glia"] <= data["cell_density"])
 

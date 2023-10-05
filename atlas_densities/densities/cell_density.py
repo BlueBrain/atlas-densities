@@ -59,7 +59,7 @@ def compute_cell_density(
     annotation: AnnotationT,
     voxel_volume: float,
     nissl: FloatArray,
-    root_region_name: str,
+    group_ids_config: dict,
 ) -> FloatArray:
     """
     Compute the overall cell density based on Nissl staining and cell counts from literature.
@@ -100,7 +100,7 @@ def compute_cell_density(
     nissl = utils.normalize_intensity(nissl, annotation, threshold_scale_factor=1.0, copy=False)
     nissl = utils.compensate_cell_overlap(nissl, annotation, gaussian_filter_stdv=-1.0, copy=False)
 
-    group_ids = utils.get_group_ids(region_map, root_region_name=root_region_name)
+    group_ids = utils.get_group_ids(region_map, config=group_ids_config)
     region_masks = utils.get_region_masks(group_ids, annotation)
     fix_purkinje_layer_intensity(group_ids, annotation, region_masks, nissl)
     non_zero_nissl = nissl > 0

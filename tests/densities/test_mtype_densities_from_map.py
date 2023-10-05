@@ -8,7 +8,8 @@ import pandas as pd
 import pytest
 from voxcell import RegionMap, VoxelData  # type: ignore
 
-import atlas_densities.densities.mtype_densities_from_map as tested
+import atlas_densities.densities.mtype_densities_from_map.create as tested_create
+import atlas_densities.densities.mtype_densities_from_map.utils as tested_utils
 from atlas_densities.exceptions import AtlasDensitiesError
 
 
@@ -162,7 +163,7 @@ class Test_create_from_probability_map:
         self.data = create_from_probability_map_data()
 
     def call_create(self, probability_maps_keys, synapse_class):
-        tested.create.create_from_probability_map(
+        tested_create.create_from_probability_map(
             self.data["annotation"],
             self.data["region_map"],
             self.data["molecular_type_densities"],
@@ -197,7 +198,7 @@ class Test_create_from_probability_map:
         with open(str(Path(tmpdir) / "metadata.json"), "r") as file:
             metadata = json.load(file)
         for metype in metypes:
-            mtype, etype = metype.split(tested.create.SEPARATOR)
+            mtype, etype = metype.split(tested_create.SEPARATOR)
             assert mtype in metadata["density_files"]
             assert etype in metadata["density_files"][mtype]
         assert synapse_class == metadata["synapse_class"]
@@ -208,7 +209,7 @@ class Test_create_from_probability_map_empty:
         self.tmpdir = tempfile.TemporaryDirectory()
         self.data = create_from_probability_map_data()
         with pytest.raises(AtlasDensitiesError):
-            tested.create.create_from_probability_map(
+            tested_create.create_from_probability_map(
                 self.data["annotation"],
                 self.data["region_map"],
                 self.data["molecular_type_densities"],
@@ -228,7 +229,7 @@ class Test_create_from_probability_map_exceptions:
         self.tmpdir.cleanup()
 
     def create_densities(self):
-        tested.create.create_from_probability_map(
+        tested_create.create_from_probability_map(
             self.data["annotation"],
             self.data["region_map"],
             self.data["molecular_type_densities"],
@@ -283,7 +284,7 @@ class Test__merge_probability_maps:
                 },
             ),
         ]
-        tested.utils._merge_probability_maps(probability_maps)
+        tested_utils._merge_probability_maps(probability_maps)
 
     def test_index_intersection_fail(self):
         probability_maps = [
@@ -311,7 +312,7 @@ class Test__merge_probability_maps:
             ),
         ]
         with pytest.raises(ValueError):
-            tested.utils._merge_probability_maps(probability_maps)
+            tested_utils._merge_probability_maps(probability_maps)
 
     def test_merge(self):
         probability_maps = [
@@ -395,7 +396,7 @@ class Test__merge_probability_maps:
             ),
         ]
 
-        result = tested.utils._merge_probability_maps(probability_maps)
+        result = tested_utils._merge_probability_maps(probability_maps)
 
         expected = self.create_probability_map(
             {

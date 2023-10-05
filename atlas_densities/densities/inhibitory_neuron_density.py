@@ -5,12 +5,7 @@ from typing import TYPE_CHECKING, Dict, Optional, Tuple, Union
 import numpy as np
 from atlas_commons.typing import AnnotationT, BoolArray, FloatArray
 
-from atlas_densities.densities.utils import (
-    compensate_cell_overlap,
-    constrain_cell_counts_per_voxel,
-    get_group_ids,
-    get_region_masks,
-)
+from atlas_densities.densities import utils
 from atlas_densities.exceptions import AtlasDensitiesError
 
 if TYPE_CHECKING:
@@ -89,7 +84,7 @@ def compute_inhibitory_neuron_density(  # pylint: disable=too-many-arguments
     neuron_density: FloatArray,
     inhibitory_proportion: Optional[float] = None,
     inhibitory_data: Optional[InhibitoryData] = None,
-    root_region_name: Optional[str] = None,
+    group_ids_config: dict = None,
 ) -> FloatArray:
     """
     Compute the inhibitory neuron density using a prescribed neuron count and the overall neuron
@@ -116,7 +111,7 @@ def compute_inhibitory_neuron_density(  # pylint: disable=too-many-arguments
                 assigning the proportion of ihnibitory neurons in each group named by a key string.
             'neuron_count': the total number of inhibitory neurons (float).
             Used only if `inhibitory_proportion` is None.
-        root_region_name(str): Name of the root region in the hierarchy
+        group_ids_config: mapping of regions to their constituent ids
 
     Returns:
         float64 array of shape (W, H, D) with non-negative entries.
@@ -140,8 +135,8 @@ def compute_inhibitory_neuron_density(  # pylint: disable=too-many-arguments
                 "Either inhibitory_proportion or inhibitory_data should be provided"
                 ". Both are None."
             )
-        group_ids = get_group_ids(region_map, root_region_name=root_region_name)
-        inhibitory_data["region_masks"] = get_region_masks(group_ids, annotation)
+        group_ids = utils.get_group_ids(region_map, config=group_ids_config)
+        inhibitory_data["region_masks"] = utils.get_region_masks(group_ids, annotation)
     else:
         inhibitory_data = {
             "proportions": {"whole brain": inhibitory_proportion},
@@ -152,8 +147,8 @@ def compute_inhibitory_neuron_density(  # pylint: disable=too-many-arguments
         }
 
     inhibitory_neuron_intensity = compute_inhibitory_neuron_intensity(
-        compensate_cell_overlap(gad1, annotation, gaussian_filter_stdv=1.0),
-        compensate_cell_overlap(nrn1, annotation, gaussian_filter_stdv=1.0),
+        utils.compensate_cell_overlap(gad1, annotation, gaussian_filter_stdv=1.0),
+        utils.compensate_cell_overlap(nrn1, annotation, gaussian_filter_stdv=1.0),
         inhibitory_data,
     )
 
@@ -199,7 +194,7 @@ def compute_inhibitory_neuron_density(  # pylint: disable=too-many-arguments
     assert isinstance(inhibitory_data["neuron_count"], int)
 
     return (
-        constrain_cell_counts_per_voxel(
+        utils.constrain_cell_counts_per_voxel(
             inhibitory_data["neuron_count"],
             inhibitory_neuron_intensity,
             neuron_density * voxel_volume,
