@@ -329,3 +329,47 @@ def test_create_inhibitory_neuron_densities():
     assert np.all(densities["gad67+"] <= data["neuron_density"])
     assert np.all(sum_ <= data["neuron_density"])
     assert np.all(sum_ <= densities["gad67+"] + 1e-6)
+
+
+def get_hierarchy_info():
+    return pd.DataFrame(
+        {
+            "brain_region": [
+                "Central lobule",
+                "Lobule II",
+                "Lobule II, granular layer",
+                "Lobule II, Purkinje layer",
+                "Lobule II, molecular layer",
+            ],
+            "descendant_id_set": [
+                {920, 976, 10708, 10709, 10710},
+                {976, 10708, 10709, 10710},
+                {10708},
+                {10709},
+                {10710},
+            ],
+        },
+        index=[920, 976, 10708, 10709, 10710],
+    )
+
+
+def test_compute_region_cell_counts():
+    annotation = np.array([[[920, 10710, 10710], [10709, 10708, 976], [10708, 10710, 10709]]])
+    cell_density = np.array([[[1.0, 1.0 / 3.0, 1.0 / 3.0], [0.5, 0.5, 1.0], [0.5, 1.0 / 3.0, 0.5]]])
+    voxel_volume = 2.0
+
+    hierarchy_info = get_hierarchy_info()
+    cell_counts = pd.DataFrame(
+        {
+            "brain_region": hierarchy_info["brain_region"],
+            "cell_count": 2 * np.array([5.0, 4.0, 1.0, 1.0, 1.0]),
+        },
+        index=hierarchy_info.index,
+    )
+
+    pdt.assert_frame_equal(
+        cell_counts,  # expected
+        tested._compute_region_cell_counts(
+            annotation, cell_density, voxel_volume, hierarchy_info=get_hierarchy_info()
+        ),
+    )

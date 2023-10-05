@@ -21,8 +21,8 @@ with the following columns:
   somatostatin, 'inhibitory neuron' for non-specfic inhibitory neurons)
 * measurement (float)
 * standard_deviation (non-negative float)
-* measurement_type (str), see MEASUREMENT_TYPES from :mod:`densities.utils`
-* measurement_unit (str), see MEASUREMENT_UNITS from :mod:`densities.utils`
+* measurement_type (str), see MEASUREMENT_TYPES
+* measurement_unit (str), see MEASUREMENT_UNITS
 * comment (str), a comment on how the measurement has been obtained
 * source_title (str), the title of the article where the measurement can be extracted
 * specimen_age (str, e.g., '8 week old', 'P56', '3 month old'), age(s) of the mice used to obtain
@@ -36,34 +36,64 @@ atlas_densities/app/data/measurements/non_density_measurements.csv under the abo
 Lexicon: AIBS stands for Allen Institute for Brain Science
     https://alleninstitute.org/what-we-do/brain-science/
 """
+from __future__ import annotations
 
 import logging
 from collections import defaultdict
-from typing import TYPE_CHECKING, Dict, List, Optional, Set, Tuple, Union
+from typing import TYPE_CHECKING, Optional
 from warnings import warn
 
 import numpy as np
 import numpy.testing as npt
 import pandas as pd
 
-from atlas_densities.densities.utils import (
-    MEASUREMENT_TYPES,
-    MEASUREMENT_UNITS,
-    get_aibs_region_names,
-)
 from atlas_densities.exceptions import AtlasDensitiesWarning
 
 if TYPE_CHECKING:  # pragma: no cover
     from pathlib import Path
 
-    from pandas import DataFrame
     from voxcell import RegionMap
 
 L = logging.getLogger(__name__)
 
+MEASUREMENT_TYPES = {
+    # For a given brain region R and a given cell type T:
+    0: "cell density",  # number of cells of type T per mm^3 in R
+    1: "neuron proportion",  # number of cells of type T / number of neurons in R
+    2: "cell proportion",  # number of cells of type T / number of cells in R
+    3: "cell count per slice",  # number of cells of type T per slice of R, see MEASUREMENT_UNITS
+}
+
+MEASUREMENT_UNITS = {
+    "cell density": "number of cells per mm^3",
+    "neuron proportion": "None",
+    "cell proportion": "None",
+    "cell count per slice": "number of cells per 5 micrometer-thick slice",
+}
+
+
+def _get_aibs_region_names(region_map: "RegionMap") -> set[str]:
+    """
+    Retrieve the names of every region in `region_map`.
+
+    Args:
+        region_map: RegionMap object to navigate the brain regions hierarchy
+            instantiated with the 1.json hierarchy file from AIBS.
+
+    Returns:
+        set of strings containing the names of all regions represented in
+        `region_map`.
+
+    """
+    aibs_region_ids = region_map.find(
+        "Basic cell groups and regions", attr="name", with_descendants=True
+    )
+
+    return {region_map.get(id_, "name") for id_ in aibs_region_ids}
+
 
 def compute_kim_et_al_neuron_densities(
-    inhibitory_neuron_densities_path: Union[str, "Path"]
+    inhibitory_neuron_densities_path: str | "Path",
 ) -> pd.DataFrame:
     """
     Extract from excel file and average over gender the densities of the cells reacting to
@@ -225,7 +255,7 @@ def _set_metadata_columns(
         The same applies to the 'comment' column. Source title blocks and comment blocks do not
         always coincide.
         """
-        columns: Dict[str, List[str]] = defaultdict(list)
+        columns: dict[str, list[str]] = defaultdict(list)
         for start, end in zip(collapsed_blocks.index, collapsed_blocks.index[1:]):
             columns[header].extend([dataframe[header][start]] * (end - start))
         # Handle the tail of the column
@@ -242,13 +272,13 @@ def _set_metadata_columns(
 
 
 def _set_measurement_type_and_unit_columns(
-    dataframe: pd.DataFrame, code_filter: Optional[List[int]] = None
+    dataframe: pd.DataFrame, code_filter: Optional[list[int]] = None
 ) -> None:
     """
-    Set the values of the 'measurement_type' and 'measurement_unit' columns.
+    set the values of the 'measurement_type' and 'measurement_unit' columns.
 
     The assigment is based on a integer code in the range [0, 3], see MEASUREMENT_TYPES and
-    MEASUREMENT_UNITS from :mod:`densities.utils`.
+    MEASUREMENT_UNITS
 
     Args:
         dataframe: DataFrame obtained when reading the worksheets 'GAD67 densities' or 'PV-SST-VIP'
@@ -346,8 +376,8 @@ def _enforce_column_types(dataframe: "pd.Dataframe", has_source: bool = True) ->
 
 
 def read_inhibitory_neuron_measurement_compilation(
-    measurements_path: Union[str, "Path"]
-) -> Tuple[pd.DataFrame, Set[str]]:
+    measurements_path: str | "Path",
+) -> tuple[pd.DataFrame, set[str]]:
     """
     Read the neuron densities of the worksheet 'GAD67 densities' in gaba_papers.xlsx
 
@@ -428,7 +458,7 @@ def _stack_pv_sst_vip_measurements(dataframe: pd.DataFrame) -> pd.DataFrame:
     return result
 
 
-def read_pv_sst_vip_measurement_compilation(measurements_path: Union[str, "Path"]) -> pd.DataFrame:
+def read_pv_sst_vip_measurement_compilation(measurements_path: str | "Path") -> pd.DataFrame:
     """
     Read the neuron densities of the worksheet 'PV-SST-VIP' in gaba_papers.xlsx
 
@@ -471,7 +501,7 @@ def read_pv_sst_vip_measurement_compilation(measurements_path: Union[str, "Path"
     return pv_sst_vip_neurons_worksheet
 
 
-def read_homogenous_neuron_type_regions(measurements_path: Union[str, "Path"]) -> pd.DataFrame:
+def read_homogenous_neuron_type_regions(measurements_path: str | "Path") -> pd.DataFrame:
     """
     Read the region list of the worksheet 'Full inhibexc regions' in gaba_papers.xlsx
 
@@ -535,7 +565,7 @@ def _enforce_aibs_nomenclature(region_map: "RegionMap", dataframe: pd.DataFrame)
     # or 'layer 6b' as in AIBS 1.json.
     # When such a problematic name is encountered, we remove it and insert its 'layer 6a' and/or
     # 'layer 6b' counterpart , if they exist.
-    aibs_region_names = get_aibs_region_names(region_map)
+    aibs_region_names = _get_aibs_region_names(region_map)
     invalid_region_names = set(dataframe["full_name"]) - aibs_region_names
     layer_6_names = set(
         name for name in aibs_region_names if ("layer 6" in name) or ("Layer 6" in name)
@@ -567,7 +597,7 @@ def _enforce_aibs_nomenclature(region_map: "RegionMap", dataframe: pd.DataFrame)
 
 
 def read_kim_et_al_neuron_densities(
-    region_map: "RegionMap", inhibitory_neuron_densities_path: Union[str, "Path"]
+    region_map: "RegionMap", inhibitory_neuron_densities_path: str | "Path"
 ) -> pd.DataFrame:
     """
     Read the neuron densities of the worksheet 'Sheet 1' in mmc3.xlsx
@@ -609,9 +639,9 @@ def read_kim_et_al_neuron_densities(
 
 def read_measurements(
     region_map: "RegionMap",
-    mmc3_path: Union[str, "Path"],
-    gaba_papers_path: Union[str, "Path"],
-    non_density_measurements_path: Union[str, "Path"],
+    mmc3_path: str | "Path",
+    gaba_papers_path: str | "Path",
+    non_density_measurements_path: str | "Path",
 ) -> pd.DataFrame:
     """
     Read all cell density related measurements from file and returns a unique DataFrame

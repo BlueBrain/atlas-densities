@@ -48,6 +48,7 @@ from scipy.optimize import linprog
 from tqdm import tqdm
 from voxcell import RegionMap
 
+from atlas_densities.densities import utils
 from atlas_densities.densities.inhibitory_neuron_densities_helper import (
     average_densities_to_cell_counts,
     check_region_counts_consistency,
@@ -55,17 +56,66 @@ from atlas_densities.densities.inhibitory_neuron_densities_helper import (
     replace_inf_with_none,
     resize_average_densities,
 )
-from atlas_densities.densities.utils import (
-    compute_region_cell_counts,
-    compute_region_volumes,
-    get_hierarchy_info,
-)
 from atlas_densities.exceptions import AtlasDensitiesError, AtlasDensitiesWarning
 
 L = logging.getLogger(__name__)
 
 SKIP = np.inf  # Used to signify that a delta variable of the linear program should be removed
 KEEP = np.nan  # Used to signify that a delta variable should be added to the linear program
+
+
+def _compute_region_cell_counts(
+    annotation: AnnotationT,
+    density: FloatArray,
+    voxel_volume: float,
+    hierarchy_info: "pd.DataFrame",
+    with_descendants: bool = True,
+) -> "pd.DataFrame":
+    """
+    Compute the cell count of every 3D region in `annotation` labeled by a unique
+    id in `ids` wrt cell `density`.
+
+    Args:
+        annotation: int array of shape (W, H, D) holding the annotation of the whole AIBS
+            mouse brain. (The integers W, H and D are the dimensions of the array).
+        density: float array of shape `annotation.shape` holding the volumetric density of a
+            given cell type. The value assigned to a voxel represents the cell density in this
+            voxel expressed in number of cells per mm^3.
+        voxel_volume: volume in mm^3 of a voxel in any of the volumetric input arrays.
+            This is (25 * 1e-6) ** 3 for an AIBS atlas nrrd file with 25um resolution.
+        hierarchy_info: data frame returned by
+            :func:`atlas_densities.densities.utils.get_hierarchy_info`.
+        with_descendants: if True, a computed cell count refers to the entire 3D region
+            designated by a region name, including all descendants subregions. Otherwise, the
+            computed cell count is the cell count of the 3D region labeled by the unique region
+            identifier. Defaults to True.
+
+    Returns:
+        DataFrame of the following form (values are fake):
+             brain_region                    cell_count
+        10   Basic cell groups and regions   200.30
+        123  Cerebrum                         75.05
+             ...                             ...
+        The index is the sorted list of all region identifiers.
+    """
+    id_counts = []
+    for id_ in tqdm(hierarchy_info.index):
+        mask = annotation == id_
+        id_counts.append(np.sum(density[mask]) * voxel_volume)
+
+    result = pd.DataFrame(
+        {"brain_region": hierarchy_info["brain_region"], "cell_count": id_counts},
+        index=hierarchy_info.index,
+    )
+
+    if with_descendants:
+        counts = []
+        for id_set in tqdm(hierarchy_info["descendant_id_set"]):
+            count = result.loc[list(id_set), "cell_count"].sum()
+            counts.append(count)
+        result["cell_count"] = counts
+
+    return result
 
 
 def set_known_values(
@@ -435,7 +485,7 @@ def _compute_initial_cell_counts(
             associated standard deviations (descendant subregions are excluded).
     """
     L.info("Computing the volume of every 3D region ...")
-    volumes = compute_region_volumes(annotation, voxel_volume, hierarchy_info)
+    volumes = utils.compute_region_volumes(annotation, voxel_volume, hierarchy_info)
 
     L.info("Computing cell count estimates in every 3D region ...")
     region_counts = average_densities_to_cell_counts(average_densities, volumes)
@@ -611,7 +661,7 @@ def create_inhibitory_neuron_densities(  # pylint: disable=too-many-locals
         linear program cannot be solved.
     """
 
-    hierarchy_info = get_hierarchy_info(RegionMap.from_dict(hierarchy), root=region_name)
+    hierarchy_info = utils.get_hierarchy_info(RegionMap.from_dict(hierarchy), root=region_name)
     average_densities = resize_average_densities(average_densities, hierarchy_info)
 
     L.info("Initialization of the linear program: started")
@@ -620,7 +670,7 @@ def create_inhibitory_neuron_densities(  # pylint: disable=too-many-locals
     )
 
     L.info("Retrieving overall neuron counts in atomic 3D regions ...")
-    neuron_counts = compute_region_cell_counts(
+    neuron_counts = _compute_region_cell_counts(
         annotation, neuron_density, voxel_volume, hierarchy_info, with_descendants=False
     )
     assert np.all(neuron_counts["cell_count"] >= 0.0)

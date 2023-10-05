@@ -55,6 +55,7 @@ from atlas_commons.app_utils import (
     log_args,
     set_verbose,
 )
+from atlas_commons.typing import FloatArray
 from voxcell import RegionMap, VoxelData  # type: ignore
 
 from atlas_densities.app.utils import AD_PATH, DATA_PATH
@@ -82,7 +83,6 @@ from atlas_densities.densities.measurement_to_density import (
 from atlas_densities.densities.refined_inhibitory_neuron_densities import (
     create_inhibitory_neuron_densities as keep_proportions,
 )
-from atlas_densities.densities.utils import zero_negative_values
 from atlas_densities.exceptions import AtlasDensitiesError
 
 EXCITATORY_SPLIT_CORTEX_ALL_TO_EXC_MTYPES = (
@@ -100,6 +100,42 @@ ALGORITHMS: Dict[str, Callable] = {
 }
 
 L = logging.getLogger(__name__)
+
+
+def _zero_negative_values(array: FloatArray) -> None:
+    """
+    Zero negative values resulting from round-off errors.
+
+    Modifies `array` in place.
+
+    Args:
+        array: float numpy array. We expect most of the `array` values to be non-negative.
+            Negative values should be negligible when compared to positive values.
+
+    Raises:
+        AtlasDensitiesError if the absolute value of the sum of all negative values exceeds
+            1 percent of the sum of all positive values, or if the smallest negative value is
+            not negligible wrt to the mean of the non-negative values.
+    """
+    negative_mask = array < 0.0
+    if np.count_nonzero(negative_mask) == 0:
+        return
+
+    non_negative_mask = np.invert(negative_mask)
+
+    if np.abs(np.sum(array[negative_mask])) / np.sum(array[non_negative_mask]) > 0.01:
+        raise AtlasDensitiesError(
+            "The absolute value of the sum of all negative values exceeds"
+            " 1 percent of the sum of all positive values"
+        )
+    ratio = np.abs(np.min(array[negative_mask])) / np.mean(array[non_negative_mask])
+    if not np.isclose(ratio, 0.0, atol=1e-08):
+        raise AtlasDensitiesError(
+            "The smallest negative value is not negligible wrt to "
+            "the mean of all non-negative values."
+        )
+
+    array[negative_mask] = 0.0
 
 
 def _get_voxel_volume_in_mm3(voxel_data: "VoxelData") -> float:
@@ -333,7 +369,7 @@ def glia_cell_densities(
 
     L.info("Saving overall neuron density to file %s", str(Path(output_dir, "neuron_density.nrrd")))
     neuron_density = overall_cell_density.raw - glia_densities["glia"]
-    zero_negative_values(neuron_density)
+    _zero_negative_values(neuron_density)
     annotation.with_data(np.asarray(neuron_density, dtype=float)).save_nrrd(
         str(Path(output_dir, "neuron_density.nrrd"))
     )
@@ -466,7 +502,7 @@ def inhibitory_and_excitatory_neuron_densities(
         str(Path(output_dir, "inhibitory_neuron_density.nrrd"))
     )
     excitatory_neuron_density = neuron_density.raw - inhibitory_neuron_density
-    zero_negative_values(excitatory_neuron_density)
+    _zero_negative_values(excitatory_neuron_density)
     annotation.with_data(np.asarray(excitatory_neuron_density, dtype=float)).save_nrrd(
         str(Path(output_dir, "excitatory_neuron_density.nrrd"))
     )
