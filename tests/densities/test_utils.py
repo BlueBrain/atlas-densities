@@ -113,6 +113,15 @@ def test_get_group_ids():
     assert len(group_ids["Isocortex group"] & group_ids["Rest"]) == 0
     assert len(group_ids["Cerebellum group"] & group_ids["Rest"]) == 0
     assert group_ids["Cerebellar cortex"].issubset(group_ids["Cerebellum group"])
+    for k, length in (('Fiber tracts group', 227),
+                      ('Isocortex group', 409),
+                      ('Cerebellar cortex', 81),
+                      ('Cerebellum group', 88),
+                      ('Molecular layer', 19),
+                      ('Purkinje layer', 19),
+                      ('Rest', 830)):
+        assert length == len(group_ids[k])
+
 
 
 def test_get_region_masks():
