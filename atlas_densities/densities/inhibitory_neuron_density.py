@@ -84,7 +84,7 @@ def compute_inhibitory_neuron_density(  # pylint: disable=too-many-arguments
     neuron_density: FloatArray,
     inhibitory_proportion: Optional[float] = None,
     inhibitory_data: Optional[InhibitoryData] = None,
-    group_ids_config: dict = None,
+    group_ids_config: Optional[dict] = None,
 ) -> FloatArray:
     """
     Compute the inhibitory neuron density using a prescribed neuron count and the overall neuron
@@ -135,6 +135,7 @@ def compute_inhibitory_neuron_density(  # pylint: disable=too-many-arguments
                 "Either inhibitory_proportion or inhibitory_data should be provided"
                 ". Both are None."
             )
+        assert group_ids_config is not None
         group_ids = utils.get_group_ids(region_map, config=group_ids_config)
         inhibitory_data["region_masks"] = utils.get_region_masks(group_ids, annotation)
     else:

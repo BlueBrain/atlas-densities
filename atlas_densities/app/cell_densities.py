@@ -59,7 +59,12 @@ from atlas_commons.typing import FloatArray
 from voxcell import RegionMap, VoxelData  # type: ignore
 
 from atlas_densities.app.utils import AD_PATH, DATA_PATH
-from atlas_densities.densities import excitatory_inhibitory_splitting
+from atlas_densities.densities import (
+    excitatory_inhibitory_splitting,
+    inhibitory_neuron_densities_optimization,
+    refined_inhibitory_neuron_densities,
+    utils,
+)
 from atlas_densities.densities.cell_counts import (
     extract_inhibitory_neurons_dataframe,
     glia_cell_counts,
@@ -72,16 +77,10 @@ from atlas_densities.densities.excel_reader import (
 )
 from atlas_densities.densities.fitting import linear_fitting
 from atlas_densities.densities.glia_densities import compute_glia_densities
-from atlas_densities.densities.inhibitory_neuron_densities_optimization import (
-    create_inhibitory_neuron_densities as linprog,
-)
 from atlas_densities.densities.inhibitory_neuron_density import compute_inhibitory_neuron_density
 from atlas_densities.densities.measurement_to_density import (
     measurement_to_average_density,
     remove_non_density_measurements,
-)
-from atlas_densities.densities.refined_inhibitory_neuron_densities import (
-    create_inhibitory_neuron_densities as keep_proportions,
 )
 from atlas_densities.exceptions import AtlasDensitiesError
 
@@ -95,8 +94,8 @@ MARKERS_README_REL_PATH = (DATA_PATH / "markers" / "README.rst").relative_to(AD_
 LINPROG_PATH = "doc/source/bbpp82_628_linprog.pdf"
 
 ALGORITHMS: Dict[str, Callable] = {
-    "keep-proportions": keep_proportions,
-    "linprog": linprog,
+    "keep-proportions": refined_inhibitory_neuron_densities.create_inhibitory_neuron_densities,
+    "linprog": inhibitory_neuron_densities_optimization.create_inhibitory_neuron_densities,
 }
 
 L = logging.getLogger(__name__)
@@ -177,13 +176,14 @@ def app(verbose):
     "A voxel value is a number of cells per mm^3",
 )
 @click.option(
-    "--root-region-name",
-    type=str,
-    default="root",
-    help="Name of the region in the hierarchy",
+    "--group-ids-config-path",
+    type=EXISTING_FILE_PATH,
+    default=utils.GROUP_IDS_PATH,
+    help="Path to density groups ids config",
+    show_default=True,
 )
 @log_args(L)
-def cell_density(annotation_path, hierarchy_path, nissl_path, output_path, root_region_name):
+def cell_density(annotation_path, hierarchy_path, nissl_path, output_path, group_ids_config_path):
     """Compute and save the overall mouse brain cell density.
 
     The input Nissl stain volume of AIBS is turned into an actual density field complying with
@@ -210,13 +210,14 @@ def cell_density(annotation_path, hierarchy_path, nissl_path, output_path, root_
     assert_properties([annotation, nissl])
 
     region_map = RegionMap.load_json(hierarchy_path)
+    group_ids_config = utils.load_json(group_ids_config_path)
 
     overall_cell_density = compute_cell_density(
         region_map,
         annotation.raw,
         _get_voxel_volume_in_mm3(annotation),
         nissl.raw,
-        root_region_name=root_region_name,
+        group_ids_config=group_ids_config,
     )
     nissl.with_data(overall_cell_density).save_nrrd(output_path)
 
@@ -268,6 +269,13 @@ def cell_density(annotation_path, hierarchy_path, nissl_path, output_path, root_
     help="Path to the directory where to write the output cell density nrrd files."
     " It will be created if it doesn't exist already.",
 )
+@click.option(
+    "--group-ids-config-path",
+    type=EXISTING_FILE_PATH,
+    default=utils.GROUP_IDS_PATH,
+    help="Path to density groups ids config",
+    show_default=True,
+)
 @log_args(L)
 def glia_cell_densities(
     annotation_path,
@@ -279,6 +287,7 @@ def glia_cell_densities(
     microglia_density_path,
     glia_proportions_path,
     output_dir,
+    group_ids_config_path,
 ):  # pylint: disable=too-many-arguments, too-many-locals
     """Compute and save the glia cell densities.
 
@@ -338,19 +347,19 @@ def glia_cell_densities(
         "microglia": VoxelData.load_nrrd(microglia_density_path),
     }
 
-    atlases = list(glia_densities.values())
-    atlases += [annotation, overall_cell_density]
+    atlases = list(glia_densities.values()) + [annotation, overall_cell_density]
     L.info("Checking input files consistency ...")
     assert_properties(atlases)
 
     L.info("Loading hierarchy ...")
     region_map = RegionMap.load_json(hierarchy_path)
-    with open(glia_proportions_path, "r", encoding="utf-8") as file_:
-        glia_proportions = json.load(file_)
+    glia_proportions = utils.load_json(glia_proportions_path)
 
     glia_densities = {
-        glia_cell_type: voxel_data.raw for (glia_cell_type, voxel_data) in glia_densities.items()
+        glia_cell_type: voxel_data.raw for glia_cell_type, voxel_data in glia_densities.items()
     }
+
+    group_ids_config = utils.load_json(group_ids_config_path)
 
     L.info("Compute volumetric glia densities: started")
     glia_densities = compute_glia_densities(
@@ -362,6 +371,7 @@ def glia_cell_densities(
         overall_cell_density.raw,
         glia_proportions,
         copy=False,
+        group_ids_config=group_ids_config,
     )
 
     if not Path(output_dir).exists():
@@ -424,10 +434,11 @@ def glia_cell_densities(
     " It will be created if it doesn't exist already.",
 )
 @click.option(
-    "--root-region-name",
-    type=str,
-    default="root",
-    help="Name of the region in the hierarchy",
+    "--group-ids-config-path",
+    type=EXISTING_FILE_PATH,
+    default=utils.GROUP_IDS_PATH,
+    help="Path to density groups ids config",
+    show_default=True,
 )
 @log_args(L)
 def inhibitory_and_excitatory_neuron_densities(
@@ -438,7 +449,7 @@ def inhibitory_and_excitatory_neuron_densities(
     neuron_density_path,
     inhibitory_neuron_counts_path,
     output_dir,
-    root_region_name,
+    group_ids_config_path,
 ):  # pylint: disable=too-many-arguments
     """Compute and save the inhibitory and excitatory neuron densities.
 
@@ -484,6 +495,7 @@ def inhibitory_and_excitatory_neuron_densities(
 
     region_map = RegionMap.load_json(hierarchy_path)
     inhibitory_df = extract_inhibitory_neurons_dataframe(inhibitory_neuron_counts_path)
+    group_ids_config = utils.load_json(group_ids_config_path)
     inhibitory_neuron_density = compute_inhibitory_neuron_density(
         region_map,
         annotation.raw,
@@ -492,7 +504,7 @@ def inhibitory_and_excitatory_neuron_densities(
         VoxelData.load_nrrd(nrn1_path).raw,
         neuron_density.raw,
         inhibitory_data=inhibitory_data(inhibitory_df),
-        root_region_name=root_region_name,
+        group_ids_config=group_ids_config,
     )
 
     if not Path(output_dir).exists():
@@ -775,6 +787,13 @@ def measurements_to_average_densities(
     help="Path to the json file containing the fitting coefficients and standard deviations"
     "for each region group and each cell type.",
 )
+@click.option(
+    "--group-ids-config-path",
+    type=EXISTING_FILE_PATH,
+    default=utils.GROUP_IDS_PATH,
+    help="Path to density groups ids config",
+    show_default=True,
+)
 @log_args(L)
 def fit_average_densities(
     hierarchy_path,
@@ -786,6 +805,7 @@ def fit_average_densities(
     homogenous_regions_path,
     fitted_densities_output_path,
     fitting_maps_output_path,
+    group_ids_config_path,
 ):  # pylint: disable=too-many-arguments, too-many-locals
     """
     Estimate average cell densities of brain regions in `hierarchy_path` for the cell types
@@ -857,17 +877,14 @@ def fit_average_densities(
     voxel_data += list(gene_voxeldata.values())
     assert_properties(voxel_data)
 
-    with open(config["realignedSlicesPath"], "r", encoding="utf-8") as file_:
-        slices = json.load(file_)
-
-    with open(config["cellDensityStandardDeviationsPath"], "r", encoding="utf-8") as file_:
-        cell_density_stddev = json.load(file_)
-        cell_density_stddev = {
-            # Use the AIBS name attribute as key (this is a unique identifier in 1.json)
-            # (Ex: former key "|root|Basic cell groups and regions|Cerebrum" -> new key: "Cerebrum")
-            name.split("|")[-1]: stddev
-            for (name, stddev) in cell_density_stddev.items()
-        }
+    slices = utils.load_json(config["realignedSlicesPath"])
+    cell_density_stddev = utils.load_json(config["cellDensityStandardDeviationsPath"])
+    cell_density_stddev = {
+        # Use the AIBS name attribute as key (this is a unique identifier in 1.json)
+        # (Ex: former key "|root|Basic cell groups and regions|Cerebrum" -> new key: "Cerebrum")
+        name.split("|")[-1]: stddev
+        for (name, stddev) in cell_density_stddev.items()
+    }
 
     gene_marker_volumes = {
         gene: {
@@ -876,6 +893,8 @@ def fit_average_densities(
         }
         for (gene, gene_data) in gene_voxeldata.items()
     }
+
+    group_ids_config = utils.load_json(group_ids_config_path)
 
     L.info("Loading average densities dataframe ...")
     average_densities_df = pd.read_csv(average_densities_path)
@@ -891,6 +910,7 @@ def fit_average_densities(
         homogenous_regions_df,
         cell_density_stddev,
         region_name=region_name,
+        group_ids_config=group_ids_config,
     )
 
     # Turn index into column so as to ease off the save and load operations on csv files
@@ -985,14 +1005,15 @@ def inhibitory_neuron_densities(
     neuron_density = VoxelData.load_nrrd(neuron_density_path)
     if np.any(neuron_density.raw < 0.0):
         raise AtlasDensitiesError(f"Negative density value found in {neuron_density_path}.")
+
     L.info("Loading hierarchy ...")
-    with open(hierarchy_path, "r", encoding="utf-8") as file_:
-        hierarchy = json.load(file_)
-        if "msg" in hierarchy:
-            L.warning("Top-most object contains 'msg'; assuming AIBS JSON layout")
-            if len(hierarchy["msg"]) > 1:
-                raise AtlasDensitiesError("Unexpected JSON layout (more than one 'msg' child)")
-            hierarchy = hierarchy["msg"][0]
+
+    hierarchy = utils.load_json(hierarchy_path)
+    if "msg" in hierarchy:
+        L.warning("Top-most object contains 'msg'; assuming AIBS JSON layout")
+        if len(hierarchy["msg"]) > 1:
+            raise AtlasDensitiesError("Unexpected JSON layout (more than one 'msg' child)")
+        hierarchy = hierarchy["msg"][0]
 
     # Consistency check
     L.info("Checking consistency ...")

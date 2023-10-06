@@ -365,21 +365,23 @@ def _interpret_region_groups(region_map, config):
 
     def make_query(query):
         if isinstance(query, dict) and any(op in query for op in OPS):
-            return materialize(query)
+            ids = materialize(query)
         elif isinstance(query, dict):
             query = dict(query)
             with_descendants = query.pop("with_descendants")
             assert len(query) == 1
             attr, value = next(iter(query.items()))
-            return region_map.find(value, attr=attr, with_descendants=with_descendants)
+            ids = region_map.find(value, attr=attr, with_descendants=with_descendants)
         elif isinstance(query, str) and query[0] == "!":
-            return set(groups[query[1:]])
-        raise Exception(f"unknown query: {query}")
+            ids = set(groups[query[1:]])
+        else:
+            raise ValueError(f"unknown query: {query}")
+        return ids
 
     def materialize(node):
         assert len(node) == 1
         op, queries = next(iter(node.items()))
-        assert op in OPS, f"{op} is not in {ops}"
+        assert op in OPS, f"{op} is not in {OPS}"
         if op == UNION:
             ids = set()
             for query in queries:

@@ -569,7 +569,7 @@ def linear_fitting(  # pylint: disable=too-many-arguments
     homogenous_regions: pd.DataFrame,
     cell_density_stddevs: Optional[dict[str, float]] = None,
     region_name: str = "root",
-    group_ids_config: dict = None,
+    group_ids_config: dict | None = None,
 ) -> pd.DataFrame:
     """
     Estimate the average densities of every region in `region_map` using a linear fitting
@@ -619,6 +619,7 @@ def linear_fitting(  # pylint: disable=too-many-arguments
             fitting_coefficients: dict returned by
                 :fun:`atlas_densities.densities.fitting.compute_fitting_coefficients`.
     """
+    assert group_ids_config is not None
     L.info("Checking input data frames sanity ...")
     _check_average_densities_sanity(average_densities)
     _check_homogenous_regions_sanity(homogenous_regions)

@@ -19,7 +19,7 @@ def compute_glia_cell_counts_per_voxel(  # pylint: disable=too-many-arguments
     glia_intensity: FloatArray,
     cell_counts_per_voxel: FloatArray,
     copy: bool = True,
-    group_ids_config: dict = None,
+    group_ids_config: dict | None = None,
 ) -> FloatArray:
     """
     Compute the overall glia cell counts per voxel using a prescribed total glia cell count and
@@ -49,6 +49,7 @@ def compute_glia_cell_counts_per_voxel(  # pylint: disable=too-many-arguments
         layer).
     """
 
+    assert group_ids_config is not None
     fiber_tracts_mask = np.isin(
         annotation, list(utils.get_fiber_tract_ids(region_map, group_ids_config))
     )
@@ -76,7 +77,7 @@ def compute_glia_densities(  # pylint: disable=too-many-arguments
     cell_density: FloatArray,
     glia_proportions: dict[str, str],
     copy: bool = False,
-    group_ids_config: dict = None,
+    group_ids_config: dict | None = None,
 ) -> dict[str, FloatArray]:
     """
     Compute the overall glia cell density as well as astrocyte, olgidendrocyte and microglia
@@ -125,6 +126,8 @@ def compute_glia_densities(  # pylint: disable=too-many-arguments
         voxel volume.
 
     """
+    assert group_ids_config is not None
+
     glia_densities = glia_intensities.copy()
     # The algorithm constraining cell counts per voxel requires double precision
     for glia_type in glia_densities:

@@ -133,7 +133,7 @@ def test_make_excitatory_density():
     res = tested.make_excitatory_density(neuron_density, inhibitory_density)
 
     assert res.shape == neuron_density.shape
-    assert np.sum(res.raw) == np.product(neuron_density.shape)
+    assert np.sum(res.raw) == np.prod(neuron_density.shape)
 
     # this would create negative densities; make sure they are clipped to zero
     res = tested.make_excitatory_density(inhibitory_density, neuron_density)
