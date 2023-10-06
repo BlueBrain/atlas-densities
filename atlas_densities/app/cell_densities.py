@@ -54,6 +54,7 @@ from atlas_commons.app_utils import (
     common_atlas_options,
     log_args,
     set_verbose,
+    verbose_option,
 )
 from atlas_commons.typing import FloatArray
 from voxcell import RegionMap, VoxelData  # type: ignore
@@ -154,7 +155,7 @@ def _get_voxel_volume_in_mm3(voxel_data: "VoxelData") -> float:
 
 
 @click.group()
-@click.option("-v", "--verbose", count=True)
+@verbose_option
 def app(verbose):
     """Run the cell densities CLI"""
     set_verbose(L, verbose)
@@ -855,6 +856,7 @@ def fit_average_densities(
     - some regions can have NaN density values for one or more cell types because they are not
     covered by the selected slices of the volumetric gene marker intensities.
     """
+    Path(fitted_densities_output_path).parent.mkdir(parents=True, exist_ok=True)
 
     L.info("Loading annotation ...")
     annotation = VoxelData.load_nrrd(annotation_path)

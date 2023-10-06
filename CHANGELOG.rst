@@ -3,8 +3,9 @@ Changelog
 
 Version 0.2.1
 -------------
-* The following `cell-density` sub-commands can now optionally take a group_ids_config:
-   `cell-density`, `glia-cell-densities`, `inhibitory-and-excitatory-neuron-densities`, `fit-average-densities`
+* The following *cell-density* sub-commands can now optionally take a ``--group-ids-config-path``:
+   *cell-density*, *glia-cell-densities*, *inhibitory-and-excitatory-neuron-densities*, *fit-average-densities*
+
    Otherwise they use the default config for the AIBS atlas.
 
 Version 0.2.0

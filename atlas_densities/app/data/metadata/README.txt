@@ -36,3 +36,12 @@ A clause is formed of dictionary of the form:
 The attribute name is used for the atlas lookup, things like "name" or "acronym" are valid.
 
 Finally, one can refer to a previous stanza by preceding it with a `!`.
+
+The current `group_ids.json was discussed here:
+    https://github.com/BlueBrain/atlas-densities/pull/51#issuecomment-1748445813
+    In very short, in older versions of the annotations, fibers and main regions were in separated files (ccfv2 / ccfbbp).
+    In the main regions, the space allocated to the fibers were annotated to Basic cell groups and regions.
+    For some weird reasons, the fibers do not take the entire space allocated for them.
+    Which means that for most of the voxels annotated to Basic cell groups and regions, they correspond to fibers.
+    I say most of the voxels because there are also voxels at the frontier between two main regions (e.g. Cerebellum) that were not annotated to their closest leaf region.
+    These voxels are gone in ccfv3.
