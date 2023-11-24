@@ -8,13 +8,18 @@ import numpy as np
 import pandas as pd
 import pandas.testing as pdt
 import pytest
-from voxcell import RegionMap  # type: ignore
+from voxcell import RegionMap
 
 import atlas_densities.densities.fitting as tested
-from atlas_densities.densities.utils import get_hierarchy_info
+from atlas_densities.densities import utils
 from atlas_densities.exceptions import AtlasDensitiesError, AtlasDensitiesWarning
 
 TESTS_PATH = Path(__file__).parent.parent
+
+
+@pytest.fixture
+def group_ids_config():
+    return utils.load_json(utils.GROUP_IDS_PATH)
 
 
 def test_create_dataframe_from_known_densities():
@@ -44,7 +49,8 @@ def test_create_dataframe_from_known_densities():
     pdt.assert_frame_equal(actual, expected)
 
 
-def get_hierarchy_info_():
+@pytest.fixture
+def hierarchy_info():
     hierarchy = {
         "id": 8,
         "name": "Basic cell groups and regions",
@@ -98,12 +104,7 @@ def get_hierarchy_info_():
         ],
     }
 
-    return get_hierarchy_info(RegionMap.from_dict(hierarchy))
-
-
-@pytest.fixture
-def hierarchy_info():
-    return get_hierarchy_info_()
+    return utils.get_hierarchy_info(RegionMap.from_dict(hierarchy))
 
 
 def test_fill_in_homogenous_regions(hierarchy_info):
@@ -278,14 +279,13 @@ def test_linear_fitting_xy():
     assert not np.isinf(actual["standard_deviation"])
 
 
-def get_fitting_input_data_():
-    h = get_hierarchy_info_()
+def get_fitting_input_data_(hierarchy_info):
     intensities = pd.DataFrame(
         {
             "gad67": [7.0 / 4.0, 1.0, 2.0, 1.0, np.nan, np.nan, np.nan, np.nan],
             "pv": [10.0 / 7.0, 2.0, 1.0, 2.0, np.nan, np.nan, np.nan, np.nan],
         },
-        index=h["brain_region"],
+        index=hierarchy_info["brain_region"],
     )
     densities = pd.DataFrame(
         {
@@ -294,7 +294,7 @@ def get_fitting_input_data_():
             "pv+": [30.0 / 7.0, 6.0, 3.0, 6.0, np.nan, np.nan, np.nan, np.nan],
             "pv+_standard_deviation": [2.0, 1.0, 3.0, 4.0, np.nan, np.nan, np.nan, np.nan],
         },
-        index=h["brain_region"],
+        index=hierarchy_info["brain_region"],
     )
     data = {
         "groups": {"Whole": {"Lobule II", "Declive (VI)"}, "Central lobule": {"Lobule II"}},
@@ -305,8 +305,8 @@ def get_fitting_input_data_():
     return data
 
 
-def test_compute_fitting_coefficients():
-    data = get_fitting_input_data_()
+def test_compute_fitting_coefficients(hierarchy_info):
+    data = get_fitting_input_data_(hierarchy_info)
 
     actual = tested.compute_fitting_coefficients(
         data["groups"], data["intensities"], data["densities"]
@@ -321,20 +321,20 @@ def test_compute_fitting_coefficients():
         assert not np.isnan(actual[group_name]["pv+"]["standard_deviation"])
 
 
-def test_compute_fitting_coefficients_exceptions():
-    data = get_fitting_input_data_()
+def test_compute_fitting_coefficients_exceptions(hierarchy_info):
+    data = get_fitting_input_data_(hierarchy_info)
     data["densities"].drop(index=["Central lobule"], inplace=True)
 
     with pytest.raises(AtlasDensitiesError):
         tested.compute_fitting_coefficients(data["groups"], data["intensities"], data["densities"])
 
-    data = get_fitting_input_data_()
+    data = get_fitting_input_data_(hierarchy_info)
     data["densities"].drop(columns=["pv+"], inplace=True)
 
     with pytest.raises(AtlasDensitiesError):
         tested.compute_fitting_coefficients(data["groups"], data["intensities"], data["densities"])
 
-    data = get_fitting_input_data_()
+    data = get_fitting_input_data_(hierarchy_info)
     data["densities"].at["Lobule II", "pv+_standard_deviation"] = np.nan
     with pytest.raises(AssertionError):
         tested.compute_fitting_coefficients(data["groups"], data["intensities"], data["densities"])
@@ -499,7 +499,7 @@ def get_fitting_input_data():
     }
 
 
-def test_linear_fitting():
+def test_linear_fitting(group_ids_config):
     data = get_fitting_input_data()
 
     with warnings.catch_warnings(record=True) as warnings_:
@@ -510,6 +510,7 @@ def test_linear_fitting():
             data["gene_marker_volumes"],
             data["average_densities"],
             data["homogenous_regions"],
+            group_ids_config=group_ids_config,
         )
         warnings_ = [w for w in warnings_ if isinstance(w.message, AtlasDensitiesWarning)]
         # Three warnings for recording NaN coefficients, three warnings for using them
@@ -526,7 +527,7 @@ def test_linear_fitting():
     assert not np.isinf(densities.at["Hippocampal formation", "pv+_standard_deviation"])
 
 
-def test_linear_fitting_exception_average_densities():
+def test_linear_fitting_exception_average_densities(group_ids_config):
     data = get_fitting_input_data()
     data["average_densities"].at["Thalamus", "measurement_type"] = "volume"
 
@@ -538,6 +539,7 @@ def test_linear_fitting_exception_average_densities():
             data["gene_marker_volumes"],
             data["average_densities"],
             data["homogenous_regions"],
+            group_ids_config=group_ids_config,
         )
 
     data["average_densities"].at["Thalamus", "measurement_type"] = "cell density"
@@ -551,10 +553,11 @@ def test_linear_fitting_exception_average_densities():
             data["gene_marker_volumes"],
             data["average_densities"],
             data["homogenous_regions"],
+            group_ids_config=group_ids_config,
         )
 
 
-def test_linear_fitting_exception_homogenous_regions():
+def test_linear_fitting_exception_homogenous_regions(group_ids_config):
     data = get_fitting_input_data()
     data["homogenous_regions"].at["Thalamus", "cell_type"] = "Inhibitory"
 
@@ -566,4 +569,12 @@ def test_linear_fitting_exception_homogenous_regions():
             data["gene_marker_volumes"],
             data["average_densities"],
             data["homogenous_regions"],
+            group_ids_config=group_ids_config,
         )
+
+
+def test__get_group_names(group_ids_config):
+    region_map = RegionMap.load_json(Path(TESTS_PATH, "1.json"))
+    ret = tested._get_group_names(region_map, group_ids_config=group_ids_config)
+    for k, length in (("Isocortex group", 409), ("Cerebellum group", 88), ("Rest", 825)):
+        assert length == len(ret[k])

@@ -10,6 +10,7 @@ import pytest
 from voxcell import RegionMap
 
 import atlas_densities.densities.inhibitory_neuron_density as tested
+from atlas_densities.densities import utils
 from atlas_densities.exceptions import AtlasDensitiesError
 
 TESTS_PATH = Path(__file__).parent.parent
@@ -74,15 +75,15 @@ def test_compute_inhibitory_neuron_density():
     data = get_intensity_data()
 
     with patch(
-        "atlas_densities.densities.inhibitory_neuron_density.get_group_ids",
+        "atlas_densities.densities.inhibitory_neuron_density.utils.get_group_ids",
         return_value=group_ids,
     ):
         with patch(
-            "atlas_densities.densities.inhibitory_neuron_density.get_region_masks",
+            "atlas_densities.densities.inhibitory_neuron_density.utils.get_region_masks",
             return_value=data["region_masks"],
         ):
             with patch(
-                "atlas_densities.densities.inhibitory_neuron_density.compensate_cell_overlap",
+                "atlas_densities.densities.inhibitory_neuron_density.utils.compensate_cell_overlap",
                 side_effect=[data["gad1"], data["nrn1"]],
             ):
                 # have any empty region map
@@ -97,7 +98,7 @@ def test_compute_inhibitory_neuron_density():
                     data["nrn1"],
                     neuron_density,
                     inhibitory_data=data["inhibitory_data"],
-                    root_region_name="root",
+                    group_ids_config="NOT_USED_SINCE_MOCK",
                 )
                 expected = np.array([[[0.0, 0.0, 4.0, 25.0 / 62.0, 99.0 / 62.0]]]) / voxel_volume
                 npt.assert_almost_equal(inhibitory_neuron_density, expected)
@@ -105,6 +106,7 @@ def test_compute_inhibitory_neuron_density():
 
 def test_compute_inhibitory_neuron_density_exception():
     # At least one of `inhibitory_proportion` or `inhibitory_data` must be provided
+    group_ids_config = utils.load_json(utils.GROUP_IDS_PATH)
     with pytest.raises(AtlasDensitiesError) as error_:
         tested.compute_inhibitory_neuron_density(
             {},
@@ -113,7 +115,7 @@ def test_compute_inhibitory_neuron_density_exception():
             np.array([[[1]]], dtype=float),
             np.array([[[1]]], dtype=float),
             np.array([[[1]]], dtype=float),
-            root_region_name="root",
+            group_ids_config=group_ids_config,
         )
     assert "inhibitory_proportion" in str(error_)
     assert "inhibitory_data" in str(error_)
@@ -153,6 +155,7 @@ def test_compute_inhibitory_density_large_input():
     region_map = RegionMap.load_json(Path(TESTS_PATH, "1.json"))
     neuron_count = 30000
     data = get_inhibitory_neuron_input_data(neuron_count)
+    group_ids_config = utils.load_json(utils.GROUP_IDS_PATH)
 
     inhibitory_neuron_density = tested.compute_inhibitory_neuron_density(
         region_map,
@@ -162,7 +165,7 @@ def test_compute_inhibitory_density_large_input():
         data["nrn1"],
         data["neuron_density"],
         inhibitory_data=data["inhibitory_data"],
-        root_region_name="root",
+        group_ids_config=group_ids_config,
     )
 
     assert np.all(inhibitory_neuron_density <= data["neuron_density"])

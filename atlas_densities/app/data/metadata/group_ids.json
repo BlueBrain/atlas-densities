@@ -1,0 +1,52 @@
+[
+  {
+    "name": "Cerebellum group",
+    "UNION": [
+        { "name": "Cerebellum", "with_descendants": true },
+        { "name": "arbor vitae", "with_descendants": true }
+    ]
+  },
+  {
+    "name": "Isocortex group",
+    "UNION": [
+        { "name": "Isocortex", "with_descendants": true },
+        { "name": "Entorhinal area", "with_descendants": true },
+        { "name": "Piriform area", "with_descendants": true } ]
+  },
+  {
+    "name": "Fiber tracts group",
+    "UNION": [
+        { "name": "fiber tracts", "with_descendants": true },
+        { "name": "grooves", "with_descendants": true },
+        { "name": "ventricular systems", "with_descendants": true },
+        { "name": "Basic cell groups and regions", "with_descendants": false },
+        { "name": "Cerebellum", "with_descendants": false }
+    ]
+  },
+  {
+    "name": "Purkinje layer",
+    "UNION": [
+      { "name": "@.*Purkinje layer", "with_descendants": true }
+    ]
+  },
+  {
+    "name": "Cerebellar cortex",
+    "UNION": [
+      { "name": "Cerebellar cortex", "with_descendants": true }
+    ]
+  },
+  {
+    "name": "Molecular layer",
+    "INTERSECT": [
+      "!Cerebellar cortex",
+      { "name": "@.*molecular layer", "with_descendants": true }
+    ]
+  },
+  {
+    "name": "Rest",
+    "REMOVE": [
+      { "name": "root", "with_descendants": true },
+      { "UNION": [ "!Cerebellum group", "!Isocortex group" ] }
+    ]
+  }
+]

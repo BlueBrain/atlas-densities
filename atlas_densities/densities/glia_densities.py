@@ -19,6 +19,7 @@ def compute_glia_cell_counts_per_voxel(  # pylint: disable=too-many-arguments
     glia_intensity: FloatArray,
     cell_counts_per_voxel: FloatArray,
     copy: bool = True,
+    group_ids_config: dict | None = None,
 ) -> FloatArray:
     """
     Compute the overall glia cell counts per voxel using a prescribed total glia cell count and
@@ -39,6 +40,7 @@ def compute_glia_cell_counts_per_voxel(  # pylint: disable=too-many-arguments
             The overall cell density of the mouse brain expressed in number of cells per voxel.
         copy: If True, the input `glia_intensity` array is copied. Otherwise it is modified in-place
              and returned by the function.
+        group_ids_config: mapping of regions to their constituent ids
 
     Returns:
         float array of shape (W, H, D) with non-negative entries. The overall glia cell counts per
@@ -47,10 +49,13 @@ def compute_glia_cell_counts_per_voxel(  # pylint: disable=too-many-arguments
         layer).
     """
 
-    fiber_tracts_mask = np.isin(annotation, list(utils.get_fiber_tract_ids(region_map)))
+    assert group_ids_config is not None
+    fiber_tracts_mask = np.isin(
+        annotation, list(utils.get_fiber_tract_ids(region_map, group_ids_config))
+    )
     fiber_tracts_free_mask = np.isin(
         annotation,
-        list(utils.get_purkinje_layer_ids(region_map)),
+        list(utils.get_purkinje_layer_ids(region_map, group_ids_config)),
     )
 
     return utils.constrain_cell_counts_per_voxel(
@@ -72,6 +77,7 @@ def compute_glia_densities(  # pylint: disable=too-many-arguments
     cell_density: FloatArray,
     glia_proportions: dict[str, str],
     copy: bool = False,
+    group_ids_config: dict | None = None,
 ) -> dict[str, FloatArray]:
     """
     Compute the overall glia cell density as well as astrocyte, olgidendrocyte and microglia
@@ -101,6 +107,7 @@ def compute_glia_densities(  # pylint: disable=too-many-arguments
             which sums up to 1.0.
         copy: If True, the input `glia_intensities` arrays are copied. Otherwise they are
             modified in-place
+        group_ids_config: mapping of regions to their constituent ids
 
     Returns:
         A dict whose keys are glia cell types and whose values are float64 arrays of shape (W, H, D)
@@ -119,6 +126,8 @@ def compute_glia_densities(  # pylint: disable=too-many-arguments
         voxel volume.
 
     """
+    assert group_ids_config is not None
+
     glia_densities = glia_intensities.copy()
     # The algorithm constraining cell counts per voxel requires double precision
     for glia_type in glia_densities:
@@ -142,6 +151,7 @@ def compute_glia_densities(  # pylint: disable=too-many-arguments
         annotation,
         glia_densities["glia"],
         cell_density * voxel_volume,
+        group_ids_config=group_ids_config,
     )
     placed_cells = np.zeros_like(glia_densities["glia"])
     for glia_type in ["astrocyte", "oligodendrocyte"]:

@@ -1,6 +1,9 @@
 """Utility functions for cell density computation."""
 from __future__ import annotations
 
+import json
+from copy import deepcopy
+from pathlib import Path
 from typing import TYPE_CHECKING
 from warnings import warn
 
@@ -16,6 +19,16 @@ from atlas_densities.utils import copy_array
 
 if TYPE_CHECKING:  # pragma: no cover
     from voxcell import RegionMap  # type: ignore
+
+
+GROUP_IDS_PATH = Path(__file__).parent.parent / "app/data/metadata/group_ids.json"
+
+
+def load_json(path):
+    """Load a json file and return its decoded contents"""
+    with open(path, "r", encoding="utf-8") as fd:
+        ret = json.load(fd)
+    return ret
 
 
 def normalize_intensity(
@@ -308,35 +321,91 @@ def constrain_cell_counts_per_voxel(  # pylint: disable=too-many-arguments, too-
     return cell_counts
 
 
-def get_fiber_tract_ids(region_map: "RegionMap") -> set[int]:
-    """
+def get_fiber_tract_ids(region_map: "RegionMap", config: dict) -> set[int]:
+    """Ibid.
+
     Args:
         region_map: object to navigate the mouse brain regions hierarchy
+        config: mapping of regions to their constituent ids
     """
-    fiber_tracts_ids = (
-        region_map.find("fiber tracts", attr="name", with_descendants=True)
-        | region_map.find("grooves", attr="name", with_descendants=True)
-        | region_map.find("ventricular systems", attr="name", with_descendants=True)
-        | region_map.find("Basic cell groups and regions", attr="name")
-        | region_map.find("Cerebellum", attr="name")
-    )
+    fiber_tracts_ids = get_group_ids(region_map, config, _skip_check=True)["Fiber tracts group"]
     assert fiber_tracts_ids, "Missing ids in Fiber tracts"
     return fiber_tracts_ids
 
 
-def get_purkinje_layer_ids(region_map: "RegionMap") -> set[int]:
-    """
+def get_purkinje_layer_ids(region_map: "RegionMap", config: dict) -> set[int]:
+    """Ibid.
+
     Args:
         region_map: object to navigate the mouse brain regions hierarchy
+        config: mapping of regions to their constituent ids
     """
-    purkinje_layer_ids = region_map.find("@.*Purkinje layer", attr="name", with_descendants=True)
+
+    purkinje_layer_ids = get_group_ids(region_map, config, _skip_check=True)["Purkinje layer"]
     assert purkinje_layer_ids, "Missing ids in Purkinje layer"
     return purkinje_layer_ids
 
 
-def get_group_ids(
-    region_map: "RegionMap", cleanup_rest: bool = False, root_region_name: str | None = None
-) -> dict[str, set[int]]:
+UNION = "UNION"
+INTERSECT = "INTERSECT"
+REMOVE = "REMOVE"
+
+
+def _interpret_region_groups(region_map, config):
+    # key:
+    #  UNION - creates union of set of ids
+    #  INTERSECT - creates intersection of ids
+    #  REMOVE - removes ids
+    OPS = (
+        UNION,
+        INTERSECT,
+        REMOVE,
+    )
+    groups = {}
+
+    def make_query(query):
+        if isinstance(query, dict) and any(op in query for op in OPS):
+            ids = materialize(query)
+        elif isinstance(query, dict):
+            query = dict(query)
+            with_descendants = query.pop("with_descendants")
+            assert len(query) == 1
+            attr, value = next(iter(query.items()))
+            ids = region_map.find(value, attr=attr, with_descendants=with_descendants)
+        elif isinstance(query, str) and query[0] == "!":
+            ids = set(groups[query[1:]])
+        else:
+            raise ValueError(f"unknown query: {query}")
+        return ids
+
+    def materialize(node):
+        assert len(node) == 1
+        op, queries = next(iter(node.items()))
+        assert op in OPS, f"{op} is not in {OPS}"
+        if op == UNION:
+            ids = set()
+            for query in queries:
+                ids |= make_query(query)
+        elif op == INTERSECT:
+            ids = make_query(queries[0])
+            for query in queries[1:]:
+                ids &= make_query(query)
+        elif op == REMOVE:
+            ids = make_query(queries[0]) - make_query(queries[1])
+
+        return ids
+
+    config = deepcopy(config)
+    for node in config:
+        name = node.pop("name")
+        assert name not in groups
+        groups[name] = materialize(node)
+
+    return groups
+
+
+def get_group_ids(region_map: "RegionMap", config: dict, _skip_check=False) -> dict[str, set[int]]:
+
     """
     Get AIBS structure ids for several region groups of interest.
 
@@ -346,52 +415,15 @@ def get_group_ids(
     Args:
         region_map: object to navigate the mouse brain regions hierarchy
             (instantied from AIBS 1.json).
-        cleanup_rest: (Optional) If True, the id of any ascendant region of the Cerebellum and
-            Isocortex groups are removed from the ids of the Rest group. This makes sure that
-            the set of ids of the Rest group is closed under taking descendants.
-
+        config: mapping of regions to their constituent ids
     Returns:
         A dictionary whose keys are region group names and whose values are
         sets of structure identifiers.
     """
-    # pylint: disable=too-many-locals
-    cerebellum_group_ids = region_map.find(
-        "Cerebellum", attr="name", with_descendants=True
-    ) | region_map.find("arbor vitae", attr="name", with_descendants=True)
-    isocortex_group_ids = (
-        region_map.find("Isocortex", attr="name", with_descendants=True)
-        | region_map.find("Entorhinal area", attr="name", with_descendants=True)
-        | region_map.find("Piriform area", attr="name", with_descendants=True)
-    )
-    purkinje_layer_ids = get_purkinje_layer_ids(region_map)
-    fiber_tracts_ids = get_fiber_tract_ids(region_map)
-    cerebellar_cortex_ids = region_map.find("Cerebellar cortex", attr="name", with_descendants=True)
-    molecular_layer_ids = cerebellar_cortex_ids & region_map.find(
-        "@.*molecular layer", attr="name", with_descendants=True
-    )
-    rest_ids = region_map.find(root_region_name, attr="name", with_descendants=True)
-    assert rest_ids, f"Did not find any ids in {root_region_name}"
-    rest_ids -= cerebellum_group_ids | isocortex_group_ids
-
-    if cleanup_rest:
-        # Make the Rest group stable under taking descendants
-        isocortex_id = region_map.find("Isocortex", attr="name").pop()
-        cerebellum_id = region_map.find("Cerebellum", attr="name").pop()
-        ascendant_ids = set(region_map.get(isocortex_id, attr="id", with_ascendants=True))
-        ascendant_ids |= set(region_map.get(cerebellum_id, attr="id", with_ascendants=True))
-        rest_ids -= ascendant_ids
-
-    ret = {
-        "Cerebellum group": cerebellum_group_ids,
-        "Isocortex group": isocortex_group_ids,
-        "Fiber tracts group": fiber_tracts_ids,
-        "Purkinje layer": purkinje_layer_ids,
-        "Molecular layer": molecular_layer_ids,
-        "Cerebellar cortex": cerebellar_cortex_ids,
-        "Rest": rest_ids,
-    }
-    for name, ids in ret.items():
-        assert ids, f"Missing ids in {name}"
+    ret = _interpret_region_groups(region_map, config)
+    if not _skip_check:
+        for name, ids in ret.items():
+            assert ids, f"Missing ids in {name}"
     return ret
 
 
