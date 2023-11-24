@@ -10,7 +10,13 @@ import click
 import pandas as pd
 import voxcell  # type: ignore
 import yaml  # type: ignore
-from atlas_commons.app_utils import EXISTING_FILE_PATH, common_atlas_options, log_args, set_verbose
+from atlas_commons.app_utils import (
+    EXISTING_FILE_PATH,
+    common_atlas_options,
+    log_args,
+    set_verbose,
+    verbose_option,
+)
 
 from atlas_densities.combination import annotations_combinator, markers_combinator
 
@@ -18,7 +24,7 @@ L = logging.getLogger(__name__)
 
 
 @click.group()
-@click.option("-v", "--verbose", count=True)
+@verbose_option
 def app(verbose):
     """Run the combination CLI"""
     set_verbose(L, verbose)

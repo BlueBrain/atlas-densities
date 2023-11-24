@@ -39,6 +39,7 @@ from atlas_commons.app_utils import (
     common_atlas_options,
     log_args,
     set_verbose,
+    verbose_option,
 )
 from voxcell import RegionMap, VoxelData  # type: ignore
 
@@ -66,7 +67,7 @@ L = logging.getLogger(__name__)
 
 
 @click.group()
-@click.option("-v", "--verbose", count=True)
+@verbose_option
 def app(verbose):
     """Run the mtype densities CLI"""
     set_verbose(L, verbose)

@@ -3,7 +3,6 @@ import json
 import os
 from copy import deepcopy
 from pathlib import Path
-from unittest.mock import patch
 
 import numpy as np
 import numpy.testing as npt
@@ -26,10 +25,13 @@ from tests.densities.test_mtype_densities_from_profiles import (
 )
 
 
-def get_result_from_profiles_(runner):
+def get_result_from_profiles(runner, td):
     return runner.invoke(
-        tested.create_from_profile,
+        tested.app,
         [
+            "--log-output-path",
+            str(td),
+            "create-from-profile",
             "--annotation-path",
             "annotation.nrrd",
             "--hierarchy-path",
@@ -46,9 +48,9 @@ def get_result_from_profiles_(runner):
     )
 
 
-def test_mtype_densities_from_profiles():
+def test_mtype_densities_from_profiles(tmp_path):
     runner = CliRunner()
-    with runner.isolated_filesystem():
+    with runner.isolated_filesystem(temp_dir=tmp_path) as td:
         create_excitatory_neuron_density().save_nrrd("excitatory_neuron_density.nrrd")
         create_inhibitory_neuron_density().save_nrrd("inhibitory_neuron_density.nrrd")
         data = create_slicer_data()
@@ -68,7 +70,7 @@ def test_mtype_densities_from_profiles():
             }
             yaml.dump(config, file_)
 
-        result = get_result_from_profiles_(runner)
+        result = get_result_from_profiles(runner, td)
         assert result.exit_code == 0
         expected_cell_densities = create_expected_cell_densities()
         for mtype, expected_cell_density in expected_cell_densities.items():
@@ -86,15 +88,18 @@ def test_mtype_densities_from_profiles():
             }
             yaml.dump(config, file_)
 
-        result = get_result_from_profiles_(runner)
+        result = get_result_from_profiles(runner, td)
         assert result.exit_code == 1
         assert "neuron density file" in str(result.exception)
 
 
-def get_result_from_probablity_map_(runner):
+def get_result_from_probablity_map_(runner, td):
     return runner.invoke(
-        tested.create_from_probability_map,
+        tested.app,
         [
+            "--log-output-path",
+            str(td),
+            "create-from-probability-map",
             "--annotation-path",
             "annotation.nrrd",
             "--hierarchy-path",
@@ -135,8 +140,8 @@ class Test_mtype_densities_from_probability_map:
         with open("hierarchy.json", "w", encoding="utf-8") as file:
             json.dump(self.data["hierarchy"], file)
 
-        self.data["probability_map01"].to_csv(f"probability_map01.csv", index=True)
-        self.data["probability_map02"].to_csv(f"probability_map02.csv", index=True)
+        self.data["probability_map01"].to_csv("probability_map01.csv", index=True)
+        self.data["probability_map02"].to_csv("probability_map02.csv", index=True)
 
         for molecular_type, data in self.data["molecular_type_densities"].items():
             VoxelData(
@@ -144,11 +149,11 @@ class Test_mtype_densities_from_probability_map:
                 voxel_dimensions=self.data["annotation"].voxel_dimensions,
             ).save_nrrd(f"{molecular_type}.nrrd")
 
-    def test_output(self):
+    def test_output(self, tmp_path):
         runner = CliRunner()
-        with runner.isolated_filesystem():
+        with runner.isolated_filesystem(temp_dir=tmp_path) as td:
             self.save_input_data_to_file()
-            result = get_result_from_probablity_map_(runner)
+            result = get_result_from_probablity_map_(runner, td)
             assert result.exit_code == 0
 
             BPbAC = VoxelData.load_nrrd(str(Path("output_dir") / "BP|bAC_EXC_densities.nrrd"))
@@ -394,8 +399,6 @@ class Test_mtype_densities_from_probability_map:
             runner = CliRunner()
 
             with runner.isolated_filesystem(temp_dir=class_tmpdir):
-                from voxcell import RegionMap, VoxelData  # type: ignore
-
                 result = runner.invoke(
                     tested.create_from_composition,
                     [

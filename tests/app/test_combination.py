@@ -9,10 +9,10 @@ from voxcell import VoxelData  # type: ignore
 
 import atlas_densities.app.combination as tested
 
-TEST_PATH = Path(Path(__file__).parent.parent)
+TEST_PATH = Path(__file__).parent.parent
 
 
-def test_combine_markers():
+def test_combine_markers(tmp_path):
     expected_proportions = [4.0 / 23.0, 8.0 / 23.0, 11.0 / 23.0]
     input_ = {
         # Cerebellum ids: 512, 1143
@@ -98,20 +98,23 @@ def test_combine_markers():
     )
     voxel_dimensions = [25] * 3
     runner = CliRunner()
-    with runner.isolated_filesystem():
+    with runner.isolated_filesystem() as td:
         for name, array in input_.items():
             VoxelData(array, voxel_dimensions=voxel_dimensions).save_nrrd(f"{name}.nrrd")
         result = runner.invoke(
             tested.app,
             [
+                "--log-output-path",
+                str(td),
                 "combine-markers",
                 "--annotation-path",
                 "annotation.nrrd",
                 "--hierarchy-path",
-                str(Path(TEST_PATH, "1.json")),
+                str(TEST_PATH / "1.json"),
                 "--config",
-                str(Path(TEST_PATH, "markers_config.yaml")),
+                str(TEST_PATH / "markers_config.yaml"),
             ],
+            catch_exceptions=False,
         )
         assert result.exit_code == 0
         with open("glia_proportions.json", encoding="utf-8") as file_:

@@ -34,8 +34,8 @@ from tests.densities.test_measurement_to_density import (
     get_input_data as get_measurement_to_density_input_data,
 )
 
-TEST_PATH = Path(Path(__file__).parent.parent)
-DATA_PATH = Path(TEST_PATH.parent, "atlas_densities", "app", "data")
+TEST_PATH = Path(__file__).parent.parent
+DATA_PATH = TEST_PATH.parent / "atlas_densities" / "app" / "data"
 MEASUREMENTS_PATH = DATA_PATH / "measurements"
 
 
