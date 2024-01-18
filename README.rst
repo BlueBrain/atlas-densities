@@ -1,4 +1,4 @@
-.. image:: atlas-densities.jpg
+|banner|
 
 Overview
 =========
@@ -343,9 +343,9 @@ mapping csv file (see also `mtypes_probability_map_config.yaml`_).
         --n-jobs 8                                                           \
         --output-dir=data/ccfv2/me-types/
 
-The molecular density of approx_lamp5 was calculated from the other molecular densities as 
+The molecular density of approx_lamp5 was calculated from the other molecular densities as
 
-.. code-block:: math
+.. math::
 
     approx_lamp5 = gad67 - vip - sst - pv
 
@@ -353,7 +353,7 @@ which approximates the molecular density of lamp5.
 
 The command outputs the density files in the output-dir and a metadata json file:
 
-.. code-block:: json
+.. code-block:: javascript
 
     {
         "SLAC": {
@@ -363,9 +363,9 @@ The command outputs the density files in the output-dir and a metadata json file
         },
         "NGC-SA": {
             "cNAC": "data/ccfv2/test_regions_me-types/NGC-SA|cNAC_densities.nrrd",
-            ...
+            // ...
         },
-        ...
+        // ...
     }
 
 Subdivide excitatory files into pyramidal subtypes
@@ -429,3 +429,7 @@ Copyright © 2022 Blue Brain Project/EPFL
 .. _`mmc3.xlsx`: https://github.com/BlueBrain/atlas-densities/blob/main/atlas_densities/app/data/measurements/mmc3.xlsx
 .. _`gaba_papers.xlsx`: https://github.com/BlueBrain/atlas-densities/blob/main/atlas_densities/app/data/measurements/gaba_papers.xlsx
 .. _`mtypes_probability_map_config.yaml`: https://github.com/BlueBrain/atlas-densities/blob/main/atlas_densities/app/data/mtypes/mtypes_probability_map_config.yaml
+
+.. substitutions
+
+.. |banner| image:: doc/source/static/atlas-densities.jpg
