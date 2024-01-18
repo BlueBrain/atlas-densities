@@ -47,7 +47,7 @@ Update Roussel et al.'s pipeline to match implementation from the paper (#12)
  * Update Roussel et al.'s pipeline to match the implementation from the paper. Htr3a is now split into vip and lamp5.
  * Added a warning for the user in case the thresholding causes the dataset to be entirely null.
  * A threshold can be applied to the Nissl and raw ISH datasets to remove a part of the background expression.
-  If the expression outside the test datasets is too high then the thresholding process will set the whole dataset to 0. Some tests will therefore randomly fail when this event happen.
+   If the expression outside the test datasets is too high then the thresholding process will set the whole dataset to 0. Some tests will therefore randomly fail when this event happen.
 
 add examples to README.rst (#6)
  * Add references to Rodarie's and Roussel's and Kim's paper.
