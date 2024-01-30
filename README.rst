@@ -305,7 +305,7 @@ and whole brain estimates from `Kim et al. (2017)`_ (located at
 BBP Cell Atlas version 2
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-Estimate excitatory, GAD67, Pvalb, SST, and VIP neuron densities from the literature and the
+Estimate GAD67, Pvalb, SST, and VIP neuron densities from the literature and the
 transfer functions computed previously (first density estimates).
 
 .. code-block:: bash
