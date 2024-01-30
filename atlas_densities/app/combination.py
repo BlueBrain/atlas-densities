@@ -265,7 +265,7 @@ class OrderedParamsCommand(click.Command):
 @click.option("--output-path", required=True, help="Path of the nrrd file to write")
 @click.option("--add", multiple=True, type=EXISTING_FILE_PATH, help="Add nrrd file to base-nrrd")
 @click.option(
-    "--subtract", multiple=True, type=EXISTING_FILE_PATH, help="Add nrrd file to base-nrrd"
+    "--subtract", multiple=True, type=EXISTING_FILE_PATH, help="Subtract nrrd file to base-nrrd"
 )
 @click.option(
     "--clip", is_flag=True, default=False, help="Clip volume after each addition / subtraction"
@@ -285,12 +285,14 @@ def manipulate(base_nrrd, clip, add, subtract, output_path):  # pylint: disable=
 
     L.debug("Loading base NRRD: %s", base_nrrd)
     combined = voxcell.VoxelData.load_nrrd(base_nrrd)
-    # to `assert_properties`, all volumes have to be in a list, so we temporarily add the base_nrrd
-    volumes.append(combined)
 
-    assert_properties(volumes)
+    assert_properties(
+        [
+            combined,
+        ]
+        + volumes
+    )
 
-    volumes.pop()
     for operation, volume, path in zip(operations, volumes, paths):
         L.debug("%s with %s", operation, path)
         if operation == "add":
