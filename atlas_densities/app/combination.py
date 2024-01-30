@@ -2,16 +2,20 @@
 
 Combination operates on two or more volumetric files with nrrd format.
 """
+from __future__ import annotations
+
 import json
 import logging
 from pathlib import Path
 
 import click
+import numpy as np
 import pandas as pd
 import voxcell  # type: ignore
 import yaml  # type: ignore
 from atlas_commons.app_utils import (
     EXISTING_FILE_PATH,
+    assert_properties,
     common_atlas_options,
     log_args,
     set_verbose,
@@ -226,3 +230,75 @@ def combine_markers(annotation_path, hierarchy_path, config):
     proportions = dict(glia_intensities.proportion.astype(str))
     with open(config["outputCellTypeProportionsPath"], "w", encoding="utf-8") as out:
         json.dump(proportions, out, indent=1, separators=(",", ": "))
+
+
+class OrderedParamsCommand(click.Command):
+    """Allow repeated params, but keeping their order
+
+    Inspired by:
+        https://stackoverflow.com/a/65744803
+    """
+
+    options: list[tuple[str, str]] = []
+
+    def parse_args(self, ctx, args):
+        parser = self.make_parser(ctx)
+        opts, _, param_order = parser.parse_args(args=list(args))
+        if opts.get("help", False):
+            click.utils.echo(ctx.get_help(), color=ctx.color)
+            ctx.exit()
+
+        for param in param_order:
+            if param.multiple:
+                type(self).options.append((param, opts[param.name].pop(0)))
+
+        return super().parse_args(ctx, args)
+
+
+@app.command(cls=OrderedParamsCommand)
+@click.option(
+    "--base-nrrd",
+    required=True,
+    type=EXISTING_FILE_PATH,
+    help="Path to nrrd file to which others are added/subtracted",
+)
+@click.option("--output-path", required=True, help="Path of the nrrd file to write")
+@click.option("--add", multiple=True, type=EXISTING_FILE_PATH, help="Add nrrd file to base-nrrd")
+@click.option(
+    "--subtract", multiple=True, type=EXISTING_FILE_PATH, help="Add nrrd file to base-nrrd"
+)
+@click.option(
+    "--clip", is_flag=True, default=False, help="Clip volume after each addition / subtraction"
+)
+def manipulate(base_nrrd, clip, add, subtract, output_path):  # pylint: disable=unused-argument
+    """Add and subtract NRRD files from the `base-nrrd`
+
+    Note: the `--add` and `--subtract` can be used multiple times.
+    """
+    volumes = []
+    operations = []
+    paths = []
+    for param, value in OrderedParamsCommand.options:
+        operations.append(param.name)
+        volumes.append(voxcell.VoxelData.load_nrrd(value))
+        paths.append(value)
+
+    L.debug("Loading base NRRD: %s", base_nrrd)
+    combined = voxcell.VoxelData.load_nrrd(base_nrrd)
+    # to `assert_properties`, all volumes have to be in a list, so we temporarily add the base_nrrd
+    volumes.append(combined)
+
+    assert_properties(volumes)
+
+    volumes.pop()
+    for operation, volume, path in zip(operations, volumes, paths):
+        L.debug("%s with %s", operation, path)
+        if operation == "add":
+            combined.raw += volume.raw
+        elif operation == "subtract":
+            combined.raw -= volume.raw
+
+        if clip:
+            combined.raw = np.clip(combined.raw, a_min=0, a_max=None)
+
+    combined.save_nrrd(output_path)

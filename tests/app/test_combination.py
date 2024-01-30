@@ -128,3 +128,95 @@ def test_combine_markers(tmp_path):
         for type_, arr in expected_glia_intensities.items():
             voxel_data = VoxelData.load_nrrd(f"{type_}.nrrd")
             npt.assert_array_almost_equal(voxel_data.raw, arr, decimal=5)
+
+
+def test_manipulate(tmp_path):
+    nrrd = tmp_path / "nrrd.nrrd"
+    array = np.array(
+        [
+            [[0.0, 0.0, 0.0]],
+            [[0.0, 1.0, 0.0]],
+            [[0.0, 1.0, 0.0]],
+        ]
+    )
+    VoxelData(array, voxel_dimensions=[25] * 3).save_nrrd(nrrd)
+
+    runner = CliRunner()
+    result = runner.invoke(
+        tested.app,
+        [
+            "manipulate",
+            "--clip",
+            "--base-nrrd",
+            nrrd,
+            "--add",
+            nrrd,
+            "--subtract",
+            nrrd,
+            "--add",
+            nrrd,
+            "--subtract",
+            nrrd,
+            "--subtract",
+            nrrd,
+            "--output-path",
+            tmp_path / "manipulate.nrrd",
+        ],
+        catch_exceptions=False,
+    )
+    assert result.exit_code == 0
+    output = VoxelData.load_nrrd(tmp_path / "manipulate.nrrd")
+    assert np.allclose(output.raw, 0.0)
+
+
+def test_manipulate_clip(tmp_path):
+    nrrd = tmp_path / "nrrd.nrrd"
+    array = np.array(
+        [
+            [[0.0, 0.0, 0.0]],
+            [[0.0, 1.0, 0.0]],
+            [[0.0, 1.0, 0.0]],
+        ]
+    )
+    VoxelData(array, voxel_dimensions=[25] * 3).save_nrrd(nrrd)
+
+    runner = CliRunner()
+    result = runner.invoke(
+        tested.app,
+        [
+            "manipulate",
+            "--clip",
+            "--base-nrrd",
+            nrrd,
+            "--subtract",
+            nrrd,
+            "--subtract",
+            nrrd,
+            "--output-path",
+            tmp_path / "manipulate.nrrd",
+        ],
+        catch_exceptions=False,
+    )
+    assert result.exit_code == 0
+    output = VoxelData.load_nrrd(tmp_path / "manipulate.nrrd")
+    assert np.allclose(output.raw, 0.0)
+
+    runner = CliRunner()
+    result = runner.invoke(
+        tested.app,
+        [
+            "manipulate",
+            "--base-nrrd",
+            nrrd,
+            "--subtract",
+            nrrd,
+            "--subtract",
+            nrrd,
+            "--output-path",
+            tmp_path / "manipulate.nrrd",
+        ],
+        catch_exceptions=False,
+    )
+    assert result.exit_code == 0
+    output = VoxelData.load_nrrd(tmp_path / "manipulate.nrrd")
+    assert np.count_nonzero(output.raw < 0) == 2

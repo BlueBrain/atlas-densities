@@ -351,6 +351,19 @@ The molecular density of approx_lamp5 was calculated from the other molecular de
 
 which approximates the molecular density of lamp5.
 
+This can be calculated via command line via:
+
+.. code-block:: bash
+
+    atlas-densities combination manipulate             \
+       --clip                                          \
+       --base-nrrd data/molecular_densities/gad67.nrrd \
+       --subtract data/molecular_densities/vip.nrrd    \
+       --subtract data/molecular_densities/pv.nrrd     \
+       --subtract data/molecular_densities/sst.nrrd    \
+       --output-path approx_lamp5.nrrd
+
+
 The command outputs the density files in the output-dir and a metadata json file:
 
 .. code-block:: javascript
