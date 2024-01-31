@@ -305,7 +305,7 @@ and whole brain estimates from `Kim et al. (2017)`_ (located at
 BBP Cell Atlas version 2
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-Estimate excitatory, GAD67, Pvalb, SST, and VIP neuron densities from the literature and the
+Estimate GAD67, Pvalb, SST, and VIP neuron densities from the literature and the
 transfer functions computed previously (first density estimates).
 
 .. code-block:: bash
@@ -350,6 +350,19 @@ The molecular density of approx_lamp5 was calculated from the other molecular de
     approx_lamp5 = gad67 - vip - sst - pv
 
 which approximates the molecular density of lamp5.
+
+This can be calculated via command line via:
+
+.. code-block:: bash
+
+    atlas-densities combination manipulate             \
+       --clip                                          \
+       --base-nrrd data/molecular_densities/gad67.nrrd \
+       --subtract data/molecular_densities/vip.nrrd    \
+       --subtract data/molecular_densities/pv.nrrd     \
+       --subtract data/molecular_densities/sst.nrrd    \
+       --output-path approx_lamp5.nrrd
+
 
 The command outputs the density files in the output-dir and a metadata json file:
 

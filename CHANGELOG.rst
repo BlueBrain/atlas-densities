@@ -1,6 +1,9 @@
 Changelog
 =========
 
+Version 0.2.2
+* add ``atlas-densities combination manipulate``
+
 Version 0.2.1
 -------------
 * The following *cell-density* sub-commands can now optionally take a ``--group-ids-config-path``:
