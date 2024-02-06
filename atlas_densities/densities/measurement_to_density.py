@@ -258,7 +258,10 @@ def cell_count_per_slice_to_density(
 
 
 def remove_unknown_regions(
-    measurements: "pd.DataFrame", region_map: RegionMap, annotation: AnnotationT
+    measurements: "pd.DataFrame",
+    region_map: RegionMap,
+    annotation: AnnotationT,
+    root: str = "root",
 ):
     """
     Drop lines from the measurements dataframe which brain regions are not in the AIBS brain region
@@ -271,8 +274,9 @@ def remove_unknown_regions(
         region_map: RegionMap object to navigate the brain regions hierarchy.
         annotation: int array of shape (W, H, D) holding the annotation of the whole AIBS
             mouse brain. (The integers W, H and D are the dimensions of the array).
+        root: name of the root region to consider in the hierarchy.
     """
-    hierarchy_info = get_hierarchy_info(region_map)
+    hierarchy_info = get_hierarchy_info(region_map, root)
     pd.set_option("display.max_colwidth", None)
     indices_ids = measurements.index[
         ~measurements["brain_region"].isin(hierarchy_info["brain_region"])
@@ -284,7 +288,7 @@ def remove_unknown_regions(
             f"{measurements.loc[indices_ids, 'brain_region'].to_string()}",
             AtlasDensitiesWarning,
         )
-    measurements.drop(indices_ids, inplace=True)
+        measurements.drop(indices_ids, inplace=True)
 
     u_regions = np.unique(annotation)
     u_regions = np.delete(u_regions, 0)  # don't take 0, i.e: outside of the brain
@@ -302,7 +306,7 @@ def remove_unknown_regions(
             f"annotation volume: \n{measurements.loc[indices_ann, 'brain_region'].to_string()}",
             AtlasDensitiesWarning,
         )
-    measurements.drop(indices_ann, inplace=True)
+        measurements.drop(indices_ann, inplace=True)
 
 
 def measurement_to_average_density(

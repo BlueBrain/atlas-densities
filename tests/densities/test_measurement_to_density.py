@@ -75,7 +75,9 @@ def test_remove_unknown_regions(region_map, annotations):
             "source_title": ["Article 1", "Article 2", "Article 1"],
         }
     )
-    tested.remove_unknown_regions(measurements, region_map, annotations)
+    tested.remove_unknown_regions(
+        measurements, region_map, annotations, root="Basic cell groups and regions"
+    )
     expected = pd.DataFrame(
         {
             "brain_region": [

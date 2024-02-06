@@ -742,7 +742,7 @@ def measurements_to_average_densities(
     "--region-name",
     type=str,
     default="root",
-    help="Name of the region in the hierarchy",
+    help="Name of the root region in the hierarchy",
 )
 @click.option(
     "--neuron-density-path",
@@ -912,8 +912,8 @@ def fit_average_densities(
     L.info("Loading average densities dataframe ...")
     average_densities_df = pd.read_csv(average_densities_path)
     homogenous_regions_df = pd.read_csv(homogenous_regions_path)
-    remove_unknown_regions(average_densities_df, region_map, annotation.raw)
-    remove_unknown_regions(homogenous_regions_df, region_map, annotation.raw)
+    remove_unknown_regions(average_densities_df, region_map, annotation.raw, root=region_name)
+    remove_unknown_regions(homogenous_regions_df, region_map, annotation.raw, root=region_name)
 
     L.info("Fitting of average densities: started")
     fitted_densities_df, fitting_maps = linear_fitting(
@@ -945,7 +945,7 @@ def fit_average_densities(
     "--region-name",
     type=str,
     default="root",
-    help="Name of the region in the hierarchy",
+    help="Name of the root region in the hierarchy",
 )
 @click.option(
     "--neuron-density-path",
