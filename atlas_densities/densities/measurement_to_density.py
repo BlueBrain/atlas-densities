@@ -11,6 +11,7 @@ more than 40 scientific articles.
 
 Densities are expressed in number of cells per mm^3.
 """
+import warnings
 from typing import Set, Tuple, Union
 
 import numpy as np
@@ -20,6 +21,7 @@ from tqdm import tqdm
 from voxcell import RegionMap  # type: ignore
 
 from atlas_densities.densities.utils import compute_region_volumes, get_hierarchy_info
+from atlas_densities.exceptions import AtlasDensitiesWarning
 
 
 def get_parent_region(region_name: str, region_map: RegionMap) -> Union[str, None]:
@@ -255,6 +257,54 @@ def cell_count_per_slice_to_density(
     measurements[mask_50um] = cell_counts_per_slice
 
 
+def remove_unknown_regions(
+    measurements: "pd.DataFrame", region_map: RegionMap, annotation: AnnotationT
+):
+    """
+    Drop lines from the measurements dataframe which brain regions are not in the AIBS brain region
+    hierarchy or not in the annotation volume.
+    The data frame `measurements` is modified in place.
+
+    Args:
+        measurements: dataframe whose columns are described in
+            :func:`atlas_densities.app.densities.compile_measurements`.
+        region_map: RegionMap object to navigate the brain regions hierarchy.
+        annotation: int array of shape (W, H, D) holding the annotation of the whole AIBS
+            mouse brain. (The integers W, H and D are the dimensions of the array).
+    """
+    hierarchy_info = get_hierarchy_info(region_map)
+    pd.set_option("display.max_colwidth", None)
+    indices_ids = measurements.index[
+        ~measurements["brain_region"].isin(hierarchy_info["brain_region"])
+    ]
+    if len(indices_ids) > 0:
+        warnings.warn(
+            "The following lines in the measurements dataframe have no equivalent in the "
+            "brain region hierarchy: \n"
+            f"{measurements.loc[indices_ids, 'brain_region'].to_string()}",
+            AtlasDensitiesWarning,
+        )
+    measurements.drop(indices_ids, inplace=True)
+
+    u_regions = np.unique(annotation)
+    u_regions = np.delete(u_regions, 0)  # don't take 0, i.e: outside of the brain
+    u_regions = [
+        region_map.get(u_region, "name", with_ascendants=True)
+        for u_region in u_regions
+        if region_map.find(u_region, "id")
+    ]
+    u_regions = np.unique([elem for row in u_regions for elem in row])  # flatten
+
+    indices_ann = measurements.index[~measurements["brain_region"].isin(u_regions)]
+    if len(indices_ann) > 0:
+        warnings.warn(
+            "The following lines in the measurements dataframe have no equivalent in the "
+            f"annotation volume: \n{measurements.loc[indices_ann, 'brain_region'].to_string()}",
+            AtlasDensitiesWarning,
+        )
+    measurements.drop(indices_ann, inplace=True)
+
+
 def measurement_to_average_density(
     region_map: RegionMap,
     annotation: AnnotationT,
@@ -273,9 +323,6 @@ def measurement_to_average_density(
     If for a given brain region, several cell density measurements are available in `measurements`
     (or if several cell density computations are possible from measurements of different
     articles), the output cell density of the region is the average of the possible cell densities.
-
-    The region names in `measurements` which are not compliant with the AIBS nomenclature (1.json)
-    are ignored.
 
     Args:
         region_map: RegionMap object to navigate the brain regions hierarchy.
@@ -298,10 +345,7 @@ def measurement_to_average_density(
         type "cell density". Densities are expressed in number of cells per mm^3.
     """
 
-    # Filter out non-AIBS compliant region names
     hierarchy_info = get_hierarchy_info(region_map)
-    indices = measurements.index[~measurements["brain_region"].isin(hierarchy_info["brain_region"])]
-    measurements = measurements.drop(indices)
 
     # Replace NaN standard deviations by measurement values
     nan_mask = measurements["standard_deviation"].isna()

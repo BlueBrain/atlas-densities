@@ -82,6 +82,7 @@ from atlas_densities.densities.inhibitory_neuron_density import compute_inhibito
 from atlas_densities.densities.measurement_to_density import (
     measurement_to_average_density,
     remove_non_density_measurements,
+    remove_unknown_regions,
 )
 from atlas_densities.exceptions import AtlasDensitiesError
 
@@ -666,6 +667,10 @@ def measurements_to_average_densities(
     `neuron_density_path`) are used to compute average cell densities in every AIBS region where
     sufficient information is available.
 
+    Measurements from regions which are not in the provided brain region hierarchy or not in the
+    provided annotation volume will be ignored. A warning with all ignored lines from the
+    measurements file will be displayed.
+
     The different cell types (e.g., PV+, SST+, VIP+ or overall inhibitory neurons) and
     brain regions under consideration are prescribed by the input measurements.
 
@@ -709,6 +714,8 @@ def measurements_to_average_densities(
     region_map = RegionMap.load_json(hierarchy_path)
     L.info("Loading measurements ...")
     measurements_df = pd.read_csv(measurements_path)
+    remove_unknown_regions(measurements_df, region_map, annotation.raw)
+
     L.info("Measurement to average density: started")
     average_cell_densities_df = measurement_to_average_density(
         region_map,
@@ -822,6 +829,10 @@ def fit_average_densities(
     `neuron_density_path` is used to compute the average density of inhibitory neurons (a.k.a
     gad67+) in every homogenous region of type "inhibitory".
 
+    Regions from the literature values and homogenous regions which are not in the provided brain
+    region hierarchy or not in the provided annotation volume will be ignored. A warning with all
+    ignored lines from the measurements file will be displayed.
+
     Our linear fitting of density values relies on the assumption that the average cell density
     (number of cells per mm^3) of a cell type T in a brain region R depends linearly on the
     average intensity of a gene marker of T. The conversion factor is a constant which depends only
@@ -901,6 +912,8 @@ def fit_average_densities(
     L.info("Loading average densities dataframe ...")
     average_densities_df = pd.read_csv(average_densities_path)
     homogenous_regions_df = pd.read_csv(homogenous_regions_path)
+    remove_unknown_regions(average_densities_df, region_map, annotation.raw)
+    remove_unknown_regions(homogenous_regions_df, region_map, annotation.raw)
 
     L.info("Fitting of average densities: started")
     fitted_densities_df, fitting_maps = linear_fitting(

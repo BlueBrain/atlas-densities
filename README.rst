@@ -10,8 +10,8 @@ The outcome of this project is a list of volumetric files that provides cell typ
 for each voxel of the mouse brain volume. The BBP Cell Atlas is the first model required to
 reconstruct BBP circuits of the mouse brain.
 
-The tools implementation is based on the methods of `Eroe et al. (2018)`_, `Rodarie et al. (2021)`_,
-and `Roussel et al. (2021)`_.
+The tools implementation is based on the methods of `Eroe et al. (2018)`_, `Rodarie et al. (2022)`_,
+and `Roussel et al. (2022)`_.
 
 The source code was originally written by Csaba Eroe, Dimitri Rodarie, Hugo Dictus, Lu Huanxiang,
 Wojciech Wajerowicz, Jonathan Lurie, and Yann Roussel.
@@ -53,7 +53,7 @@ Note: Depending on the size and resolution of the atlas, it can happen that some
 Reference atlases
 -----------------
 
-Most the pipeline steps rely on the following AIBS reference datasets (see `Rodarie et al. (2021)`_ for more
+Most the pipeline steps rely on the following AIBS reference datasets (see `Rodarie et al. (2022)`_ for more
 details on the different versions of these datasets):
 
 * A Nissl volume
@@ -161,7 +161,7 @@ ISH datasets for inhibitory/excitatory neurons
 In `Eroe et al. (2018)`_ (i.e., BBP Cell Atlas version 1), the excitatory neurons are distinguished
 from the inhibitory neurons using the Nrn1 and GAD67 (or GAD1) genetic marker.
 
-In `Rodarie et al. (2021)`_ (i.e., BBP Cell Atlas version 2), the authors used parvalbumin (Pvalb),
+In `Rodarie et al. (2022)`_ (i.e., BBP Cell Atlas version 2), the authors used parvalbumin (Pvalb),
 somatostatin (SST), vasoactive intestinal peptide (VIP) and gabaergic (GAD1) markers (see also
 `fit_average_densities_ccfv2_config.yaml`_).
 
@@ -207,7 +207,7 @@ The files `glia.nrrd`, `oligodendrocyte.nrrd`, `microglia.nrrd`, `astrocyte.nrrd
 Extract literature neuron type densities estimates
 --------------------------------------------------
 
-In `Rodarie et al. (2021)`_, the authors collected density estimates from the literature for
+In `Rodarie et al. (2022)`_, the authors collected density estimates from the literature for
 inhibitory neurons. Some estimates are in a format that can not be directly used by the pipeline
 (e.g., counts instead of densities). This part of the pipeline integrates the literature values into
 csv files, that will be used later on for the fitting.
@@ -216,7 +216,7 @@ Format literature review files
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 We compile here the cell density estimates related to measurements of `Kim et al. (2017)`_ density
-file (`mmc3.xlsx`_) and `Rodarie et al. (2021)`_ literature
+file (`mmc3.xlsx`_) and `Rodarie et al. (2022)`_ literature
 review file (`gaba_papers.xlsx`_) into a single CSV file.
 Regions known to be purely excitatory or inhibitory (in terms of neuron composition) are also listed
 in a separate CSV file.
@@ -237,6 +237,13 @@ Convert literature measurements into average densities
 Compute and save average cell densities based on literature measurements and Cell Atlas data (e.g.,
 region volumes).
 
+WARNING:
+Different versions of the annotation atlas or the hierarchy file might have different sets brain
+regions (see `Rodarie et al. (2022)`_ for more details). The region names used by the literature
+measurements might therefore have no match in these datasets.
+Regions from the measurements that are not in the hierarchy or do not appear in the annotations will
+be ignored. A warning message will display these regions, allowing us to review them.
+
 .. code-block:: bash
 
     atlas-densities cell-densities measurements-to-average-densities         \
@@ -252,7 +259,7 @@ Fit transfer functions from mean region intensity to neuron density
 -------------------------------------------------------------------
 
 We fit here transfer functions that describe the relation between mean ISH expression in regions of
-the mouse brain and literature regional density estimates (see `Rodarie et al. (2021)`_ for more
+the mouse brain and literature regional density estimates (see `Rodarie et al. (2022)`_ for more
 details). This step leverages AIBS ISH marker datasets (in their expression form, see also
 `fit_average_densities_ccfv2_config.yaml`_) and the previously computed
 literature density values.
@@ -281,7 +288,7 @@ Compute inhibitory/excitatory neuron densities
 ----------------------------------------------
 
 The neuron subtypes are here distinguished from each other using either the pipeline from
-`Eroe et al. (2018)`_ (BBP Cell Atlas version 1) or `Rodarie et al. (2021)`_ (BBP Cell Atlas version
+`Eroe et al. (2018)`_ (BBP Cell Atlas version 1) or `Rodarie et al. (2022)`_ (BBP Cell Atlas version
 2).
 
 BBP Cell Atlas version 1
@@ -321,8 +328,8 @@ Compute ME-types densities from a probability map
 -------------------------------------------------
 
 Morphological and Electrical type densities of inhibitory neurons in the isocortex can be estimated
-using Roussel et al.'s pipeline. This pipeline produces a mapping from inhibitory neuron molecular
-types (here PV, SST, VIP and GAD67) to ME-types defined in `Markram et al. (2015)`_.
+using `Roussel et al. (2022)`_'s pipeline. This pipeline produces a mapping from inhibitory neuron
+molecular types (here PV, SST, VIP and GAD67) to ME-types defined in `Markram et al. (2015)`_.
 
 The following command creates neuron density nrrd files for the me-types listed in a probability
 mapping csv file (see also `mtypes_probability_map_config.yaml`_).
@@ -431,8 +438,8 @@ Copyright © 2022 Blue Brain Project/EPFL
 .. _`Eroe et al. (2018)`: https://www.frontiersin.org/articles/10.3389/fninf.2018.00084/full
 .. _`Kim et al. (2017)`: https://www.sciencedirect.com/science/article/pii/S0092867417310693
 .. _`Markram et al. (2015)`: https://www.cell.com/cell/fulltext/S0092-8674(15)01191-5
-.. _`Rodarie et al. (2021)`: https://www.biorxiv.org/content/10.1101/2021.11.20.469384v2
-.. _`Roussel et al. (2021)`: https://www.biorxiv.org/content/10.1101/2021.11.24.469815v1
+.. _`Rodarie et al. (2022)`: https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1010739
+.. _`Roussel et al. (2022)`: https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1010058
 .. _`BBP Cell Atlas`: https://portal.bluebrain.epfl.ch/resources/models/cell-atlas/
 .. _cgal-pybind: https://github.com/BlueBrain/cgal-pybind
 .. _`DeepAtlas`: https://github.com/BlueBrain/Deep-Atlas

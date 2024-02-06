@@ -21,6 +21,11 @@ def region_map():
 
 
 @pytest.fixture
+def annotations():
+    return np.array([[[0, 10710, 10710, 10711, 10711, 0]]], dtype=int)
+
+
+@pytest.fixture
 def cell_densities():
     densities = np.array([5.0 / 9.0, 4.0 / 8.0, 1.0 / 3.0, 1.0 / 3.0, 1.0 / 3.0])
     hierarchy_info = get_hierarchy_info()
@@ -53,6 +58,37 @@ def volumes(voxel_volume=2):
         },
         index=hierarchy_info.index,
     )
+
+
+def test_remove_unknown_regions(region_map, annotations):
+    measurements = pd.DataFrame(
+        {
+            "brain_region": [
+                "Lobule Ii",
+                "Lobule II, granular layer",
+                "Lobule II, molecular layer",
+            ],
+            "measurement": [0.722, 28118.0, 31047],
+            "standard_deviation": [0.722, 6753.9, 5312],
+            "measurement_type": ["volume", "cell count", "cell count"],
+            "measurement_unit": ["mm^3", "number of cells", "number of cells"],
+            "source_title": ["Article 1", "Article 2", "Article 1"],
+        }
+    )
+    tested.remove_unknown_regions(measurements, region_map, annotations)
+    expected = pd.DataFrame(
+        {
+            "brain_region": [
+                "Lobule II, molecular layer",
+            ],
+            "measurement": [31047.0],
+            "standard_deviation": [5312.0],
+            "measurement_type": ["cell count"],
+            "measurement_unit": ["number of cells"],
+            "source_title": ["Article 1"],
+        }
+    )
+    pdt.assert_frame_equal(measurements.reset_index(drop=True), expected)
 
 
 def test_cell_count_to_density(region_map, volumes):
