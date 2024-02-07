@@ -1,4 +1,4 @@
 """version"""
-from pkg_resources import get_distribution  # type: ignore
+import importlib.metadata
 
-VERSION = get_distribution("atlas_densities").version
+VERSION = importlib.metadata.version("atlas_densities")
