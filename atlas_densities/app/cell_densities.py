@@ -82,7 +82,6 @@ from atlas_densities.densities.inhibitory_neuron_density import compute_inhibito
 from atlas_densities.densities.measurement_to_density import (
     measurement_to_average_density,
     remove_non_density_measurements,
-    remove_unknown_regions,
 )
 from atlas_densities.exceptions import AtlasDensitiesError
 
@@ -623,6 +622,12 @@ def compile_measurements(
 @app.command()
 @common_atlas_options
 @click.option(
+    "--region-name",
+    type=str,
+    default="root",
+    help="Name of the root region in the hierarchy",
+)
+@click.option(
     "--cell-density-path",
     type=EXISTING_FILE_PATH,
     required=True,
@@ -655,6 +660,7 @@ def compile_measurements(
 def measurements_to_average_densities(
     annotation_path,
     hierarchy_path,
+    region_name,
     cell_density_path,
     neuron_density_path,
     measurements_path,
@@ -714,7 +720,6 @@ def measurements_to_average_densities(
     region_map = RegionMap.load_json(hierarchy_path)
     L.info("Loading measurements ...")
     measurements_df = pd.read_csv(measurements_path)
-    remove_unknown_regions(measurements_df, region_map, annotation.raw)
 
     L.info("Measurement to average density: started")
     average_cell_densities_df = measurement_to_average_density(
@@ -725,6 +730,7 @@ def measurements_to_average_densities(
         overall_cell_density.raw,
         neuron_density.raw,
         measurements_df,
+        region_name,
     )
 
     remove_non_density_measurements(average_cell_densities_df)
@@ -912,8 +918,6 @@ def fit_average_densities(
     L.info("Loading average densities dataframe ...")
     average_densities_df = pd.read_csv(average_densities_path)
     homogenous_regions_df = pd.read_csv(homogenous_regions_path)
-    remove_unknown_regions(average_densities_df, region_map, annotation.raw, root=region_name)
-    remove_unknown_regions(homogenous_regions_df, region_map, annotation.raw, root=region_name)
 
     L.info("Fitting of average densities: started")
     fitted_densities_df, fitting_maps = linear_fitting(

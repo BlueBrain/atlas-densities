@@ -29,6 +29,7 @@ from scipy.optimize import curve_fit
 from tqdm import tqdm
 
 from atlas_densities.densities import utils
+from atlas_densities.densities.measurement_to_density import remove_unknown_regions
 from atlas_densities.exceptions import AtlasDensitiesError, AtlasDensitiesWarning
 
 if TYPE_CHECKING:  # pragma: no cover
@@ -625,6 +626,9 @@ def linear_fitting(  # pylint: disable=too-many-arguments
     _check_homogenous_regions_sanity(homogenous_regions)
 
     hierarchy_info = utils.get_hierarchy_info(region_map, root=region_name)
+    remove_unknown_regions(average_densities, region_map, annotation, hierarchy_info)
+    remove_unknown_regions(homogenous_regions, region_map, annotation, hierarchy_info)
+
     L.info("Creating a data frame from known densities ...")
     densities = create_dataframe_from_known_densities(
         hierarchy_info["brain_region"].to_list(), average_densities

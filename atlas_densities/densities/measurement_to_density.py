@@ -261,7 +261,7 @@ def remove_unknown_regions(
     measurements: "pd.DataFrame",
     region_map: RegionMap,
     annotation: AnnotationT,
-    root: str = "root",
+    hierarchy_info: "pd.DataFrame",
 ):
     """
     Drop lines from the measurements dataframe which brain regions are not in the AIBS brain region
@@ -274,9 +274,9 @@ def remove_unknown_regions(
         region_map: RegionMap object to navigate the brain regions hierarchy.
         annotation: int array of shape (W, H, D) holding the annotation of the whole AIBS
             mouse brain. (The integers W, H and D are the dimensions of the array).
-        root: name of the root region to consider in the hierarchy.
+        hierarchy_info: data frame returned by
+            :func:`atlas_densities.densities.utils.get_hierarchy_info`.
     """
-    hierarchy_info = get_hierarchy_info(region_map, root)
     pd.set_option("display.max_colwidth", None)
     indices_ids = measurements.index[
         ~measurements["brain_region"].isin(hierarchy_info["brain_region"])
@@ -309,7 +309,7 @@ def remove_unknown_regions(
         measurements.drop(indices_ann, inplace=True)
 
 
-def measurement_to_average_density(
+def measurement_to_average_density(  # pylint: disable=too-many-arguments
     region_map: RegionMap,
     annotation: AnnotationT,
     voxel_dimensions: Tuple[float, float, float],
@@ -317,6 +317,7 @@ def measurement_to_average_density(
     cell_density: FloatArray,
     neuron_density: FloatArray,
     measurements: "pd.DataFrame",
+    root_region: str = "Basic cell groups and regions",
 ) -> "pd.DataFrame":
     """
     Compute average cell densities in AIBS brain regions based on experimental `measurements`.
@@ -342,6 +343,7 @@ def measurement_to_average_density(
             in that voxel expressed in number of neurons per mm^3.
         measurements: dataframe whose columns are described in
             :func:`atlas_densities.app.densities.compile_measurements`.
+        root_region: name of the root region in the brain region hierarchy.
 
     Returns:
         dataframe of the same format as `measurements` but where all measurements of type
@@ -349,7 +351,8 @@ def measurement_to_average_density(
         type "cell density". Densities are expressed in number of cells per mm^3.
     """
 
-    hierarchy_info = get_hierarchy_info(region_map)
+    hierarchy_info = get_hierarchy_info(region_map, root_region)
+    remove_unknown_regions(measurements, region_map, annotation, hierarchy_info)
 
     # Replace NaN standard deviations by measurement values
     nan_mask = measurements["standard_deviation"].isna()

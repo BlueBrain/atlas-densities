@@ -271,6 +271,8 @@ def _get_measurements_to_average_densities_result(runner, hierarchy_path, measur
         hierarchy_path,
         "--annotation-path",
         "annotation.nrrd",
+        "--region-name",
+        "Basic cell groups and regions",
         "--cell-density-path",
         "cell_density.nrrd",
         "--neuron-density-path",
