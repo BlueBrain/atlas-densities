@@ -622,6 +622,12 @@ def compile_measurements(
 @app.command()
 @common_atlas_options
 @click.option(
+    "--region-name",
+    type=str,
+    default="root",
+    help="Name of the root region in the hierarchy",
+)
+@click.option(
     "--cell-density-path",
     type=EXISTING_FILE_PATH,
     required=True,
@@ -654,6 +660,7 @@ def compile_measurements(
 def measurements_to_average_densities(
     annotation_path,
     hierarchy_path,
+    region_name,
     cell_density_path,
     neuron_density_path,
     measurements_path,
@@ -665,6 +672,10 @@ def measurements_to_average_densities(
     (`annotation`) and precomputed volumetric cell densities (`cell_density_path` and
     `neuron_density_path`) are used to compute average cell densities in every AIBS region where
     sufficient information is available.
+
+    Measurements from regions which are not in the provided brain region hierarchy or not in the
+    provided annotation volume will be ignored. A warning with all ignored lines from the
+    measurements file will be displayed.
 
     The different cell types (e.g., PV+, SST+, VIP+ or overall inhibitory neurons) and
     brain regions under consideration are prescribed by the input measurements.
@@ -709,6 +720,7 @@ def measurements_to_average_densities(
     region_map = RegionMap.load_json(hierarchy_path)
     L.info("Loading measurements ...")
     measurements_df = pd.read_csv(measurements_path)
+
     L.info("Measurement to average density: started")
     average_cell_densities_df = measurement_to_average_density(
         region_map,
@@ -718,6 +730,7 @@ def measurements_to_average_densities(
         overall_cell_density.raw,
         neuron_density.raw,
         measurements_df,
+        region_name,
     )
 
     remove_non_density_measurements(average_cell_densities_df)
@@ -735,7 +748,7 @@ def measurements_to_average_densities(
     "--region-name",
     type=str,
     default="root",
-    help="Name of the region in the hierarchy",
+    help="Name of the root region in the hierarchy",
 )
 @click.option(
     "--neuron-density-path",
@@ -821,6 +834,10 @@ def fit_average_densities(
     excitatory. These regions are listed in `homogenous_regions_path`. The volumetric density
     `neuron_density_path` is used to compute the average density of inhibitory neurons (a.k.a
     gad67+) in every homogenous region of type "inhibitory".
+
+    Regions from the literature values and homogenous regions which are not in the provided brain
+    region hierarchy or not in the provided annotation volume will be ignored. A warning with all
+    ignored lines from the measurements file will be displayed.
 
     Our linear fitting of density values relies on the assumption that the average cell density
     (number of cells per mm^3) of a cell type T in a brain region R depends linearly on the
@@ -932,7 +949,7 @@ def fit_average_densities(
     "--region-name",
     type=str,
     default="root",
-    help="Name of the region in the hierarchy",
+    help="Name of the root region in the hierarchy",
 )
 @click.option(
     "--neuron-density-path",
