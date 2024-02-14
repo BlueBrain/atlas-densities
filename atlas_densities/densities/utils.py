@@ -12,7 +12,6 @@ import pandas as pd
 import scipy.misc
 import scipy.ndimage
 from atlas_commons.typing import AnnotationT, BoolArray, FloatArray
-from tqdm import tqdm
 
 from atlas_densities.exceptions import AtlasDensitiesError, AtlasDensitiesWarning
 from atlas_densities.utils import copy_array
@@ -524,20 +523,19 @@ def compute_region_volumes(
         The latter column is created only if `hierarchy_info` has no `id_set` column,
         in which case its index is made of unique integer identifiers.
     """
-    id_volumes = []
-    for id_ in tqdm(hierarchy_info.index):
-        id_volumes.append(np.count_nonzero(annotation == id_) * voxel_volume)
-
     result = pd.DataFrame(
         {
             "brain_region": hierarchy_info["brain_region"],
-            "id_volume": id_volumes,
+            "id_volume": 0.0,
         },
         index=hierarchy_info.index,
     )
 
+    ids, counts = np.unique(annotation, return_counts=True)
+    result["id_volume"] = pd.Series(counts * voxel_volume, index=ids)
+
     volumes = []
-    for id_ in tqdm(hierarchy_info.index):
+    for id_ in hierarchy_info.index:
         id_set = hierarchy_info.loc[id_, "descendant_id_set"]
         volume = result.loc[list(id_set), "id_volume"].sum()
         volumes.append(volume)
