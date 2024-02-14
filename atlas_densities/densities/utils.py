@@ -457,7 +457,7 @@ def get_hierarchy_info(
     root: str = "Basic cell groups and regions",
 ) -> "pd.DataFrame":
     """
-    Returns the name and the descendant_id_set of each region that can be found by `region_map`.
+    Returns the name and the descendant_ids of each region that can be found by `region_map`.
 
     Note: We assume that the hierarchy file has unique brain region names.
 
@@ -470,24 +470,22 @@ def get_hierarchy_info(
     Returns:
         returns a dataframe with index a list of unique region ids and two columns
         (values are fake)
-                 descendant_id_set    brain_region
+                 descendant_ids    brain_region
             1    {1, 3}               "Cerebellum"
             2    {2, 4, 10}           "Isocortex"
                  ...             ...
         The index consists in the sorted list of the identifiers of every region recorded in
-        `region_map` under root. The column `descendant_id_set` holds for each region the set of
+        `region_map` under root. The column `descendant_ids` holds for each region the set of
         identifiers of the descendants including the region itself. `brain region` is the list of
         every region name.
 
     """
     region_ids = list(region_map.find(root, attr="name", with_descendants=True))
     region_ids.sort()
-    descendant_id_sets = [
-        region_map.find(id_, attr="id", with_descendants=True) for id_ in region_ids
-    ]
+    descendant_ids = [region_map.find(id_, attr="id", with_descendants=True) for id_ in region_ids]
     region_names = [region_map.get(id_, attr="name") for id_ in region_ids]
     data_frame = pd.DataFrame(
-        {"brain_region": region_names, "descendant_id_set": descendant_id_sets},
+        {"brain_region": region_names, "descendant_ids": descendant_ids},
         index=region_ids,
     )
 
@@ -536,7 +534,7 @@ def compute_region_volumes(
 
     volumes = []
     for id_ in hierarchy_info.index:
-        id_set = hierarchy_info.loc[id_, "descendant_id_set"]
+        id_set = hierarchy_info.loc[id_, "descendant_ids"]
         volume = result.loc[list(id_set), "id_volume"].sum()
         volumes.append(volume)
     result["volume"] = volumes

@@ -28,7 +28,9 @@ def test_resize_average_densities():
         index=["A", "B"],
     )
     hierarchy_info = pd.DataFrame(
-        {"brain_region": ["A", "B", "C"], "descendant_id_set": [{1}, {2}, {1, 2, 3}]},
+        {
+            "brain_region": ["A", "B", "C"],
+        },
         index=[1, 2, 3],
     )
 
@@ -64,7 +66,7 @@ def test_check_region_counts_consistency():
         index=["A", "B", "C"],
     )
     hierarchy_info = pd.DataFrame(
-        {"brain_region": ["A", "B", "C"], "descendant_id_set": [{1, 2, 3}, {2}, {3}]},
+        {"brain_region": ["A", "B", "C"], "descendant_ids": [{1, 2, 3}, {2}, {3}]},
         index=[1, 2, 3],
     )
 

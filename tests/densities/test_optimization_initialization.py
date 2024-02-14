@@ -16,7 +16,7 @@ from atlas_densities.exceptions import AtlasDensitiesError
 @pytest.fixture
 def counts_data_1():
     hierarchy_info = pd.DataFrame(
-        {"brain_region": ["A", "B"], "descendant_id_set": [{1}, {2}]}, index=[1, 2]
+        {"brain_region": ["A", "B"], "descendant_ids": [{1}, {2}]}, index=[1, 2]
     )
     region_counts = pd.DataFrame(
         {
@@ -162,7 +162,7 @@ def test_set_known_values_3(counts_data_1):
 def counts_data_2():
     hierarchy_info = pd.DataFrame(
         # A is now a parent region of B
-        {"brain_region": ["A", "B"], "descendant_id_set": [{1, 2}, {2}]},
+        {"brain_region": ["A", "B"], "descendant_ids": [{1, 2}, {2}]},
         index=[1, 2],
     )
     region_counts = pd.DataFrame(
@@ -335,7 +335,7 @@ def neuron_counts():
 
 def counts_data_3():
     hierarchy_info = pd.DataFrame(
-        {"brain_region": ["A", "B", "C"], "descendant_id_set": [{1, 2, 3}, {2}, {3}]},
+        {"brain_region": ["A", "B", "C"], "descendant_ids": [{1, 2, 3}, {2}, {3}]},
         index=[1, 2, 3],
     )
     region_counts = pd.DataFrame(
@@ -571,7 +571,7 @@ def test_create_bounds_2():
 @pytest.fixture
 def aub_and_bub_data():
     hierarchy_info = pd.DataFrame(
-        {"brain_region": ["A", "B", "C"], "descendant_id_set": [{1, 2, 3}, {2}, {3}]},
+        {"brain_region": ["A", "B", "C"], "descendant_ids": [{1, 2, 3}, {2}, {3}]},
         index=[1, 2, 3],
     )
     x_map, deltas_map = expected_maps()

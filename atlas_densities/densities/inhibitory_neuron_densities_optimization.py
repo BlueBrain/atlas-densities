@@ -114,50 +114,45 @@ def _check_region_counts_consistency(
 
     """
 
-    def _check_descendants_consistency(
-        region_counts, hierarchy_info, region_name: str, id_set: Set[int], cell_type: str
-    ):
-        if region_counts.at[region_name, f"{cell_type}_standard_deviation"] == 0.0:
-            count = region_counts.at[region_name, cell_type]
-            descendants_names = hierarchy_info.loc[list(id_set), "brain_region"]
-            zero_std_mask = (
-                region_counts.loc[descendants_names, f"{cell_type}_standard_deviation"] == 0.0
-            )
-            mask = zero_std_mask & (
-                region_counts.loc[descendants_names, cell_type] > count + tolerance
-            )
-            descendants_counts = region_counts.loc[descendants_names, cell_type][mask]
-            if not descendants_counts.empty:
-                raise AtlasDensitiesError(
-                    f"Counts of {cell_type} cells in regions {list(descendants_names)} all exceed "
-                    f"the count of its ancestor region {region_name} and each count is given "
-                    f"for certain. The counts {descendants_counts} are all larger than "
-                    f"{count}."
-                )
-            names_with_certainty = descendants_names[zero_std_mask.to_list()].to_list()
-            leaf_names = [
-                hierarchy_info.at[id_, "brain_region"]
-                for id_ in id_set
-                if len(hierarchy_info.at[id_, "descendant_id_set"]) == 1
-                and hierarchy_info.at[id_, "brain_region"] in names_with_certainty
-            ]
-            leaves_count_sum = np.sum(region_counts.loc[leaf_names, cell_type])
-            if leaves_count_sum > count + tolerance:
-                raise AtlasDensitiesError(
-                    f"The sum of the counts of {cell_type} cells in leaf regions",
-                    f" which are given with certainty, exceeds the count of the ancestor"
-                    f" region {region_name}, also given with certainty: "
-                    f"{leaves_count_sum} > {count}.",
-                )
+    def _check_descendants_consistency(region_name: str, id_set: Set[int], cell_type: str):
+        standard_deviation = f"{cell_type}_standard_deviation"
 
-    cell_types = get_cell_types(region_counts)
-    for region_name, id_set in zip(
-        hierarchy_info["brain_region"], hierarchy_info["descendant_id_set"]
-    ):
-        for cell_type in cell_types:
-            _check_descendants_consistency(
-                region_counts, hierarchy_info, region_name, id_set, cell_type
+        if region_counts.at[region_name, standard_deviation] != 0.0:
+            return
+
+        # count is certain, since standard_deviation is 0
+        count = region_counts.at[region_name, cell_type]
+        descendants_names = hierarchy_info.loc[list(id_set), "brain_region"]
+        zero_std_mask = region_counts.loc[descendants_names, standard_deviation] == 0.0
+        mask = zero_std_mask & (region_counts.loc[descendants_names, cell_type] > count + tolerance)
+        descendants_counts = region_counts.loc[descendants_names, cell_type][mask]
+        if not descendants_counts.empty:
+            raise AtlasDensitiesError(
+                f"Counts of {cell_type} cells in regions {list(descendants_names)} all exceed "
+                f"the count of its ancestor region {region_name} and each count is given "
+                f"for certain. The counts {descendants_counts} are all larger than "
+                f"{count}."
             )
+
+        names_with_certainty = descendants_names[zero_std_mask.to_list()].to_list()
+        leaf_names = [
+            hierarchy_info.at[id_, "brain_region"]
+            for id_ in id_set
+            if len(hierarchy_info.at[id_, "descendant_ids"]) == 1
+            and hierarchy_info.at[id_, "brain_region"] in names_with_certainty
+        ]
+        leaves_count_sum = np.sum(region_counts.loc[leaf_names, cell_type])
+        if leaves_count_sum > count + tolerance:
+            raise AtlasDensitiesError(
+                f"The sum of the counts of {cell_type} cells in leaf regions",
+                " which are given with certainty, exceeds the count of the ancestor"
+                f" region {region_name}, also given with certainty: "
+                f"{leaves_count_sum} > {count}.",
+            )
+
+    for _, region_name, id_set in hierarchy_info[["brain_region", "descendant_ids"]].itertuples():
+        for cell_type in get_cell_types(region_counts):
+            _check_descendants_consistency(region_name, id_set, cell_type)
 
 
 def _replace_inf_with_none(bounds: FloatArray) -> List[MinMaxPair]:
@@ -273,7 +268,7 @@ def set_known_values(
         Zeroes the count of `cell_type` cells in every descendant regions of `id_`,
         including `id_`.
         """
-        desc_ids = list(hierarchy_info.at[id_, "descendant_id_set"])
+        desc_ids = list(hierarchy_info.at[id_, "descendant_ids"])
         x_result.loc[desc_ids, cell_type] = 0.0
         desc_names = hierarchy_info.loc[desc_ids, "brain_region"]
         deltas.loc[desc_names, cell_type] = 0.0
@@ -468,9 +463,7 @@ def create_aub_and_bub(
     b_ub = []
     variable_count = len(x_map) + len(deltas_map)
     cell_types = get_cell_types(region_counts)
-    for id_, region_name, set_ in zip(
-        hierarchy_info.index, hierarchy_info["brain_region"], hierarchy_info["descendant_id_set"]
-    ):
+    for id_, region_name, set_ in hierarchy_info[["brain_region", "descendant_ids"]].itertuples():
         for cell_type in cell_types:
             if (region_name, cell_type) in deltas_map:
                 constraint = np.zeros((variable_count,), dtype=float)
@@ -589,8 +582,6 @@ def _compute_initial_cell_counts(
     L.info("Computing cell count estimates in every 3D region ...")
     region_counts = average_densities_to_cell_counts(average_densities, volumes)
 
-    # Detect cell counts inconsistency between a region and its descendants when
-    # estimates are deemed as certain.
     _check_region_counts_consistency(region_counts, hierarchy_info)
 
     L.info("Computing cell count estimates in atomic 3D region ...")
@@ -634,7 +625,7 @@ def _check_variables_consistency(
     """
     cell_count_tolerance = 1e-2  # absolute tolerance to rule out round-off errors
     for region_name, id_, id_set in zip(
-        deltas.index, hierarchy_info.index, hierarchy_info["descendant_id_set"]
+        deltas.index, hierarchy_info.index, hierarchy_info["descendant_ids"]
     ):
         for cell_type in cell_types:
             if np.isfinite(deltas.loc[region_name, cell_type]):
