@@ -12,7 +12,7 @@ more than 40 scientific articles.
 Densities are expressed in number of cells per mm^3.
 """
 import warnings
-from typing import Set, Tuple, Union
+from typing import Dict, Set, Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -20,7 +20,7 @@ from atlas_commons.typing import AnnotationT, FloatArray
 from tqdm import tqdm
 from voxcell import RegionMap  # type: ignore
 
-from atlas_densities.densities.utils import compute_region_volumes, get_hierarchy_info
+from atlas_densities.densities.utils import get_hierarchy_info
 from atlas_densities.exceptions import AtlasDensitiesWarning
 
 
@@ -47,40 +47,65 @@ def get_parent_region(region_name: str, region_map: RegionMap) -> Union[str, Non
 
 def compute_region_densities(
     annotation: AnnotationT,
-    cell_density: FloatArray,
+    density_datasets: Dict[str, FloatArray],
     hierarchy_info: "pd.DataFrame",
-) -> "pd.DataFrame":
+    voxel_volume: float,
+):
     """
-    Compute the average cell density of every annotated brain region of `annotation` whose
-    id can be found by `region_map` based on the volumetric `cell_density`.
+    Compute the volume in mm^3 as well as the average density of every annotated brain region of
+    `annotation` whose id can be found by `region_map` based on the volumetric `density_datasets`.
 
     Args:
         annotation: int array of shape (W, H, D) holding the annotation of the whole AIBS
             mouse brain. (The integers W, H and D are the dimensions of the array).
-        cell_density: float array of shape (W, H, D) holding the overall volumetric cell density
-            of the AIBS mouse brain. A voxel value represents the average cell density in that
-            voxel expressed in number of cells per mm^3.
+        density_datasets: dictionary linking density dataset names to the dataset.
+            Each dataset is a float array of shape (W, H, D) holding the overall volumetric density
+            of the AIBS mouse brain. A voxel value represents the average density in that
+            voxel expressed in number per mm^3.
         hierarchy_info: data frame returned by
             :func:`atlas_densities.densities.utils.get_hierarchy_info`.
+        voxel_volume: volume in mm^3 of a voxel in any of the volumetric input arrays.
+            This is (25 * 1e-3) ** 3 for an AIBS atlas nrrd file with 25um resolution.
 
     Returns:
-        DataFrame of the following form (values are fake):
-             brain region                    cell density
-        5    Basic cell groups and regions   0.005
-        123  Cerebrum                        0.001
-        ...  ...                             ...
+        DataFrame of the following form, where `density_1` and `density_2` are the
+        `density_datasets` keys (values are fake):
+             brain region                    volume  id_volume  density_1   density_2
+        10   Basic cell groups and regions   2000    55         80          15
+        123  Cerebrum                        700     0          55          40
+        ...  ...                             ...    ...         ...         ...
         The index is the sorted list of all region identifiers.
     """
-    densities = []
-    descendants = hierarchy_info["descendant_id_set"]
-    for iset_ in tqdm(range(len(descendants))):
-        mask = np.isin(annotation, list(descendants.iloc[iset_]))
-        densities.append(np.sum(cell_density[mask]) / np.count_nonzero(mask))
 
-    return pd.DataFrame(
-        {"brain_region": hierarchy_info["brain_region"], "cell density": densities},
+    data = {
+        "brain_region": hierarchy_info["brain_region"],
+        "id_volume": np.zeros(len(hierarchy_info.index)),
+        "volume": np.zeros(len(hierarchy_info.index)),
+    }
+    data.update({k: np.zeros(len(hierarchy_info.index)) for k in density_datasets.keys()})
+    result = pd.DataFrame(
+        data,
         index=hierarchy_info.index,
     )
+    region_counts = {k: np.zeros(len(hierarchy_info.index)) for k in density_datasets.keys()}
+    for i, id_ in enumerate(tqdm(hierarchy_info.index)):
+        filter_ann = annotation == id_
+        if np.any(filter_ann):
+            result.loc[id_, "id_volume"] = np.count_nonzero(filter_ann) * voxel_volume
+            for k, density in density_datasets.items():
+                # convert densities into counts to facilitate combination
+                region_counts[k][i] = np.sum(density[filter_ann] * voxel_volume)
+
+    for i, id_ in enumerate(tqdm(hierarchy_info.index)):
+        id_set = hierarchy_info.loc[id_, "descendant_id_set"]
+        volume = result.loc[list(id_set), "id_volume"].sum()
+        indices = np.isin(result.index, list(id_set))
+        for k in density_datasets.keys():
+            # sum counts and convert back to density based on total volume
+            result.loc[id_, k] = np.sum(region_counts[k][indices]) / volume
+        result.loc[id_, "volume"] = volume
+
+    return result
 
 
 def cell_count_to_density(
@@ -151,6 +176,7 @@ def cell_count_to_density(
 def cell_proportion_to_density(
     measurements: "pd.DataFrame",
     cell_densities: "pd.DataFrame",
+    density_key: str,
     measurement_type: str,
 ) -> None:
     """
@@ -165,6 +191,7 @@ def cell_proportion_to_density(
         cell_densities: data frame returned by
             :func:`atlas_densities.densities.cell_densities_from_measurements.
             compute_region_densities`.
+        density_key: column name of `cell_densities` data frame containing the densities to use.
         measurement_type: Either "cell proportion" or "neuron proportion". The type of measurement
             to turn into a cell density.
     """
@@ -173,7 +200,7 @@ def cell_proportion_to_density(
     cell_proportions = measurements[proportion_mask]
     cell_densities = cell_densities.set_index("brain_region")
     for index, row in cell_proportions.iterrows():
-        density = cell_densities.loc[row["brain_region"], "cell density"]
+        density = cell_densities.loc[row["brain_region"], density_key]
         cell_proportions.at[index, "measurement"] *= density
         cell_proportions.at[index, "standard_deviation"] *= density
         cell_proportions.at[index, "measurement_type"] = "cell density"
@@ -359,20 +386,25 @@ def measurement_to_average_density(  # pylint: disable=too-many-arguments
     measurements.loc[nan_mask, "standard_deviation"] = measurements["measurement"][nan_mask]
 
     # Compute the volumes of every AIBS brain region
-    volumes = compute_region_volumes(annotation, voxel_volume, hierarchy_info)
-    cell_count_to_density(measurements, volumes, region_map)
+    all_data = compute_region_densities(
+        annotation,
+        {"cell density": cell_density, "neuron density": neuron_density},
+        hierarchy_info,
+        voxel_volume,
+    )
+    cell_count_to_density(measurements, all_data, region_map)
 
     # Compute the average cell density of every AIBS brain region according to the content of
     # cell_density
-    cell_densities = compute_region_densities(annotation, cell_density, hierarchy_info)
-
-    cell_proportion_to_density(measurements, cell_densities, measurement_type="cell proportion")
+    cell_proportion_to_density(
+        measurements, all_data, density_key="cell density", measurement_type="cell proportion"
+    )
 
     # Compute the average neuron densities of every AIBS brain region according to the content of
     # neuron_density
-    neuron_densities = compute_region_densities(annotation, neuron_density, hierarchy_info)
-
-    cell_proportion_to_density(measurements, neuron_densities, measurement_type="neuron proportion")
+    cell_proportion_to_density(
+        measurements, all_data, density_key="neuron density", measurement_type="neuron proportion"
+    )
 
     cell_count_per_slice_to_density(
         measurements, annotation, voxel_dimensions, voxel_volume, hierarchy_info
