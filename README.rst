@@ -432,7 +432,7 @@ of the Swiss Federal Institutes of Technology.
 
 For license and authors, see LICENSE.txt and AUTHORS.txt respectively.
 
-Copyright © 2022 Blue Brain Project/EPFL
+Copyright (c) 2022-2024 Blue Brain Project/EPFL
 
 .. _`Allen Institute for Brain Science (AIBS)`: https://alleninstitute.org/what-we-do/brain-science/
 .. _`Eroe et al. (2018)`: https://www.frontiersin.org/articles/10.3389/fninf.2018.00084/full
