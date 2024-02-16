@@ -152,7 +152,9 @@ def test_cell_proportion_to_density(cell_densities):
             "source_title": ["Article 2", "Article 1"],
         }
     )
-    tested.cell_proportion_to_density(measurements, cell_densities, "cell proportion")
+    tested.cell_proportion_to_density(
+        measurements, cell_densities, "cell density", "cell proportion"
+    )
     pdt.assert_frame_equal(measurements, expected)
 
 

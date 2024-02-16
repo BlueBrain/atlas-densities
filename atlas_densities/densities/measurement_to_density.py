@@ -99,11 +99,12 @@ def compute_region_densities(
     for i, id_ in enumerate(tqdm(hierarchy_info.index)):
         id_set = hierarchy_info.loc[id_, "descendant_id_set"]
         volume = result.loc[list(id_set), "id_volume"].sum()
-        indices = np.isin(result.index, list(id_set))
-        for k in density_datasets.keys():
-            # sum counts and convert back to density based on total volume
-            result.loc[id_, k] = np.sum(region_counts[k][indices]) / volume
-        result.loc[id_, "volume"] = volume
+        if volume > 0:
+            indices = np.isin(result.index, list(id_set))
+            for k in density_datasets.keys():
+                # sum counts and convert back to density based on total volume
+                result.loc[id_, k] = np.sum(region_counts[k][indices]) / volume
+            result.loc[id_, "volume"] = volume
 
     return result
 
