@@ -52,24 +52,6 @@ reference volumes.
 Fitting of transfer functions from mean region intensity to neuron density
 >>>>>>>>>>
 
-The option `--gene-config-path` of the CLI `atlas-densities cell-densities fit-average-densities`
-expects a path to a yaml file of the following form:
-
-.. code:: yaml
-
-    inputGeneVolumePath:
-        pv: "pv.nrrd"
-        sst: "sst.nrrd"
-        vip: "vip.nrrd"
-        gad67: "gad67.nrrd"
-    sectionDataSetID:
-        pv: 868
-        sst: 1001
-        vip: 77371835
-        gad67: 479
-    realignedSlicesPath: "realigned_slices_XXX.json"
-    cellDensityStandardDeviationsPath: "std_cells.json"
-
 The sectionDataSetID values are AIBS dataset identifiers recorded in `realigned_slices_XXX.json`.
 An example of this configuration file (`fit_average_densities_ccfv2_config.yaml`) is provided for the
 CCFv2 reference volumes.

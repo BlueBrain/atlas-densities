@@ -260,27 +260,32 @@ Fit transfer functions from mean region intensity to neuron density
 
 We fit here transfer functions that describe the relation between mean ISH expression in regions of
 the mouse brain and literature regional density estimates (see `Rodarie et al. (2022)`_ for more
-details). This step leverages AIBS ISH marker datasets (in their expression form, see also
-`fit_average_densities_ccfv2_config.yaml`_) and the previously computed
-literature density values.
-These transfer functions are used to obtain first estimates of neuron densities in regions not
-covered by literature.
+details).
+This step leverages AIBS ISH marker datasets and the previously computed literature density values.
+These transfer functions are used to obtain first estimates of neuron densities in regions not covered by literature.
 The result of the following command is a list of first density estimates for each neuron type and
 for each region of the annotation volume.
+Note the usage of multiple ``--markers`` the format is ``marker name:marker id:path/to/marker.nrrd``.
+The ``marker name`` is used for the output columns, the ``marker id`` is used to lookup which slices to use in the ``--realigned-slices-path``.
 
 .. code-block:: bash
 
     # make output folder
     mkdir -p data/ccfv2/first_estimates
 
-    atlas-densities cell-densities fit-average-densities                                            \
-        --hierarchy-path=data/1.json                                                                \
-        --annotation-path=data/ccfv2/annotation_25.nrrd                                             \
-        --neuron-density-path=data/ccfv2/density_volumes/neuron_density.nrrd                        \
-        --average-densities-path=data/ccfv2/measurements/lit_densities.csv                          \
-        --homogenous-regions-path=data/ccfv2/measurements/homogeneous_regions.csv                   \
-        --gene-config-path=atlas_densities/app/data/markers/fit_average_densities_ccfv2_config.yaml \
-        --fitted-densities-output-path=data/ccfv2/first_estimates/first_estimates.csv               \
+    atlas-densities cell-densities fit-average-densities                                        \
+        --hierarchy-path=data/1.json                                                            \
+        --annotation-path=data/ccfv2/annotation_25.nrrd                                         \
+        --neuron-density-path=data/ccfv2/density_volumes/neuron_density.nrrd                    \
+        --average-densities-path=data/ccfv2/measurements/lit_densities.csv                      \
+        --homogenous-regions-path=data/ccfv2/measurements/homogeneous_regions.csv               \
+        --marker=pv:868:data/ccfv2/marker_volumes/pvalb.nrrd                                    \
+        --marker=sst:1001:data/ccfv2/marker_volumes/SST.nrrd                                    \
+        --marker=vip:77371835:data/ccfv2/marker_volumes/VIP.nrrd                                \
+        --marker=gad67:479:data/ccfv2/marker_volumes/gad1.nrrd                                  \
+        --realigned-slices-path=atlas_densities/app/data/markers/realigned_slices_ccfv2.json    \
+        --cell-density-standard-deviations=atlas_densities/app/data/measurements/std_cells.json \
+        --fitted-densities-output-path=data/ccfv2/first_estimates/first_estimates.csv           \
         --fitting-maps-output-path=data/ccfv2/first_estimates/fitting.json
 
 

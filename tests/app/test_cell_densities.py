@@ -319,32 +319,23 @@ def test_measurements_to_average_densities():
         assert np.all(actual["measurement_unit"] == "number of cells per mm^3")
 
 
-def _get_fitting_result(runner):
-    args = [
-        "fit-average-densities",
-        "--hierarchy-path",
-        "hierarchy.json",
-        "--annotation-path",
-        "annotation.nrrd",
-        "--neuron-density-path",
-        "neuron_density.nrrd",
-        "--gene-config-path",
-        "gene_config.yaml",
-        "--average-densities-path",
-        "average_densities.csv",
-        "--homogenous-regions-path",
-        "homogenous_regions.csv",
-        "--fitted-densities-output-path",
-        "fitted_densities.csv",
-        "--fitting-maps-output-path",
-        "fitting_maps.json",
-    ]
-
-    return runner.invoke(tested.app, args)
-
-
 @pytest.mark.filterwarnings("ignore::atlas_densities.exceptions.AtlasDensitiesWarning")
 def test_fit_average_densities():
+    # fmt: off
+    args = [
+        "fit-average-densities",
+        "--hierarchy-path", "hierarchy.json",
+        "--annotation-path", "annotation.nrrd",
+        "--neuron-density-path", "neuron_density.nrrd",
+        "--average-densities-path", "average_densities.csv",
+        "--homogenous-regions-path", "homogenous_regions.csv",
+        "--realigned-slices-path", "realigned_slices.json",
+        "--cell-density-standard-deviations", "std_cells.json",
+        "--fitted-densities-output-path", "fitted_densities.csv",
+        "--fitting-maps-output-path", "fitting_maps.json",
+    ]
+    # fmt: on
+
     runner = CliRunner()
     with runner.isolated_filesystem():
         input_ = get_fitting_input_data()
@@ -363,23 +354,13 @@ def test_fit_average_densities():
         with open("std_cells.json", "w", encoding="utf-8") as out:
             json.dump(input_["cell_density_stddevs"], out, indent=1, separators=(",", ": "))
 
-        with open("gene_config.yaml", "w", encoding="utf-8") as out:
-            gene_config = {
-                "inputGeneVolumePath": {},
-                "sectionDataSetID": {},
-                "realignedSlicesPath": "realigned_slices.json",
-                "cellDensityStandardDeviationsPath": "std_cells.json",
-            }
-            for marker, intensity in input_["gene_marker_volumes"].items():
-                VoxelData(intensity["intensity"], voxel_dimensions=[25.0] * 3).save_nrrd(
-                    marker + ".nrrd"
-                )
-                gene_config["inputGeneVolumePath"][marker] = marker + ".nrrd"
-                gene_config["sectionDataSetID"][marker] = input_["slice_map"][marker]
+        for marker, intensity in input_["gene_marker_volumes"].items():
+            VoxelData(intensity["intensity"], voxel_dimensions=[25.0] * 3).save_nrrd(
+                marker + ".nrrd"
+            )
+            args += [f'--marker={marker}:{input_["slice_map"][marker]}:{marker}.nrrd']
 
-            yaml.dump(gene_config, out)
-
-        result = _get_fitting_result(runner)
+        result = runner.invoke(tested.app, args)
         assert result.exit_code == 0
 
         densities = pd.read_csv("fitted_densities.csv")
@@ -404,7 +385,7 @@ def test_fit_average_densities():
         VoxelData(input_["neuron_density"], voxel_dimensions=(10, 10, 10)).save_nrrd(
             "neuron_density.nrrd"
         )
-        result = _get_fitting_result(runner)
+        result = runner.invoke(tested.app, args)
         assert "Negative density value" in str(result.exception)
 
 
