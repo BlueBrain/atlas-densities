@@ -265,8 +265,11 @@ details). This step leverages AIBS ISH marker datasets (in their expression form
 literature density values.
 These transfer functions are used to obtain first estimates of neuron densities in regions not
 covered by literature.
-The result of the following command is a list of first density estimates for each neuron type and
-for each region of the annotation volume.
+
+The results of the following command includes a csv file (`first_estimates.csv`) storing the list
+of first density estimates for each neuron type and for each region of the annotation volume.
+The `fitting.json` output file contains the coefficients fitted by the algorithm together with their
+respective standard deviation and `coefficient of determination`_ (`r_square`).
 
 .. code-block:: bash
 
@@ -449,6 +452,7 @@ Copyright (c) 2022-2024 Blue Brain Project/EPFL
 .. _`mmc3.xlsx`: https://github.com/BlueBrain/atlas-densities/blob/main/atlas_densities/app/data/measurements/mmc3.xlsx
 .. _`gaba_papers.xlsx`: https://github.com/BlueBrain/atlas-densities/blob/main/atlas_densities/app/data/measurements/gaba_papers.xlsx
 .. _`mtypes_probability_map_config.yaml`: https://github.com/BlueBrain/atlas-densities/blob/main/atlas_densities/app/data/mtypes/mtypes_probability_map_config.yaml
+.. _`coefficient of determination`: https://en.wikipedia.org/wiki/Coefficient_of_determination
 
 .. substitutions
 
