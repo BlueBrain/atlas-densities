@@ -47,7 +47,6 @@ from typing import Callable, Dict
 import click
 import numpy as np
 import pandas as pd
-import yaml  # type: ignore
 from atlas_commons.app_utils import (
     EXISTING_FILE_PATH,
     assert_properties,
@@ -91,7 +90,6 @@ EXCITATORY_SPLIT_CORTEX_ALL_TO_EXC_MTYPES = (
 EXCITATORY_SPLIT_METADATA = DATA_PATH / "metadata" / "excitatory-inhibitory-splitting.json"
 HOMOGENOUS_REGIONS_PATH = DATA_PATH / "measurements" / "homogenous_regions.csv"
 HOMOGENOUS_REGIONS_REL_PATH = HOMOGENOUS_REGIONS_PATH.relative_to(AD_PATH)
-MARKERS_README_REL_PATH = (DATA_PATH / "markers" / "README.rst").relative_to(AD_PATH)
 LINPROG_PATH = "doc/source/bbpp82_628_linprog.pdf"
 
 ALGORITHMS: Dict[str, Callable] = {
@@ -760,17 +758,6 @@ def measurements_to_average_densities(
     ),
 )
 @click.option(
-    "--gene-config-path",
-    type=EXISTING_FILE_PATH,
-    required=True,
-    help=(
-        "Path to the gene markers configuration file. This yaml file contains the paths to the "
-        "gene marker volumes (nrrd files from AIBS) that will be used to estimate average cell "
-        "densities accross all AIBS brain regions: PV, SST, VIP and GAD67. See "
-        f"`{MARKERS_README_REL_PATH}`."
-    ),
-)
-@click.option(
     "--average-densities-path",
     required=True,
     help="Path to the average densities data frame, i.e., the output of measurement-to-density."
@@ -786,11 +773,29 @@ def measurements_to_average_densities(
     default=HOMOGENOUS_REGIONS_PATH,
 )
 @click.option(
+    "--marker",
+    multiple=True,
+    type=str,
+    required=True,
+    help=("Marker information in the format `marker name`:`marker id`:`path/to/marker.nrrd`"),
+)
+@click.option(
+    "--realigned-slices-path",
+    type=EXISTING_FILE_PATH,
+    required=True,
+    help=("JSON file containing mapping of `marker id` to list of slices selected for that marker"),
+)
+@click.option(
+    "--cell-density-standard-deviations",
+    type=EXISTING_FILE_PATH,
+    required=True,
+    help=("Standard deviations for cells, in a CSV file"),
+)
+@click.option(
     "--fitted-densities-output-path",
     required=True,
     help="Path where to write the data frame containing the average cell density of every region"
-    "found in the brain hierarchy (see --hierarchy-path option) for the cell types marked by the "
-    "gene markers listed in the gene configuration file (see --gene-config-path option). "
+    "found in the brain hierarchy (see --hierarchy-path option) for the marked cell types "
     "The output file is a CSV file whose first column is a list of region names. The other columns"
     " come in pairs for each cell type: ``<cell_type>`` and ``<cell_type>_standard_deviation``."
     " Cell types are derived from marker names: ``<cell_type> = <marker>+``.",
@@ -814,7 +819,9 @@ def fit_average_densities(
     annotation_path,
     region_name,
     neuron_density_path,
-    gene_config_path,
+    marker,
+    realigned_slices_path,
+    cell_density_standard_deviations,
     average_densities_path,
     homogenous_regions_path,
     fitted_densities_output_path,
@@ -823,7 +830,6 @@ def fit_average_densities(
 ):  # pylint: disable=too-many-arguments, too-many-locals
     """
     Estimate average cell densities of brain regions in `hierarchy_path` for the cell types
-    marked by the markers listed in `gene_config_path`.
 
     We perform a linear fitting based on average cell densities inferred from the scientific
     literature (`average_densities_path`) to estimate average cell densities in regions where
@@ -877,6 +883,7 @@ def fit_average_densities(
 
     L.info("Loading annotation ...")
     annotation = VoxelData.load_nrrd(annotation_path)
+
     L.info("Loading neuron density ...")
     neuron_density = VoxelData.load_nrrd(neuron_density_path)
     if np.any(neuron_density.raw < 0.0):
@@ -884,33 +891,31 @@ def fit_average_densities(
 
     L.info("Loading hierarchy ...")
     region_map = RegionMap.load_json(hierarchy_path)
-    L.info("Loading gene config ...")
-    with open(gene_config_path, "r", encoding="utf-8") as input_file:
-        config = yaml.load(input_file, Loader=yaml.FullLoader)
 
-    gene_voxeldata = {
-        gene: VoxelData.load_nrrd(path) for (gene, path) in config["inputGeneVolumePath"].items()
-    }
-    # Consistency check
-    voxel_data = [annotation, neuron_density]
-    voxel_data += list(gene_voxeldata.values())
-    assert_properties(voxel_data)
+    slices = utils.load_json(realigned_slices_path)
 
-    slices = utils.load_json(config["realignedSlicesPath"])
-    cell_density_stddev = utils.load_json(config["cellDensityStandardDeviationsPath"])
+    gene_marker_volumes = {}
+    for m in marker:
+        marker_name, marker_id, marker_path = m.split(":", 3)
+        gene_marker_volumes[marker_name] = {
+            "intensity": VoxelData.load_nrrd(marker_path),
+            "slices": slices[marker_id],  # list of integer slice indices
+        }
+
+    assert_properties(
+        [annotation, neuron_density]
+        + [intensity["intensity"] for intensity in gene_marker_volumes.values()]
+    )
+
+    for volume in gene_marker_volumes.values():
+        volume["intensity"] = volume["intensity"].raw
+
+    cell_density_stddev = utils.load_json(cell_density_standard_deviations)
     cell_density_stddev = {
         # Use the AIBS name attribute as key (this is a unique identifier in 1.json)
         # (Ex: former key "|root|Basic cell groups and regions|Cerebrum" -> new key: "Cerebrum")
         name.split("|")[-1]: stddev
         for (name, stddev) in cell_density_stddev.items()
-    }
-
-    gene_marker_volumes = {
-        gene: {
-            "intensity": gene_data.raw,
-            "slices": slices[config["sectionDataSetID"][gene]],  # list of integer slice indices
-        }
-        for (gene, gene_data) in gene_voxeldata.items()
     }
 
     group_ids_config = utils.load_json(group_ids_config_path)
@@ -968,7 +973,7 @@ def fit_average_densities(
 )
 @click.option(
     "--algorithm",
-    type=click.Choice(list(ALGORITHMS.keys())),
+    type=click.Choice(list(ALGORITHMS)),
     required=False,
     default="linprog",
     help=f"Algorithm to be used. Defaults to 'linprog'. "
