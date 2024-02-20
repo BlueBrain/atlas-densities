@@ -209,8 +209,144 @@ def compute_average_intensity(
 
     return 0.0
 
+class ValueToIndexVoxels:
+    """Efficient access to indices of unique values of the values array.
+
+    Useful for when one has an "annotations volume" or "brain region volume" that has
+    regions indicated by unique values, and these are used to create masks.  Often,
+    it's faster to avoid mask creation, and use indices directly
+
+    Example:
+        vtiv = ValueToIndexVoxels(br.raw)
+        values, funcs = zip(*((i, np.sum if i % 2 else np.mean) for i in vtiv.values[:10]))
+        list(vtiv.apply(values, funcs, density.raw))
+    """
+
+    def __init__(self, values):
+        """Initialize.
+
+        Args:
+            values(np.array): volume with each voxel marked with a value; usually to group regions
+        """
+        self._order = "C" if values.flags["C_CONTIGUOUS"] else "F"
+
+        values = values.ravel(order=self._order)
+        uniques, counts = np.unique(values, return_counts=True)
+
+        offsets = np.empty(len(counts) + 1, dtype=np.uint64)
+        offsets[0] = 0
+        offsets[1:] = np.cumsum(counts)
+
+        self._indices = np.argsort(values, kind="stable")
+        self._offsets = offsets
+        self._mapping = {v: i for i, v in enumerate(uniques)}
+
+    @property
+    def values(self):
+        """List of values that are found in the original volume."""
+        return list(self._mapping)
+
+    def value_to_1d_indices(self, value):
+        """Return the indices array indices corresponding to the 'value'.
+
+        Note: These are 1D indices, so the assumption is they are applied to a volume
+        who has been ValueToIndexVoxels::ravel(volume)
+        """
+        if value not in self._mapping:
+            return np.array([], dtype=np.uint64)
+
+        group_index = self._mapping[value]
+        return self._indices[self._offsets[group_index]:self._offsets[group_index + 1]]
+
+    def ravel(self, voxel_data):
+        """Ensures `voxel_data` matches the layout that the 1D indices can be used."""
+        return voxel_data.ravel(order=self._order)
+
+    def apply(self, values, funcs, voxel_data):
+        """For pairs of `values` and `funcs`, apply the func as if a mask was created from `value`.
+
+        Args:
+            values(iterable of value): values to be found in original values array
+            funcs(iterable of funcs): if only a single function is provided,
+            it is used for all `values`
+            voxel_data(np.array): Array on which to apply function based on desired `values`
+        """
+        flat_data = self.ravel(voxel_data)
+        if hasattr(funcs, '__call__'):
+            funcs = (funcs, )
+        for value, func in zip(values, it.cycle(funcs)):
+            idx = self.value_to_1d_indices(value)
+            yield func(flat_data[idx])
+
+    def assign(self, index_voxel_values, voxel_data, inplace=False):
+        """Assign.
+
+        Args:
+            index_voxel_values(iterable of value): values to be found in original values array
+            voxel_data(np.array): Array on which to apply function based on desired `values`
+            inplace(bool): whether `voxel_data` is modified inplace
+        """
+        original_shape = voxel_data.shape
+        flat_data = self.ravel(voxel_data)
+
+        if not inplace:
+            flat_data = flat_data.copy(order="K")
+
+        for index_value, voxel_value in index_voxel_values:
+            idx = self.value_to_1d_indices(index_value)
+            flat_data[idx] = voxel_value
+
+        return flat_data.reshape(original_shape, order=self._order)
 
 def compute_average_intensities(
+    annotation: AnnotationT,
+    gene_marker_volumes: MarkerVolumes,
+    hierarchy_info: pd.DataFrame,
+) -> pd.DataFrame:
+    densities = {marker_name.lower(): pd.DataFrame(
+        data=0,
+        index=hierarchy_info.index,
+        columns=['voxel_count', 'mean']
+        )
+        for marker_name in gene_marker_volumes}
+
+    hierarchy_info = hierarchy_info.set_index("brain_region")
+    result = pd.DataFrame(
+        data=np.nan,
+        index=hierarchy_info.index,
+        columns=[marker_name.lower() for marker_name in gene_marker_volumes.keys()],
+    )
+
+    ids = np.unique(annotation)
+    for marker, intensity in gene_marker_volumes.items():
+        if intensity["slices"] is None:
+            restricted_mask = np.ones_like(annotation, dtype=bool)
+        else:
+            restricted_mask = np.zeros_like(annotation, dtype=bool)
+            # remove slices indices outside the volume_mask
+            slices = [sl for sl in intensity["slices"] if 0 <= sl < annotation.shape[0]]
+            restricted_mask[slices] = True
+
+        for id_ in ids:
+            if id_ == 0:
+                continue
+            mask = (annotation == id_) & restricted_mask
+            densities[marker.lower()].loc[id_, 'voxel_count'] = np.sum(mask)
+            densities[marker.lower()].loc[id_, 'mean'] = np.mean(intensity['intensity'][mask])
+
+    for marker, marker_density in densities.items():
+        for idx in np.argsort(hierarchy_info['descendant_ids'].apply(len).values):
+            df = marker_density.loc[list(hierarchy_info.iloc[idx]['descendant_ids'])]
+            counts = df['voxel_count'].to_numpy()
+            means = df['mean'].to_numpy()
+            if np.any(count):
+                marker_density.iloc[idx]['voxel_count'] = np.average(df['mean'], weights=df['voxel_count'])
+
+    breakpoint() # XXX BREAKPOINT
+    return result
+
+
+def compute_average_intensities1(
     annotation: AnnotationT,
     gene_marker_volumes: MarkerVolumes,
     hierarchy_info: pd.DataFrame,
@@ -259,13 +395,50 @@ def compute_average_intensities(
         len(gene_marker_volumes),
         region_count,
     )
+
+    from voxcell.voxel_data import FastApplyToIndexVoxels
+    fativ = FastApplyToIndexVoxels(annotation)
+
+    gene_marker_volumes_ravel = {k : {'intensity': v['intensity'].ravel(),
+                                      'slices': v['slices']}
+        for k, v in gene_marker_volumes.items()
+        }
+
+    ret = []
     for region_name in tqdm(result.index):
         region_mask = np.isin(annotation, list(hierarchy_info.at[region_name, "descendant_ids"]))
+        ids = hierarchy_info.at[region_name, "descendant_ids"]
+        indices = np.concatenate([fativ._get_group_indices_by_value(value)
+                                  for value in ids], dtype=int)
+
         for marker, intensity in gene_marker_volumes.items():
             result.at[region_name, marker.lower()] = compute_average_intensity(
                 intensity["intensity"], region_mask, intensity["slices"]
             )
 
+            if intensity["slices"]:
+                s = np.ogrid[0:annotation.shape[1], 0:annotation.shape[2]]
+                slice_idx = np.concatenate([
+                    np.ravel_multi_index(([sl], *s), annotation.shape)
+                    for sl in intensity["slices"]
+                    ]
+                    )
+                idx = np.intersect1d(indices, slice_idx.ravel())
+            else:
+                idx = indices
+
+            if len(idx):
+                aaa = np.mean(gene_marker_volumes_ravel[marker]['intensity'][idx])
+            else:
+                aaa = 0.
+
+            ret.append((
+                region_name,
+                marker.lower(),
+                aaa
+                ))
+
+    result.update(pd.DataFrame(data=ret, columns=['name', 'marker', 'value']).pivot(index='name', columns='marker', values='value'))
     return result
 
 
