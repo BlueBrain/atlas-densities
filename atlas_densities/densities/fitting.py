@@ -285,7 +285,9 @@ def linear_fitting_xy(
             otherwise by 1.0.
 
     Returns:
-        a dict of the form {"coefficient": <float>, "standard_deviation": <float>}.
+        a dict of the form {"coefficient": <float>,
+                            "standard_deviation": <float>,
+                            "r_square": <float>}.
 
     Raises:
        AtlasDensitiesError if some of the `sigma`values are negative.
@@ -311,15 +313,24 @@ def linear_fitting_xy(
         least_positive = np.min(sigma[~zero_mask])
         sigma[zero_mask] = least_positive / 2.0
 
+    def _optimize_func(x, coefficient):
+        return coefficient * np.array(x)
+
     parameters = curve_fit(
-        lambda x, coefficient: coefficient * x,
+        _optimize_func,
         xdata=xdata,
         ydata=ydata,
         sigma=sigma,
         absolute_sigma=True,
     )
-
-    return {"coefficient": parameters[0][0], "standard_deviation": np.sqrt(parameters[1][0][0])}
+    ss_reg = np.sum((_optimize_func(xdata, parameters[0][0]) - np.mean(ydata)) ** 2)
+    ss_tot = np.sum((np.array(ydata) - _optimize_func(xdata, parameters[0][0])) ** 2) + ss_reg
+    # if total sum of square is null, no variance can be explained by the fitting
+    return {
+        "coefficient": parameters[0][0],
+        "standard_deviation": np.sqrt(parameters[1][0][0]),
+        "r_square": (ss_reg / ss_tot) if ss_tot > 0 else np.nan,
+    }
 
 
 FittingData = Dict[str, Dict[str, Dict[str, float]]]
@@ -350,16 +361,16 @@ def compute_fitting_coefficients(
         dict of the form (values are fake):
         {
             "Isocortex" : {
-                "gad67": { "coefficient": 0.85, "standard_deviation": 0.15},
-                "pv": { "coefficient": 1.00, "standard_deviation": 0.5},
-                "sst": { "coefficient": 1.07, "standard_deviation": 0.75},
-                "vip": { "coefficient": 0.95, "standard_deviation": 0.15},
+                "gad67": { "coefficient": 0.85, "standard_deviation": 0.15, "r_square": 0.75},
+                "pv": { "coefficient": 1.00, "standard_deviation": 0.5, "r_square": 0.66},
+                "sst": { "coefficient": 1.07, "standard_deviation": 0.75, "r_square": 0.80},
+                "vip": { "coefficient": 0.95, "standard_deviation": 0.15, "r_square": 0.90},
             },
             "Cerebellum" : {
-                "gad67": { "coefficient": 0.75, "standard_deviation": 0.15},
-                "pv": { "coefficient": 1.10, "standard_deviation": 0.55},
-                "sst": { "coefficient": 1.20, "standard_deviation": 0.45},
-                "vip": { "coefficient": 0.95, "standard_deviation": 0.15},
+                "gad67": { "coefficient": 0.75, "standard_deviation": 0.15, "r_square": 0.55},
+                "pv": { "coefficient": 1.10, "standard_deviation": 0.55, "r_square": 0.40},
+                "sst": { "coefficient": 1.20, "standard_deviation": 0.45, "r_square": 0.58},
+                "vip": { "coefficient": 0.95, "standard_deviation": 0.15, "r_square": 0.77},
             },
            ...
         }
@@ -367,6 +378,7 @@ def compute_fitting_coefficients(
         performed. A "coefficient" value is the value of the linear regression coefficient for a
         given region group and a given cell type.
         The "standard_deviation" value is the standard deviation of the coefficient value.
+        The "r_square" value is the coefficient of determination of the coefficient value.
     """
 
     if len(densities.index) != len(average_intensities.index) or np.any(
@@ -387,7 +399,7 @@ def compute_fitting_coefficients(
 
     result = {
         group_name: {
-            cell_type: {"coefficient": np.nan, "standard_deviation": np.nan}
+            cell_type: {"coefficient": np.nan, "standard_deviation": np.nan, "r_square": np.nan}
             for cell_type in cell_types
         }
         for group_name in groups

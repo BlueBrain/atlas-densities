@@ -268,15 +268,18 @@ def test_compute_average_intensities(hierarchy_info):
 def test_linear_fitting_xy():
     actual = tested.linear_fitting_xy([0.0, 1.0, 2.0], [0.0, 2.0, 4.0], [1.0, 1.0, 1.0])
     assert np.allclose(actual["coefficient"], 2.0)
+    assert np.allclose(actual["r_square"], 1.0)
     assert not np.isinf(actual["standard_deviation"])
 
     actual = tested.linear_fitting_xy([0.0, 1.0, 2.0], [0.0, 1.0, 4.0], [1.0, 1.0, 1e-5])
     assert np.allclose(actual["coefficient"], 2.0)
     assert not np.isinf(actual["standard_deviation"])
+    assert np.allclose(actual["r_square"], 0.89286)
 
     actual = tested.linear_fitting_xy([0.0, 1.0, 2.0], [0.0, 2.0, 4.0], [1.0, 0.0, 1.0])
     assert np.allclose(actual["coefficient"], 2.0)
     assert not np.isinf(actual["standard_deviation"])
+    assert np.allclose(actual["r_square"], 1.0)
 
 
 def get_fitting_input_data_(hierarchy_info):
@@ -319,6 +322,10 @@ def test_compute_fitting_coefficients(hierarchy_info):
         assert not np.isnan(actual[group_name]["gad67+"]["standard_deviation"])
         assert not np.isinf(actual[group_name]["pv+"]["standard_deviation"])
         assert not np.isnan(actual[group_name]["pv+"]["standard_deviation"])
+    assert actual["Whole"]["pv+"]["r_square"] == 1.0
+    assert actual["Whole"]["gad67+"]["r_square"] == 1.0
+    assert np.isnan(actual["Central lobule"]["pv+"]["r_square"])  # only one value so no variation.
+    assert np.isnan(actual["Central lobule"]["gad67+"]["r_square"])
 
 
 def test_compute_fitting_coefficients_exceptions(hierarchy_info):
