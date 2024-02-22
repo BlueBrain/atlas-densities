@@ -214,7 +214,102 @@ def compute_average_intensity(
     return 0.0
 
 
+#from atlas_densities.densities import utils
+#import voxcell
+#region_map = voxcell.RegionMap.load_json('input-data/hierarchy_ccfv2_l23split_barrelsplit.json')
+#
+#region_name = 'root'
+#hierarchy_info = utils.get_hierarchy_info(region_map, root=region_name)
+
+def add_depths(region_map_df, root_id):
+    region_map_df['depth'] = 0
+    parent_ids = [root_id, ]
+    depth = 1
+    while parent_ids:
+        children_ids = region_map_df[np.isin(region_map_df['parent_id'], list(parent_ids))].index
+        region_map_df.loc[children_ids, 'depth'] = depth
+        parent_ids = set(children_ids)
+        depth += 1
+
+def fill_densities(region_map, region_map_df, df):
+    order_idx = np.argsort(region_map_df.depth.to_numpy())
+
+    for idx in region_map_df.index[order_idx[::-1]]:
+        if idx not in region_map._children:
+            continue
+        children = region_map._children[idx]
+        if not children:
+            continue
+        print(region_map_df.loc[idx, 'name'], region_map_df.loc[idx, 'depth'])
+        voxel_count = df.loc[children, "voxel_count"]
+        count = voxel_count.sum()
+        if count:
+            df.loc[idx, "voxel_count"] = count
+            df.loc[idx, "density"] = np.average(df.loc[children, "density"], weights=voxel_count)
+
+
 def compute_average_intensities(
+    annotation: AnnotationT,
+    gene_marker_volumes: MarkerVolumes,
+    hierarchy_info: pd.DataFrame,
+    region_map,
+) -> pd.DataFrame:
+
+    densities = {k: pd.DataFrame(
+        data=0.0,
+        index=hierarchy_info.index,
+        columns=['voxel_count', 'density'],
+    ) for k in gene_marker_volumes}
+
+    for id_ in np.unique(annotation):
+        if id_ == 0:
+            continue
+        mask = annotation == id_
+        for marker, intensity in gene_marker_volumes.items():
+            intensity, slices = intensity["intensity"], intensity["slices"]
+
+            if slices is None:
+                restricted_mask = mask
+            else:
+                restricted_mask = np.zeros_like(mask, dtype=bool)
+                slices_ = [slice_ for slice_ in slices if 0 <= slice_ < mask.shape[0]]
+                restricted_mask[slices_] = True
+                restricted_mask = np.logical_and(restricted_mask, mask)
+
+            count = restricted_mask.sum()
+            if count <= 0:
+                continue
+
+            mean_density = np.mean(intensity[restricted_mask])
+            if mean_density == 0.:
+                #print(f"Mean density for {hierarchy_info.loc[id_]} and {marker}")
+                breakpoint() # XXX BREAKPOINT
+                pass
+
+            densities[marker.lower()].loc[id_]['voxel_count'] = count
+            densities[marker.lower()].loc[id_]['density'] = mean_density
+
+    hierarchy_info = hierarchy_info.set_index("brain_region")
+    result = pd.DataFrame(
+        data=np.nan,
+        index=hierarchy_info.index,
+        columns=[marker_name.lower() for marker_name in gene_marker_volumes.keys()],
+    )
+
+    region_map_df = region_map.as_dataframe()
+    add_depths(region_map_df, 997)
+
+    for marker in gene_marker_volumes:
+        df = densities[marker.lower()]
+        fill_densities(region_map, region_map_df, df)
+        df['name'] = region_map_df.loc[df.index].name
+        df = df.set_index('name')
+        result[marker.lower()] = df['density']
+
+    return result
+
+
+def compute_average_intensities1(
     annotation: AnnotationT,
     gene_marker_volumes: MarkerVolumes,
     hierarchy_info: pd.DataFrame,
@@ -732,9 +827,7 @@ def linear_fitting(  # pylint: disable=too-many-arguments
         invert=True,
     )
     average_intensities = compute_average_intensities(
-        annotation,
-        gene_marker_volumes,
-        hierarchy_info.drop(hierarchy_info.index[indexes]),
+        annotation, gene_marker_volumes, hierarchy_info, region_map
     )
 
     L.info("Computing fitting coefficients ...")
