@@ -50,7 +50,7 @@ def test_create_dataframe_from_known_densities():
 
 
 @pytest.fixture
-def hierarchy_info():
+def region_map():
     hierarchy = {
         "id": 8,
         "name": "Basic cell groups and regions",
@@ -104,7 +104,11 @@ def hierarchy_info():
         ],
     }
 
-    return utils.get_hierarchy_info(RegionMap.from_dict(hierarchy))
+    return RegionMap.from_dict(hierarchy)
+
+@pytest.fixture
+def hierarchy_info(region_map):
+    return utils.get_hierarchy_info(region_map)
 
 
 def test_fill_in_homogenous_regions(hierarchy_info):
@@ -226,7 +230,7 @@ def test_compute_average_intensity():
     assert actual == 0
 
 
-def test_compute_average_intensities(hierarchy_info):
+def test_compute_average_intensities(region_map, hierarchy_info):
     annotation = np.array(
         [[[0, 976], [976, 936]], [[976, 936], [936, 936]]]  # 976 = Lobule II, 936 = "Declive (VI)""
     )
@@ -261,7 +265,7 @@ def test_compute_average_intensities(hierarchy_info):
         index=hierarchy_info["brain_region"],
     )
 
-    actual = tested.compute_average_intensities(annotation, marker_volumes, hierarchy_info)
+    actual = tested.compute_average_intensities(annotation, marker_volumes, hierarchy_info, region_map)
     pdt.assert_frame_equal(actual, expected)
 
 
