@@ -221,9 +221,9 @@ def compute_average_intensity(
 #region_name = 'root'
 #hierarchy_info = utils.get_hierarchy_info(region_map, root=region_name)
 
-def add_depths(region_map_df, root_id):
+def add_depths(region_map_df):
     region_map_df['depth'] = 0
-    parent_ids = [root_id, ]
+    parent_ids = [-1, ]
     depth = 1
     while parent_ids:
         children_ids = region_map_df[np.isin(region_map_df['parent_id'], list(parent_ids))].index
@@ -231,21 +231,69 @@ def add_depths(region_map_df, root_id):
         parent_ids = set(children_ids)
         depth += 1
 
+
 def fill_densities(region_map, region_map_df, df):
     order_idx = np.argsort(region_map_df.depth.to_numpy())
 
-    for idx in region_map_df.index[order_idx[::-1]]:
-        if idx not in region_map._children:
+    ids = region_map_df.index[order_idx[::-1]]
+    for id_ in ids:
+        #if id_ == 607 or id_ == 112:
+        #    breakpoint() # XXX BREAKPOINT
+
+        if id_ not in region_map._children:
             continue
-        children = region_map._children[idx]
+        children = region_map._children[id_]
         if not children:
             continue
-        print(region_map_df.loc[idx, 'name'], region_map_df.loc[idx, 'depth'])
+        #print(region_map_df.loc[idx, 'name'], region_map_df.loc[idx, 'depth'])
         voxel_count = df.loc[children, "voxel_count"]
         count = voxel_count.sum()
         if count:
-            df.loc[idx, "voxel_count"] = count
-            df.loc[idx, "density"] = np.average(df.loc[children, "density"], weights=voxel_count)
+            df.loc[id_, "voxel_count"] = count
+            df.loc[id_, "density"] = np.average(df.loc[children, "density"], weights=voxel_count)
+
+
+from joblib import delayed, Parallel
+
+def _apply_density_slices(gene_marker_volumes):
+    ret = {}
+    for marker, intensity in gene_marker_volumes.items():
+        intensity, slices = intensity["intensity"], intensity["slices"]
+
+        if slices is None:
+            mask = np.ones_like(intensity, dtype=bool)
+        else:
+            mask = np.zeros_like(intensity, dtype=bool)
+            slices_ = [slice_ for slice_ in slices if 0 <= slice_ < mask.shape[0]]
+            mask[slices_] = True
+
+        ret[marker] = {
+            'intensity': intensity,
+            'slices': slices,
+            'mask': mask
+        }
+
+    return ret
+
+
+def _compute_average_intensities_helper(annotation, gene_marker_volumes, id_):
+    mask = annotation == id_
+    res = []
+    for marker, intensity in gene_marker_volumes.items():
+        restricted_mask = np.logical_and(intensity['mask'], mask)
+        count = restricted_mask.sum()
+
+        if count <= 0:
+            continue
+
+        mean_density = np.mean(intensity['intensity'][restricted_mask])
+        if mean_density == 0.:
+            #print(f"Mean density for {hierarchy_info.loc[id_]} and {marker}")
+            breakpoint() # XXX BREAKPOINT
+            pass
+        res.append((marker.lower(), id_, count, mean_density))
+
+    return res
 
 
 def compute_average_intensities(
@@ -255,59 +303,74 @@ def compute_average_intensities(
     region_map,
 ) -> pd.DataFrame:
 
-    densities = {k: pd.DataFrame(
-        data=0.0,
-        index=hierarchy_info.index,
-        columns=['voxel_count', 'density'],
-    ) for k in gene_marker_volumes}
+    gene_marker_volumes = _apply_density_slices(gene_marker_volumes)
 
+    _helper = delayed(_compute_average_intensities_helper)
+    work = []
     for id_ in np.unique(annotation):
         if id_ == 0:
             continue
-        mask = annotation == id_
-        for marker, intensity in gene_marker_volumes.items():
-            intensity, slices = intensity["intensity"], intensity["slices"]
+        work.append(_helper(annotation, gene_marker_volumes, id_))
 
-            if slices is None:
-                restricted_mask = mask
-            else:
-                restricted_mask = np.zeros_like(mask, dtype=bool)
-                slices_ = [slice_ for slice_ in slices if 0 <= slice_ < mask.shape[0]]
-                restricted_mask[slices_] = True
-                restricted_mask = np.logical_and(restricted_mask, mask)
 
-            count = restricted_mask.sum()
-            if count <= 0:
-                continue
+    res = Parallel(n_jobs=-2)(work)
+    densities = (pd.DataFrame(list(it.chain(*res)),
+                              columns=['marker', 'id', 'voxel_count', 'density'])
+                 .set_index('id')
+                 .pivot(columns='marker')
+                 .swaplevel(axis=1)
+                 )
 
-            mean_density = np.mean(intensity[restricted_mask])
-            if mean_density == 0.:
-                #print(f"Mean density for {hierarchy_info.loc[id_]} and {marker}")
-                breakpoint() # XXX BREAKPOINT
-                pass
+    region_map_df = region_map.as_dataframe()
+    add_depths(region_map_df)
 
-            densities[marker.lower()].loc[id_]['voxel_count'] = count
-            densities[marker.lower()].loc[id_]['density'] = mean_density
-
-    hierarchy_info = hierarchy_info.set_index("brain_region")
+    #hierarchy_info = hierarchy_info.set_index("brain_region")
+    #gene_marker_volumes = ['gad67', 'pv', 'sst', 'vip']
     result = pd.DataFrame(
         data=np.nan,
         index=hierarchy_info.index,
-        columns=[marker_name.lower() for marker_name in gene_marker_volumes.keys()],
+        columns=[marker_name.lower() for marker_name in gene_marker_volumes],
     )
-
-    region_map_df = region_map.as_dataframe()
-    add_depths(region_map_df, 997)
+    result['name'] = region_map_df.loc[result.index].name
 
     for marker in gene_marker_volumes:
-        df = densities[marker.lower()]
+        df = pd.DataFrame(data=0.0, index=result.index, columns=['voxel_count', 'density'])
+        df.update(densities[marker.lower()])
         fill_densities(region_map, region_map_df, df)
-        df['name'] = region_map_df.loc[df.index].name
-        df = df.set_index('name')
         result[marker.lower()] = df['density']
 
+    result = result.set_index('name')
     return result
 
+
+'''
+from atlas_densities.densities import fitting
+from voxcell import VoxelData, RegionMap
+from atlas_densities.densities import utils
+
+annotation = VoxelData.load_nrrd('input-data/annotation_ccfv2_l23split_barrelsplit_validated.nrrd')
+
+gene_voxeldata = {
+    'gad67': VoxelData.load_nrrd('input-data/gene_gad67_correctednissl.nrrd'),
+    'pv': VoxelData.load_nrrd('input-data/gene_pv_correctednissl.nrrd'),
+    'sst': VoxelData.load_nrrd('input-data/gene_sst_correctednissl.nrrd'),
+    'vip': VoxelData.load_nrrd('input-data/gene_vip_correctednissl.nrrd'),
+}
+gids = { 'gad67': '479', 'pv': '868', 'sst': '1001', 'vip': '77371835', }
+slices = utils.load_json('input-data/realigned_slices.json')
+gene_marker_volumes = {
+    gene: {
+        "intensity": gene_data.raw,
+        "slices": slices[gids[gene]],  # list of integer slice indices
+    }
+    for (gene, gene_data) in gene_voxeldata.items()
+}
+region_map = RegionMap.load_json('input-data/hierarchy_ccfv2_l23split_barrelsplit.json')
+hierarchy_info = utils.get_hierarchy_info(region_map, root='root')
+
+fitting.compute_average_intensities(annotation, gene_marker_volumes, hierarchy_info, region_map)
+breakpoint() # XXX BREAKPOINT
+'''
 
 def compute_average_intensities1(
     annotation: AnnotationT,
