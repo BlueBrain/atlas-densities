@@ -259,7 +259,6 @@ class Test__merge_probability_maps:
         return probability_map
 
     def test_index_intersection_success(self):
-
         probability_maps = [
             self.create_probability_map(
                 {
