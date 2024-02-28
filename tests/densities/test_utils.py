@@ -59,6 +59,20 @@ def test_normalize():
     # In place modification
     actual = tested.normalize_intensity(marker, annotation_raw, copy=False)
     npt.assert_array_almost_equal(marker, expected)
+    # Test outside with no intensity
+    marker = np.array(
+        [
+            [
+                [0.0, 0.0, 0.0, 0.0],
+                [0.0, 0.0, 1.0, 0.0],
+                [0.0, 3.0, 5.0, 0.0],
+                [0.0, 0.0, 0.0, 0.0],
+            ]
+        ],
+        dtype=float,
+    )
+    actual = tested.normalize_intensity(marker, annotation_raw, copy=True)
+    npt.assert_array_almost_equal(marker / np.max(marker), actual)
 
 
 def test_compensate_cell_overlap():
