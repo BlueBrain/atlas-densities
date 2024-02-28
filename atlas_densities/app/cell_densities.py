@@ -183,8 +183,22 @@ def app(verbose):
     help="Path to density groups ids config",
     show_default=True,
 )
+@click.option(
+    "--skip-normalization",
+    is_flag=True,
+    default=False,
+    help="Whether to skip normalization of the Nissl path",
+    show_default=True,
+)
 @log_args(L)
-def cell_density(annotation_path, hierarchy_path, nissl_path, output_path, group_ids_config_path):
+def cell_density(
+    annotation_path,
+    hierarchy_path,
+    nissl_path,
+    output_path,
+    group_ids_config_path,
+    skip_normalization,
+):
     """Compute and save the overall mouse brain cell density.
 
     The input Nissl stain volume of AIBS is turned into an actual density field complying with
@@ -219,6 +233,7 @@ def cell_density(annotation_path, hierarchy_path, nissl_path, output_path, group
         _get_voxel_volume_in_mm3(annotation),
         nissl.raw,
         group_ids_config=group_ids_config,
+        skip_normalization=skip_normalization,
     )
     nissl.with_data(overall_cell_density).save_nrrd(output_path)
 

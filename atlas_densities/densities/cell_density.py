@@ -60,6 +60,7 @@ def compute_cell_density(
     voxel_volume: float,
     nissl: FloatArray,
     group_ids_config: dict,
+    skip_normalization: bool = False,
 ) -> FloatArray:
     """
     Compute the overall cell density based on Nissl staining and cell counts from literature.
@@ -87,6 +88,8 @@ def compute_cell_density(
         voxel_volume: the common volume of a voxel associated to any of the input arrays.
         nissl: float array of shape (W, H, D) with non-negative entries. The input
             Nissl stain intensity.
+        group_ids_config: Layout described in `atlas_densities/app/data/metadata/README.txt`
+        skip_normalization: whether the normalization should be skipped
 
     Returns:
         float array of shape (W, H, D) with non-negative entries. The returned array is a
@@ -97,7 +100,8 @@ def compute_cell_density(
     """
 
     nissl = np.asarray(nissl, dtype=np.float64)
-    nissl = utils.normalize_intensity(nissl, annotation, threshold_scale_factor=1.0, copy=False)
+    if not skip_normalization:
+        nissl = utils.normalize_intensity(nissl, annotation, threshold_scale_factor=1.0, copy=False)
     nissl = utils.compensate_cell_overlap(nissl, annotation, gaussian_filter_stdv=-1.0, copy=False)
 
     group_ids = utils.get_group_ids(region_map, config=group_ids_config)
