@@ -164,7 +164,7 @@ def compute_kim_et_al_neuron_densities(
         engine="openpyxl",
     ).set_index("ROI")
     for acronym in kim_et_al_mmc3.index:
-        full_name = kim_et_al_mmc3.loc[acronym][0]
+        full_name = kim_et_al_mmc3.loc[acronym].iloc[0]
         if not isinstance(full_name, str) or not full_name:
             warn(
                 f"Region with acronym {acronym} has no valid full name. "

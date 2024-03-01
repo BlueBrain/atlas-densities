@@ -523,6 +523,43 @@ def inhibitory_and_excitatory_neuron_densities(
 
 @app.command()
 @click.option(
+        "--hierarchy-path",
+        type=EXISTING_FILE_PATH,
+        default=Path(DATA_PATH, "1.json"),
+        help="The path to the hierarchy file, i.e., AIBS 1.json or BBP hierarchy.json.",
+        show_default=True,
+)
+@click.option(
+    "--kim-results-path",
+    type=EXISTING_FILE_PATH,
+    default=Path(DATA_PATH, "measurements", "mmc3.xlsx"),
+    help=(
+        "The path to the excel sheet containing the compilation of cell density from Kim et al. "
+        "2017."
+    ),
+    show_default=True,
+)
+@click.option(
+    "--rodarie-review-path",
+    type=EXISTING_FILE_PATH,
+    default=Path(DATA_PATH, "measurements", "gaba_papers.xlsx"),
+    help=(
+        "The path to the excel sheet containing the review on cell density from Rodarie et al. "
+        "2022."
+    ),
+    show_default=True,
+)
+@click.option(
+    "--rodarie-non-dens-path",
+    type=EXISTING_FILE_PATH,
+    default=Path(DATA_PATH, "measurements", "non_density_measurements.csv"),
+    help=(
+        "The path to the csv file containing the non densities values from the review on cell "
+        "density from Rodarie et al. 2022."
+    ),
+    show_default=True,
+)
+@click.option(
     "--measurements-output-path",
     required=True,
     help="Path where the density-related measurement series will be written. CSV file whose columns"
@@ -536,6 +573,10 @@ def inhibitory_and_excitatory_neuron_densities(
 )
 @log_args(L)
 def compile_measurements(
+    hierarchy_path,
+    kim_results_path,
+    rodarie_review_path,
+    rodarie_non_dens_path,
     measurements_output_path,
     homogenous_regions_output_path,
 ):
@@ -600,19 +641,19 @@ def compile_measurements(
     """
 
     L.info("Loading hierarchy ...")
-    region_map = RegionMap.load_json(Path(DATA_PATH, "1.json"))  # Unmodified AIBS 1.json
+    region_map = RegionMap.load_json(hierarchy_path)  # Unmodified AIBS 1.json
     L.info("Loading excel files ...")
     measurements = read_measurements(
         region_map,
-        Path(DATA_PATH, "measurements", "mmc3.xlsx"),
-        Path(DATA_PATH, "measurements", "gaba_papers.xlsx"),
+        kim_results_path,
+        rodarie_review_path,
         # The next measurement file has been obtained after manual extraction
         # of non-density measurements from the worksheets PV-SST-VIP and 'GAD67 densities'
         # of gaba_papers.xlsx.
-        Path(DATA_PATH, "measurements", "non_density_measurements.csv"),
+        rodarie_non_dens_path,
     )
     homogenous_regions = read_homogenous_neuron_type_regions(
-        Path(DATA_PATH, "measurements", "gaba_papers.xlsx")
+        rodarie_review_path
     )
     L.info("Saving to CSV files ...")
     measurements.to_csv(measurements_output_path, index=False)

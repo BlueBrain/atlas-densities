@@ -226,8 +226,12 @@ in a separate CSV file.
     # make output directory
     mkdir -p data/ccfv2/measurements
 
-    atlas-densities cell-densities compile-measurements                                  \
-        --measurements-output-path=data/ccfv2/measurements/measurements.csv              \
+    atlas-densities cell-densities compile-measurements                                            \
+        --hierarchy-path=data/1.json                                                               \
+        --kim-results-path=atlas_densities/app/data/measurements/mmc3.xlsx                         \
+        --rodarie-review-path=atlas_densities/app/data/measurements/gaba_papers.xlsx               \
+        --rodarie-non-dens-path=atlas_densities/app/data/measurements/non_density_measurements.csv \
+        --measurements-output-path=data/ccfv2/measurements/measurements.csv                        \
         --homogenous-regions-output-path=data/ccfv2/measurements/homogeneous_regions.csv
 
 
