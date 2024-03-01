@@ -321,8 +321,6 @@ def compute_average_intensities(
     region_map_df = region_map.as_dataframe()
     add_depths(region_map_df)
 
-    #hierarchy_info = hierarchy_info.set_index("brain_region")
-    #gene_marker_volumes = ['gad67', 'pv', 'sst', 'vip']
     result = pd.DataFrame(
         data=np.nan,
         index=hierarchy_info.index,
@@ -337,94 +335,6 @@ def compute_average_intensities(
         result[marker.lower()] = df['density']
 
     result = result.set_index('name')
-    return result
-
-
-'''
-from atlas_densities.densities import fitting
-from voxcell import VoxelData, RegionMap
-from atlas_densities.densities import utils
-
-annotation = VoxelData.load_nrrd('input-data/annotation_ccfv2_l23split_barrelsplit_validated.nrrd')
-
-gene_voxeldata = {
-    'gad67': VoxelData.load_nrrd('input-data/gene_gad67_correctednissl.nrrd'),
-    'pv': VoxelData.load_nrrd('input-data/gene_pv_correctednissl.nrrd'),
-    'sst': VoxelData.load_nrrd('input-data/gene_sst_correctednissl.nrrd'),
-    'vip': VoxelData.load_nrrd('input-data/gene_vip_correctednissl.nrrd'),
-}
-gids = { 'gad67': '479', 'pv': '868', 'sst': '1001', 'vip': '77371835', }
-slices = utils.load_json('input-data/realigned_slices.json')
-gene_marker_volumes = {
-    gene: {
-        "intensity": gene_data.raw,
-        "slices": slices[gids[gene]],  # list of integer slice indices
-    }
-    for (gene, gene_data) in gene_voxeldata.items()
-}
-region_map = RegionMap.load_json('input-data/hierarchy_ccfv2_l23split_barrelsplit.json')
-hierarchy_info = utils.get_hierarchy_info(region_map, root='root')
-
-fitting.compute_average_intensities(annotation, gene_marker_volumes, hierarchy_info, region_map)
-breakpoint() # XXX BREAKPOINT
-'''
-
-def compute_average_intensities1(
-    annotation: AnnotationT,
-    gene_marker_volumes: MarkerVolumes,
-    hierarchy_info: pd.DataFrame,
-) -> pd.DataFrame:
-    """
-    Compute the average marker intensity of every region in `hierarchy_info` for every marker
-    of `gene_marker_volumes`.
-
-    If a region does not intersect any of the slices of a gene marker volume, the average density
-    of the marked cell type of this region is set with np.nan.
-
-    Args:
-        annotation: int array of shape (W, H, D) holding the annotation of the whole
-            brain model. (The integers W, H and D are the dimensions of the array).
-        gene_marker_volumes: dict of the form {
-                "gad67": {"intensity": <array>, "slices": <list>},
-                "pv": {"intensity": <array>, "slices": <list>},
-                ...
-                }
-            where each intensity array is of shape (W, H, D) and where the items of each slice
-            list range in [0, W - 1].
-        hierarchy_info: data frame with colums "descendant_ids" (set[int]) and "brain_region"
-            (str) and whose index is a list of region ids.
-            See :fun:`atlas_densities.densities.utils.get_hierarchy_info`.
-
-    Returns:
-        A data frame of the following form (values are fake):
-                    gad67  pv   sst    vip
-        Isocortex   1.5    1.1  0.2    12.0
-        Cerebellum  2.5    0.9  0.1    11.0
-        ...         ...   ...    ...    ...
-        The index of the data frame is the list of regions `hierarchy_info["brain_region"]`.
-        The column labels are the keys of `gene_marker_volumes` in lower case.
-    """
-    region_count = len(hierarchy_info["brain_region"])
-    data = np.full((region_count, len(gene_marker_volumes)), np.nan)
-    hierarchy_info = hierarchy_info.set_index("brain_region")
-    result = pd.DataFrame(
-        data=data,
-        index=hierarchy_info.index,
-        columns=[marker_name.lower() for marker_name in gene_marker_volumes.keys()],
-    )
-
-    L.info(
-        "Computing average intensities for %d markers in %d regions ...",
-        len(gene_marker_volumes),
-        region_count,
-    )
-    for region_name in tqdm(result.index):
-        region_mask = np.isin(annotation, list(hierarchy_info.at[region_name, "descendant_ids"]))
-        for marker, intensity in gene_marker_volumes.items():
-            result.at[region_name, marker.lower()] = compute_average_intensity(
-                intensity["intensity"], region_mask, intensity["slices"]
-            )
-
     return result
 
 
