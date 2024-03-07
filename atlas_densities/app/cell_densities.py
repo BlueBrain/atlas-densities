@@ -905,13 +905,18 @@ def fit_average_densities(
         for (name, stddev) in cell_density_stddev.items()
     }
 
-    gene_marker_volumes = {
-        gene: {
+    gene_marker_volumes = {}
+    for gene, gene_data in gene_voxeldata.items():
+        loc_slices = slices[config["sectionDataSetID"][gene]]
+        gene_marker_volumes[gene] = {
             "intensity": gene_data.raw,
-            "slices": slices[config["sectionDataSetID"][gene]],  # list of integer slice indices
+            # list of integer slice indices
+            "slices": (
+                loc_slices - np.asarray(gene_data.offset / gene_data.voxel_dimensions, dtype=int)[0]
+                if loc_slices is not None
+                else None
+            ),
         }
-        for (gene, gene_data) in gene_voxeldata.items()
-    }
 
     group_ids_config = utils.load_json(group_ids_config_path)
 

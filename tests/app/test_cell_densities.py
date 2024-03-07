@@ -1,4 +1,5 @@
 """test cell_densities"""
+
 import json
 from pathlib import Path
 
@@ -348,8 +349,12 @@ def test_fit_average_densities():
     runner = CliRunner()
     with runner.isolated_filesystem():
         input_ = get_fitting_input_data()
+        input_["gene_marker_volumes"]["gad67"]["slices"] = [-1]  # force offset
+        input_["realigned_slices"][input_["slice_map"]["gad67"]] = [-1]
         for name in ["annotation", "neuron_density"]:
-            VoxelData(input_[name], voxel_dimensions=[25.0] * 3).save_nrrd(name + ".nrrd")
+            VoxelData(
+                input_[name], voxel_dimensions=[25.0] * 3, offset=(-50.0, 100.0, -450.0)
+            ).save_nrrd(name + ".nrrd")
 
         input_["homogenous_regions"].to_csv("homogenous_regions.csv", index=False)
         input_["average_densities"].to_csv("average_densities.csv", index=False)
@@ -371,9 +376,11 @@ def test_fit_average_densities():
                 "cellDensityStandardDeviationsPath": "std_cells.json",
             }
             for marker, intensity in input_["gene_marker_volumes"].items():
-                VoxelData(intensity["intensity"], voxel_dimensions=[25.0] * 3).save_nrrd(
-                    marker + ".nrrd"
-                )
+                VoxelData(
+                    intensity["intensity"],
+                    voxel_dimensions=[25.0] * 3,
+                    offset=(-50.0, 100.0, -450.0),
+                ).save_nrrd(marker + ".nrrd")
                 gene_config["inputGeneVolumePath"][marker] = marker + ".nrrd"
                 gene_config["sectionDataSetID"][marker] = input_["slice_map"][marker]
 
