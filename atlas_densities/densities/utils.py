@@ -414,7 +414,7 @@ def get_group_ids(region_map: "RegionMap", config: dict, _skip_check=False) -> d
 
     Args:
         region_map: object to navigate the mouse brain regions hierarchy
-            (instantied from AIBS 1.json).
+            (instantiated from AIBS 1.json).
         config: mapping of regions to their constituent ids
     Returns:
         A dictionary whose keys are region group names and whose values are
