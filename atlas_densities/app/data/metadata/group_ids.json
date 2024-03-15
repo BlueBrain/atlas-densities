@@ -45,7 +45,7 @@
   {
     "name": "Rest",
     "REMOVE": [
-      { "name": "Basic cell groups and regions", "with_descendants": true },
+      { "name": "root", "with_descendants": true },
       { "UNION": [ "!Cerebellum group", "!Isocortex group" ] }
     ]
   }

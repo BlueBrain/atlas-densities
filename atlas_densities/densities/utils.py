@@ -405,7 +405,6 @@ def _interpret_region_groups(region_map, config):
 
 
 def get_group_ids(region_map: "RegionMap", config: dict, _skip_check=False) -> dict[str, set[int]]:
-
     """
     Get AIBS structure ids for several region groups of interest.
 

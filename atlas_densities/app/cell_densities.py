@@ -937,7 +937,7 @@ def fit_average_densities(
         group_ids_config=group_ids_config,
     )
 
-    # Turn index into column so as to ease off the save and load operations on csv files
+    # Turn index into column to ease off the save and load operations on csv files
     fitted_densities_df["brain_region"] = fitted_densities_df.index
 
     L.info("Saving fitted densities to file %s ...", fitted_densities_output_path)
