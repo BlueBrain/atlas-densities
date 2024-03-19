@@ -68,11 +68,11 @@ def normalize_intensity(
         3D array, the normalized marker intensity array.
     """
 
-    outside_mean = np.mean(
-        marker_intensity[np.logical_and((annotation == region_id), (marker_intensity > 0.0))]
-    )
     output_intensity = copy_array(marker_intensity, copy=copy)
-    output_intensity -= outside_mean * threshold_scale_factor
+    mask_low_filter = np.logical_and((annotation == region_id), (marker_intensity > 0.0))
+    if np.any(mask_low_filter):
+        outside_mean = np.mean(marker_intensity[mask_low_filter])
+        output_intensity -= outside_mean * threshold_scale_factor
     output_intensity[output_intensity < 0.0] = 0.0
     max_intensity = np.max(output_intensity)
     if max_intensity > 0:
@@ -405,7 +405,6 @@ def _interpret_region_groups(region_map, config):
 
 
 def get_group_ids(region_map: "RegionMap", config: dict, _skip_check=False) -> dict[str, set[int]]:
-
     """
     Get AIBS structure ids for several region groups of interest.
 
