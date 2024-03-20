@@ -180,6 +180,7 @@ def set_known_values(
         deltas.loc[desc_names, cell_type] = 0.0
 
     L.info("Preparing variables layout ...")
+    #Create 2 df-s with only np.nans, next we will update this based on assumptions
     x_result = pd.DataFrame(
         {cell_type: np.full(len(id_counts), KEEP) for cell_type in cell_types},
         index=id_counts.index,  # indexed by integer identifiers
@@ -207,6 +208,7 @@ def set_known_values(
             region_counts.at[region_name, "gad67+_standard_deviation"], 0.0, atol=stddev_tolerance
         ) and np.isclose(region_counts.at[region_name, "gad67+"], 0.0, atol=stddev_tolerance):
             for cell_type in cell_types:
+                #(Basically, if GAD is 0 then every other inh neuron type should be zero..)
                 _zero_descendants(id_, cell_type, x_result, deltas, hierarchy_info)
 
     # Set the (possibly non-zero) cell count estimates which are given with certainty.
@@ -228,6 +230,18 @@ def set_known_values(
                 # are used as definitive estimates.
                 x_result.at[id_, cell_type] = id_counts.at[id_, cell_type]
                 deltas.at[region_name, cell_type] = 0.0
+                # IF the region is not empty of leaf regions 
+                # AND all its leaf regions are np.nan 
+                # AND the region's cell count is 0:
+                # Revert standard deviation to np.inf i.e. var is omitted
+                # Since cell count i.e. literature value was changed to 0 we change it to np.nan
+                if (
+                    not x_result.loc[desc_only, cell_type].empty and
+                    x_result.loc[desc_only, cell_type].isnull().all() and
+                    x_result.loc[id_, cell_type] == 0
+                ):
+                deltas.at[region_name, cell_type] = SKIP
+                x_result.at[id_, cell_type] = np.nan
 
     return x_result, deltas
 
@@ -531,9 +545,11 @@ def _check_variables_consistency(
         AtlasDensitiesError if on the the following assumptions is violated:
         - if cell count estimate of a region is known with certainty for a given cell type,
         then the cell count of every descendant region is also known with certainty.
-        - a cell count estimate which is given for certain does not
+        - a neuron subtype count estimate which is given for certain is greater than
+        its total neuron count estimate counterpart.
     """
     cell_count_tolerance = 1e-2  # absolute tolerance to rule out round-off errors
+    # pylint: disable=too-many-nested-blocks
     for region_name, id_, id_set in zip(
         deltas.index, hierarchy_info.index, hierarchy_info["descendant_id_set"]
     ):
@@ -542,7 +558,7 @@ def _check_variables_consistency(
                 for desc_id in id_set:
                     if np.isnan(x_result.loc[desc_id, cell_type]):
                         raise AtlasDensitiesError(
-                            f"Cell count estimate of region named '{region_name}' for cell type "
+                            f"Cell count estimate of region '{region_name}' for cell type "
                             f"{cell_type} was given for certain whereas the cell count of "
                             f"descendant id {desc_id} is not certain."
                         )
