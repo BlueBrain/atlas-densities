@@ -106,6 +106,7 @@ def region_map():
 
     return RegionMap.from_dict(hierarchy)
 
+
 @pytest.fixture
 def hierarchy_info(region_map):
     return utils.get_hierarchy_info(region_map)
@@ -265,7 +266,9 @@ def test_compute_average_intensities(region_map, hierarchy_info):
         index=hierarchy_info["brain_region"],
     )
 
-    actual = tested.compute_average_intensities(annotation, marker_volumes, hierarchy_info, region_map)
+    actual = tested.compute_average_intensities(
+        annotation, marker_volumes, hierarchy_info, region_map
+    )
     pdt.assert_frame_equal(actual, expected)
 
 
