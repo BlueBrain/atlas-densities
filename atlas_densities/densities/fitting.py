@@ -215,33 +215,35 @@ def compute_average_intensity(
     return 0.0
 
 
-#from atlas_densities.densities import utils
-#import voxcell
-#region_map = voxcell.RegionMap.load_json('input-data/hierarchy_ccfv2_l23split_barrelsplit.json')
-#
-#region_name = 'root'
-#hierarchy_info = utils.get_hierarchy_info(region_map, root=region_name)
-
-def add_depths(region_map_df):
-    region_map_df['depth'] = 0
-    parent_ids = [-1, ]
+def _add_depths(region_map_df):
+    """Rdd a `depth` column to the `region_map_df` with how deep it is within the hierarchy."""
+    region_map_df["depth"] = 0
+    parent_ids = [
+        -1,
+    ]
     depth = 1
     while parent_ids:
-        children_ids = region_map_df[np.isin(region_map_df['parent_id'], list(parent_ids))].index
-        region_map_df.loc[children_ids, 'depth'] = depth
+        children_ids = region_map_df[np.isin(region_map_df["parent_id"], list(parent_ids))].index
+        region_map_df.loc[children_ids, "depth"] = depth
         parent_ids = set(children_ids)
         depth += 1
 
 
-def fill_densities(region_map, region_map_df, df):
+def _fill_densities(region_map, region_map_df, df):
+    """Fill all `voxel_count` and `density` for each region within `def`.
+
+    This assumes the leaf nodes (ie: the deapest nodes in region_map) have had
+    their values filled in, and thus each of their parents can recursively be
+    filled in.
+    """
     order_idx = np.argsort(region_map_df.depth.to_numpy())
 
     ids = region_map_df.index[order_idx[::-1]]
     for id_ in ids:
-        if id_ not in region_map._children:
+        if id_ not in region_map._children:  # pylint: disable=protected-access
             continue
 
-        children = region_map._children[id_]
+        children = region_map._children[id_]  # pylint: disable=protected-access
 
         if not children:
             continue
@@ -254,6 +256,7 @@ def fill_densities(region_map, region_map_df, df):
 
 
 def _apply_density_slices(gene_marker_volumes):
+    """For each marker in `gene_marker_volumes`, apply the slice mask to the indensities volume."""
     ret = {}
     for marker, intensity in gene_marker_volumes.items():
         intensity, slices = intensity["intensity"], intensity["slices"]
@@ -265,27 +268,24 @@ def _apply_density_slices(gene_marker_volumes):
             slices_ = [slice_ for slice_ in slices if 0 <= slice_ < mask.shape[0]]
             mask[slices_] = True
 
-        ret[marker] = {
-            'intensity': intensity,
-            'slices': slices,
-            'mask': mask
-        }
+        ret[marker] = {"intensity": intensity, "slices": slices, "mask": mask}
 
     return ret
 
 
 def _compute_average_intensities_helper(annotation, gene_marker_volumes, id_):
+    """Compute the average intensity for `id_`, for all makers in `gene_marker_volumes`"""
     mask = annotation == id_
     res = []
     for marker, intensity in gene_marker_volumes.items():
-        restricted_mask = np.logical_and(intensity['mask'], mask)
+        restricted_mask = np.logical_and(intensity["mask"], mask)
         count = restricted_mask.sum()
 
         if count <= 0:
             continue
 
-        mean_density = np.mean(intensity['intensity'][restricted_mask])
-        if mean_density == 0.:
+        mean_density = np.mean(intensity["intensity"][restricted_mask])
+        if mean_density == 0.0:
             L.warning("Mean density for id=%s and marker=%s", id_, marker)
         res.append((marker.lower(), id_, count, mean_density))
 
@@ -298,7 +298,36 @@ def compute_average_intensities(
     hierarchy_info: pd.DataFrame,
     region_map,
 ) -> pd.DataFrame:
+    """
+    Compute the average marker intensity of every region in `hierarchy_info` for every marker
+    of `gene_marker_volumes`.
 
+    If a region does not intersect any of the slices of a gene marker volume, the average density
+    of the marked cell type of this region is set with np.nan.
+
+    Args:
+        annotation: int array of shape (W, H, D) holding the annotation of the whole
+            brain model. (The integers W, H and D are the dimensions of the array).
+        gene_marker_volumes: dict of the form {
+                "gad67": {"intensity": <array>, "slices": <list>},
+                "pv": {"intensity": <array>, "slices": <list>},
+                ...
+                }
+            where each intensity array is of shape (W, H, D) and where the items of each slice
+            list range in [0, W - 1].
+        hierarchy_info: data frame with colums "descendant_ids" (set[int]) and "brain_region"
+            (str) and whose index is a list of region ids.
+            See :fun:`atlas_densities.densities.utils.get_hierarchy_info`.
+
+    Returns:
+        A data frame of the following form (values are fake):
+                    gad67  pv   sst    vip
+        Isocortex   1.5    1.1  0.2    12.0
+        Cerebellum  2.5    0.9  0.1    11.0
+        ...         ...   ...    ...    ...
+        The index of the data frame is the list of regions `hierarchy_info["brain_region"]`.
+        The column labels are the keys of `gene_marker_volumes` in lower case.
+    """
     gene_marker_volumes = _apply_density_slices(gene_marker_volumes)
 
     _helper = delayed(_compute_average_intensities_helper)
@@ -308,32 +337,31 @@ def compute_average_intensities(
             continue
         work.append(_helper(annotation, gene_marker_volumes, id_))
 
-
     res = Parallel(n_jobs=-2)(work)
-    densities = (pd.DataFrame(list(it.chain(*res)),
-                              columns=['marker', 'id', 'voxel_count', 'density'])
-                 .set_index('id')
-                 .pivot(columns='marker')
-                 .swaplevel(axis=1)
-                 )
+    densities = (
+        pd.DataFrame(list(it.chain(*res)), columns=["marker", "id", "voxel_count", "density"])
+        .set_index("id")
+        .pivot(columns="marker")
+        .swaplevel(axis=1)
+    )
 
     region_map_df = region_map.as_dataframe()
-    add_depths(region_map_df)
+    _add_depths(region_map_df)
 
     result = pd.DataFrame(
         data=np.nan,
         index=hierarchy_info.index,
         columns=[marker_name.lower() for marker_name in gene_marker_volumes],
     )
-    result['brain_region'] = region_map_df.loc[result.index].name
+    result["brain_region"] = region_map_df.loc[result.index].name
 
     for marker in gene_marker_volumes:
-        df = pd.DataFrame(data=0.0, index=result.index, columns=['voxel_count', 'density'])
+        df = pd.DataFrame(data=0.0, index=result.index, columns=["voxel_count", "density"])
         df.update(densities[marker.lower()])
-        fill_densities(region_map, region_map_df, df)
-        result[marker.lower()] = df['density']
+        _fill_densities(region_map, region_map_df, df)
+        result[marker.lower()] = df["density"]
 
-    result = result.set_index('brain_region')
+    result = result.set_index("brain_region")
     return result
 
 
