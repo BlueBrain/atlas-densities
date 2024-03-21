@@ -166,273 +166,274 @@ class Test_mtype_densities_from_probability_map:
             assert "bAC" in metadata["density_files"]["BP"]
             assert "EXC" == metadata["synapse_class"]
 
-    class Test_mtype_densities_from_composition:
-        @pytest.fixture(scope="session")
-        def class_tmpdir(self, tmpdir_factory):
-            """Create a session scoped temp dir using the class name"""
-            return tmpdir_factory.mktemp(type(self).__name__)
 
-        @pytest.fixture(scope="session")
-        def annotation_path(self, class_tmpdir):
-            path = class_tmpdir.join("annotation.nrrd")
-            VoxelData(
-                np.array([[[101, 102, 103, 104, 105, 106]]], dtype=np.int32),
-                voxel_dimensions=[25] * 3,
-            ).save_nrrd(str(path))
-            return path
+class Test_mtype_densities_from_composition:
+    @pytest.fixture(scope="session")
+    def class_tmpdir(self, tmpdir_factory):
+        """Create a session scoped temp dir using the class name"""
+        return tmpdir_factory.mktemp(type(self).__name__)
 
-        @pytest.fixture(scope="session")
-        def hierarchy_path(self, class_tmpdir):
-            path = class_tmpdir.join("hierarchy.json")
+    @pytest.fixture(scope="session")
+    def annotation_path(self, class_tmpdir):
+        path = class_tmpdir.join("annotation.nrrd")
+        VoxelData(
+            np.array([[[101, 102, 103, 104, 105, 106]]], dtype=np.int32),
+            voxel_dimensions=[25] * 3,
+        ).save_nrrd(str(path))
+        return path
 
-            hierarchy = {
-                "id": 315,
-                "acronym": "Isocortex",
-                "name": "Isocortex",
-                "children": [
-                    {
-                        "id": 500,
-                        "acronym": "MO",
-                        "name": "Somatomotor areas",
-                        "children": [
-                            {
-                                "id": 101,
-                                "acronym": "MO1",
-                                "name": "Somatomotor areas, Layer 1",
-                                "children": [],
-                            },
-                            {
-                                "id": 102,
-                                "acronym": "MO2",
-                                "name": "Somatomotor areas, Layer 2",
-                                "children": [],
-                            },
-                            {
-                                "id": 103,
-                                "acronym": "MO3",
-                                "name": "Somatomotor areas, Layer 3",
-                                "children": [],
-                            },
-                            {
-                                "id": 104,
-                                "acronym": "MO4",
-                                "name": "Somatomotor areas, Layer 4",
-                                "children": [],
-                            },
-                            {
-                                "id": 105,
-                                "acronym": "MO5",
-                                "name": "Somatomotor areas, layer 5",
-                                "children": [],
-                            },
-                            {
-                                "id": 106,
-                                "acronym": "MO6",
-                                "name": "Somatomotor areas, layer 6",
-                                "children": [],
-                            },
-                        ],
-                    },
-                ],
-            }
-            with open(path, "w", encoding="utf-8") as jsonfile:
-                json.dump(hierarchy, jsonfile, indent=1, separators=(",", ": "))
-            return path
+    @pytest.fixture(scope="session")
+    def hierarchy_path(self, class_tmpdir):
+        path = class_tmpdir.join("hierarchy.json")
 
-        @pytest.fixture(scope="session")
-        def metadata_path(self, class_tmpdir):
-            path = class_tmpdir.join("metadata.json")
-            metadata = {
-                "region": {
-                    "name": "Isocortex",
-                    "query": "Isocortex",
-                    "attribute": "acronym",
-                    "with_descendants": True,
-                },
-                "layers": {
-                    "names": ["layer_1", "layer_2", "layer_3", "layer_4", "layer_5", "layer_6"],
-                    "queries": [
-                        "@.*1[ab]?$",
-                        "@.*2[ab]?$",
-                        "@.*[^/]3[ab]?$",
-                        "@.*4[ab]?$",
-                        "@.*5[ab]?$",
-                        "@.*6[ab]?$",
-                    ],
-                    "attribute": "acronym",
-                    "with_descendants": True,
-                },
-            }
-            with open(path, "w", encoding="utf-8") as jsonfile:
-                json.dump(metadata, jsonfile, indent=1)
-
-            return path
-
-        @pytest.fixture(scope="session")
-        def density(self):
-            return VoxelData(
-                np.array([[[0.3, 0.3, 0.3, 0.3, 0.3, 0.3]]], dtype=np.float32),
-                voxel_dimensions=[25] * 3,
-            )
-
-        @pytest.fixture(scope="session")
-        def density_path(self, density, class_tmpdir):
-            path = class_tmpdir.join("density.nrrd")
-            density.save_nrrd(str(path))
-
-            return path
-
-        @pytest.fixture(scope="session")
-        def taxonomy(self):
-            return pd.DataFrame(
+        hierarchy = {
+            "id": 315,
+            "acronym": "Isocortex",
+            "name": "Isocortex",
+            "children": [
                 {
-                    "mtype": ["L3_TPC:A", "L3_TPC:B", "L23_MC", "L4_TPC", "L4_LBC", "L4_UPC"],
-                    "mClass": ["PYR", "PYR", "INT", "PYR", "INT", "PYR"],
-                    "sClass": ["EXC", "EXC", "INH", "EXC", "INH", "EXC"],
-                },
-                columns=["mtype", "mClass", "sClass"],
-            )
-
-        @pytest.fixture(scope="session")
-        def taxonomy_path(self, taxonomy, class_tmpdir):
-            """Creates a taxonomy file and returns its path"""
-            path = class_tmpdir.join("neurons-mtype-taxonomy.tsv")
-            taxonomy.to_csv(path, sep="\t")
-
-            return path
-
-        @pytest.fixture(scope="session")
-        def composition(self):
-            return pd.DataFrame(
-                {
-                    "density": [51750.099, 14785.743, 2779.081, 62321.137, 2103.119, 25921.181],
-                    "layer": ["layer_3", "layer_3", "layer_3", "layer_4", "layer_4", "layer_4"],
-                    "mtype": ["L3_TPC:A", "L3_TPC:B", "L23_MC", "L4_TPC", "L4_LBC", "L4_UPC"],
-                },
-                columns=["density", "layer", "mtype"],
-            )
-
-        @pytest.fixture(scope="session")
-        def composition_path(self, composition, class_tmpdir):
-            path = class_tmpdir.join("composition.yaml")
-            out_dict = {"neurons": []}
-            for row in composition.itertuples():
-                out_dict["neurons"].append(
-                    {
-                        "density": row.density,
-                        "traits": {
-                            "layer": int(row.layer.replace("layer_", "")),
-                            "mtype": row.mtype,
+                    "id": 500,
+                    "acronym": "MO",
+                    "name": "Somatomotor areas",
+                    "children": [
+                        {
+                            "id": 101,
+                            "acronym": "MO1",
+                            "name": "Somatomotor areas, Layer 1",
+                            "children": [],
                         },
-                    }
-                )
-            with open(path, "w", encoding="utf-8") as yaml_file:
-                yaml.dump(out_dict, yaml_file)
+                        {
+                            "id": 102,
+                            "acronym": "MO2",
+                            "name": "Somatomotor areas, Layer 2",
+                            "children": [],
+                        },
+                        {
+                            "id": 103,
+                            "acronym": "MO3",
+                            "name": "Somatomotor areas, Layer 3",
+                            "children": [],
+                        },
+                        {
+                            "id": 104,
+                            "acronym": "MO4",
+                            "name": "Somatomotor areas, Layer 4",
+                            "children": [],
+                        },
+                        {
+                            "id": 105,
+                            "acronym": "MO5",
+                            "name": "Somatomotor areas, layer 5",
+                            "children": [],
+                        },
+                        {
+                            "id": 106,
+                            "acronym": "MO6",
+                            "name": "Somatomotor areas, layer 6",
+                            "children": [],
+                        },
+                    ],
+                },
+            ],
+        }
+        with open(path, "w", encoding="utf-8") as jsonfile:
+            json.dump(hierarchy, jsonfile, indent=1, separators=(",", ": "))
+        return path
 
-            return path
+    @pytest.fixture(scope="session")
+    def metadata_path(self, class_tmpdir):
+        path = class_tmpdir.join("metadata.json")
+        metadata = {
+            "region": {
+                "name": "Isocortex",
+                "query": "Isocortex",
+                "attribute": "acronym",
+                "with_descendants": True,
+            },
+            "layers": {
+                "names": ["layer_1", "layer_2", "layer_3", "layer_4", "layer_5", "layer_6"],
+                "queries": [
+                    "@.*1[ab]?$",
+                    "@.*2[ab]?$",
+                    "@.*[^/]3[ab]?$",
+                    "@.*4[ab]?$",
+                    "@.*5[ab]?$",
+                    "@.*6[ab]?$",
+                ],
+                "attribute": "acronym",
+                "with_descendants": True,
+            },
+        }
+        with open(path, "w", encoding="utf-8") as jsonfile:
+            json.dump(metadata, jsonfile, indent=1)
 
-        def test_load_neuronal_mtype_taxonomy(self, taxonomy, taxonomy_path):
-            pdt.assert_frame_equal(tested._load_neuronal_mtype_taxonomy(taxonomy_path), taxonomy)
+        return path
 
-        def test_validate_mtype_taxonomy(self, taxonomy):
-            tested._validate_mtype_taxonomy(taxonomy)
+    @pytest.fixture(scope="session")
+    def density(self):
+        return VoxelData(
+            np.array([[[0.3, 0.3, 0.3, 0.3, 0.3, 0.3]]], dtype=np.float32),
+            voxel_dimensions=[25] * 3,
+        )
 
-            wrong_taxonomy = taxonomy.rename(columns={"sClass": "John"})
-            with pytest.raises(AtlasDensitiesError):
-                tested._validate_mtype_taxonomy(wrong_taxonomy)
+    @pytest.fixture(scope="session")
+    def density_path(self, density, class_tmpdir):
+        path = class_tmpdir.join("density.nrrd")
+        density.save_nrrd(str(path))
 
-            wrong_taxonomy = taxonomy.drop(columns=["mtype"])
-            with pytest.raises(AtlasDensitiesError):
-                tested._validate_mtype_taxonomy(wrong_taxonomy)
+        return path
 
-            wrong_taxonomy = deepcopy(taxonomy)
-            wrong_taxonomy.loc[1, "sClass"] = "OTHER"
-            with pytest.raises(AtlasDensitiesError):
-                tested._validate_mtype_taxonomy(wrong_taxonomy)
+    @pytest.fixture(scope="session")
+    def taxonomy(self):
+        return pd.DataFrame(
+            {
+                "mtype": ["L3_TPC:A", "L3_TPC:B", "L23_MC", "L4_TPC", "L4_LBC", "L4_UPC"],
+                "mClass": ["PYR", "PYR", "INT", "PYR", "INT", "PYR"],
+                "sClass": ["EXC", "EXC", "INH", "EXC", "INH", "EXC"],
+            },
+            columns=["mtype", "mClass", "sClass"],
+        )
 
-        def test_load_neuronal_mtype_composition(self, composition, composition_path):
-            pdt.assert_frame_equal(
-                tested._load_neuronal_mtype_composition(composition_path), composition
+    @pytest.fixture(scope="session")
+    def taxonomy_path(self, taxonomy, class_tmpdir):
+        """Creates a taxonomy file and returns its path"""
+        path = class_tmpdir.join("neurons-mtype-taxonomy.tsv")
+        taxonomy.to_csv(path, sep="\t")
+
+        return path
+
+    @pytest.fixture(scope="session")
+    def composition(self):
+        return pd.DataFrame(
+            {
+                "density": [51750.099, 14785.743, 2779.081, 62321.137, 2103.119, 25921.181],
+                "layer": ["layer_3", "layer_3", "layer_3", "layer_4", "layer_4", "layer_4"],
+                "mtype": ["L3_TPC:A", "L3_TPC:B", "L23_MC", "L4_TPC", "L4_LBC", "L4_UPC"],
+            },
+            columns=["density", "layer", "mtype"],
+        )
+
+    @pytest.fixture(scope="session")
+    def composition_path(self, composition, class_tmpdir):
+        path = class_tmpdir.join("composition.yaml")
+        out_dict = {"neurons": []}
+        for row in composition.itertuples():
+            out_dict["neurons"].append(
+                {
+                    "density": row.density,
+                    "traits": {
+                        "layer": int(row.layer.replace("layer_", "")),
+                        "mtype": row.mtype,
+                    },
+                }
+            )
+        with open(path, "w", encoding="utf-8") as yaml_file:
+            yaml.dump(out_dict, yaml_file)
+
+        return path
+
+    def test_load_neuronal_mtype_taxonomy(self, taxonomy, taxonomy_path):
+        pdt.assert_frame_equal(tested._load_neuronal_mtype_taxonomy(taxonomy_path), taxonomy)
+
+    def test_validate_mtype_taxonomy(self, taxonomy):
+        tested._validate_mtype_taxonomy(taxonomy)
+
+        wrong_taxonomy = taxonomy.rename(columns={"sClass": "John"})
+        with pytest.raises(AtlasDensitiesError):
+            tested._validate_mtype_taxonomy(wrong_taxonomy)
+
+        wrong_taxonomy = taxonomy.drop(columns=["mtype"])
+        with pytest.raises(AtlasDensitiesError):
+            tested._validate_mtype_taxonomy(wrong_taxonomy)
+
+        wrong_taxonomy = deepcopy(taxonomy)
+        wrong_taxonomy.loc[1, "sClass"] = "OTHER"
+        with pytest.raises(AtlasDensitiesError):
+            tested._validate_mtype_taxonomy(wrong_taxonomy)
+
+    def test_load_neuronal_mtype_composition(self, composition, composition_path):
+        pdt.assert_frame_equal(
+            tested._load_neuronal_mtype_composition(composition_path), composition
+        )
+
+    def test_validate_density(self, density):
+        tested._validate_density(density)
+
+        wrong_density = density.with_data(np.zeros_like(density.raw))
+        with pytest.raises(AtlasDensitiesError):
+            tested._validate_density(wrong_density)
+
+        wrong_density = deepcopy(density)
+        wrong_density.raw[0, 0, 2] = -10.0
+        with pytest.raises(AtlasDensitiesError):
+            tested._validate_density(wrong_density)
+
+    def test_validate_neuronal_mtype_composition(self, composition):
+        tested._validate_neuronal_mtype_composition(composition)
+
+        wrong_composition = composition.copy(deep=True)
+        wrong_composition[["density", 2]] = -1.0
+        with pytest.raises(AtlasDensitiesError):
+            tested._validate_neuronal_mtype_composition(wrong_composition)
+
+    def test_check_taxonomy_composition_congruency(self, taxonomy, composition):
+        tested._check_taxonomy_composition_congruency(taxonomy, composition)
+
+        with pytest.raises(AtlasDensitiesError):
+            tested._check_taxonomy_composition_congruency(taxonomy.drop([1]), composition)
+
+        with pytest.raises(AtlasDensitiesError):
+            tested._check_taxonomy_composition_congruency(taxonomy, composition.drop([2]))
+
+    def test_create_from_composition(
+        self,
+        annotation_path,
+        hierarchy_path,
+        metadata_path,
+        density_path,
+        taxonomy_path,
+        composition_path,
+        class_tmpdir,
+    ):
+        output_dir = class_tmpdir.mkdir("output")
+
+        runner = CliRunner()
+
+        with runner.isolated_filesystem(temp_dir=class_tmpdir):
+            result = runner.invoke(
+                tested.create_from_composition,
+                [
+                    "--annotation-path",
+                    annotation_path,
+                    "--hierarchy-path",
+                    hierarchy_path,
+                    "--metadata-path",
+                    metadata_path,
+                    "--excitatory-neuron-density-path",
+                    density_path,
+                    "--taxonomy-path",
+                    taxonomy_path,
+                    "--composition-path",
+                    composition_path,
+                    "--output-dir",
+                    output_dir,
+                ],
             )
 
-        def test_validate_density(self, density):
-            tested._validate_density(density)
+            assert result.exit_code == 0, result.output
 
-            wrong_density = density.with_data(np.zeros_like(density.raw))
-            with pytest.raises(AtlasDensitiesError):
-                tested._validate_density(wrong_density)
+            expected_filenames = {
+                "L3_TPC:A_densities.nrrd",
+                "L3_TPC:B_densities.nrrd",
+                "L4_TPC_densities.nrrd",
+                "L4_UPC_densities.nrrd",
+            }
 
-            wrong_density = deepcopy(density)
-            wrong_density.raw[0, 0, 2] = -10.0
-            with pytest.raises(AtlasDensitiesError):
-                tested._validate_density(wrong_density)
+            filenames = set(os.listdir(output_dir))
 
-        def test_validate_neuronal_mtype_composition(self, composition):
-            tested._validate_neuronal_mtype_composition(composition)
+            assert filenames == expected_filenames
 
-            wrong_composition = composition.copy(deep=True)
-            wrong_composition[["density", 2]] = -1.0
-            with pytest.raises(AtlasDensitiesError):
-                tested._validate_neuronal_mtype_composition(wrong_composition)
-
-        def test_check_taxonomy_composition_congruency(self, taxonomy, composition):
-            tested._check_taxonomy_composition_congruency(taxonomy, composition)
-
-            with pytest.raises(AtlasDensitiesError):
-                tested._check_taxonomy_composition_congruency(taxonomy.drop([1]), composition)
-
-            with pytest.raises(AtlasDensitiesError):
-                tested._check_taxonomy_composition_congruency(taxonomy, composition.drop([2]))
-
-        def test_create_from_composition(
-            self,
-            annotation_path,
-            hierarchy_path,
-            metadata_path,
-            density_path,
-            taxonomy_path,
-            composition_path,
-            class_tmpdir,
-        ):
-            output_dir = class_tmpdir.mkdir("output")
-
-            runner = CliRunner()
-
-            with runner.isolated_filesystem(temp_dir=class_tmpdir):
-                result = runner.invoke(
-                    tested.create_from_composition,
-                    [
-                        "--annotation-path",
-                        annotation_path,
-                        "--hierarchy-path",
-                        hierarchy_path,
-                        "--metadata-path",
-                        metadata_path,
-                        "--excitatory-neuron-density-path",
-                        density_path,
-                        "--taxonomy-path",
-                        taxonomy_path,
-                        "--composition-path",
-                        composition_path,
-                        "--output-dir",
-                        output_dir,
-                    ],
-                )
-
-                assert result.exit_code == 0, result.output
-
-                expected_filenames = {
-                    "L3_TPC:A_densities.nrrd",
-                    "L3_TPC:B_densities.nrrd",
-                    "L4_TPC_densities.nrrd",
-                    "L4_UPC_densities.nrrd",
-                }
-
-                filenames = set(os.listdir(output_dir))
-
-                assert filenames == expected_filenames
-
-                for filename in filenames:
-                    data = VoxelData.load_nrrd(str(Path(output_dir, filename)))
-                    assert data.shape == (1, 1, 6)
-                    assert not np.allclose(data.raw, 0.0)
+            for filename in filenames:
+                data = VoxelData.load_nrrd(str(Path(output_dir, filename)))
+                assert data.shape == (1, 1, 6)
+                assert not np.allclose(data.raw, 0.0)
