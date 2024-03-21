@@ -26,6 +26,7 @@ from typing import TYPE_CHECKING, Dict, List, Optional, Union
 import numpy as np
 import pandas as pd
 from atlas_commons.typing import AnnotationT, BoolArray, FloatArray
+from joblib import Parallel, delayed
 from scipy.optimize import curve_fit
 from tqdm import tqdm
 
@@ -237,23 +238,20 @@ def fill_densities(region_map, region_map_df, df):
 
     ids = region_map_df.index[order_idx[::-1]]
     for id_ in ids:
-        #if id_ == 607 or id_ == 112:
-        #    breakpoint() # XXX BREAKPOINT
-
         if id_ not in region_map._children:
             continue
+
         children = region_map._children[id_]
+
         if not children:
             continue
-        #print(region_map_df.loc[idx, 'name'], region_map_df.loc[idx, 'depth'])
+
         voxel_count = df.loc[children, "voxel_count"]
         count = voxel_count.sum()
         if count:
             df.loc[id_, "voxel_count"] = count
             df.loc[id_, "density"] = np.average(df.loc[children, "density"], weights=voxel_count)
 
-
-from joblib import delayed, Parallel
 
 def _apply_density_slices(gene_marker_volumes):
     ret = {}
@@ -288,9 +286,7 @@ def _compute_average_intensities_helper(annotation, gene_marker_volumes, id_):
 
         mean_density = np.mean(intensity['intensity'][restricted_mask])
         if mean_density == 0.:
-            #print(f"Mean density for {hierarchy_info.loc[id_]} and {marker}")
-            breakpoint() # XXX BREAKPOINT
-            pass
+            L.warning("Mean density for id=%s and marker=%s", id_, marker)
         res.append((marker.lower(), id_, count, mean_density))
 
     return res
@@ -329,7 +325,7 @@ def compute_average_intensities(
         index=hierarchy_info.index,
         columns=[marker_name.lower() for marker_name in gene_marker_volumes],
     )
-    result['name'] = region_map_df.loc[result.index].name
+    result['brain_region'] = region_map_df.loc[result.index].name
 
     for marker in gene_marker_volumes:
         df = pd.DataFrame(data=0.0, index=result.index, columns=['voxel_count', 'density'])
@@ -337,7 +333,7 @@ def compute_average_intensities(
         fill_densities(region_map, region_map_df, df)
         result[marker.lower()] = df['density']
 
-    result = result.set_index('name')
+    result = result.set_index('brain_region')
     return result
 
 
