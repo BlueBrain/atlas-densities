@@ -334,7 +334,7 @@ def compute_average_intensities(
             continue
         work.append(_helper(annotation, gene_marker_volumes, id_))
 
-    res = Parallel(n_jobs=-2)(work)
+    res = Parallel()(work)
     densities = (
         pd.DataFrame(list(it.chain(*res)), columns=["marker", "id", "voxel_count", "density"])
         .set_index("id")
