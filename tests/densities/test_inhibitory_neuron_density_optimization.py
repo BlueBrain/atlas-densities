@@ -13,6 +13,90 @@ import atlas_densities.densities.inhibitory_neuron_densities_optimization as tes
 from atlas_densities.exceptions import AtlasDensitiesError
 
 
+def test_resize_average_densities():
+    average_densities = pd.DataFrame(
+        {
+            "gad67+": [9.0, 12.0],
+            "gad67+_standard_deviation": [0.9, 1.2],
+            "pv+": [1.0, 2.0],
+            "pv+_standard_deviation": [0.1, 0.2],
+            "sst+": [3.0, 4.0],
+            "sst+_standard_deviation": [0.3, 0.4],
+            "vip+": [5.0, 6.0],
+            "vip+_standard_deviation": [0.5, 0.6],
+        },
+        index=["A", "B"],
+    )
+    hierarchy_info = pd.DataFrame(
+        {
+            "brain_region": ["A", "B", "C"],
+        },
+        index=[1, 2, 3],
+    )
+
+    expected = pd.DataFrame(
+        {
+            "gad67+": [9.0, 12.0, np.nan],
+            "gad67+_standard_deviation": [0.9, 1.2, np.nan],
+            "pv+": [1.0, 2.0, np.nan],
+            "pv+_standard_deviation": [0.1, 0.2, np.nan],
+            "sst+": [3.0, 4.0, np.nan],
+            "sst+_standard_deviation": [0.3, 0.4, np.nan],
+            "vip+": [5.0, 6.0, np.nan],
+            "vip+_standard_deviation": [0.5, 0.6, np.nan],
+        },
+        index=hierarchy_info["brain_region"],
+    )
+    actual = tested._resize_average_densities(average_densities, hierarchy_info)
+    pdt.assert_frame_equal(actual, expected)
+
+
+def test_check_region_counts_consistency():
+    region_counts = pd.DataFrame(
+        {
+            "gad67+": [9.0, 12.0, 2.0],
+            "gad67+_standard_deviation": [0.9, 1.2, 1.0],
+            "pv+": [1.0, 1.0, 1.0],
+            "pv+_standard_deviation": [0.1, 0.2, 0.3],
+            "sst+": [3.0, 4.0, 5.0],
+            "sst+_standard_deviation": [0.3, 0.4, 0.5],
+            "vip+": [5.0, 6.0, 7.0],
+            "vip+_standard_deviation": [0.5, 0.6, 0.7],
+        },
+        index=["A", "B", "C"],
+    )
+    hierarchy_info = pd.DataFrame(
+        {"brain_region": ["A", "B", "C"], "descendant_ids": [{1, 2, 3}, {2}, {3}]},
+        index=[1, 2, 3],
+    )
+
+    # Uncertain or consistent
+    tested._check_region_counts_consistency(region_counts, hierarchy_info)
+    region_counts.loc["A", "gad67+_standard_deviation"] = 0.0
+    tested._check_region_counts_consistency(region_counts, hierarchy_info)
+
+    # Inconsistent parent-child count inequality
+    region_counts.loc["B", "gad67+_standard_deviation"] = 0.0
+    with pytest.raises(AtlasDensitiesError, match=r"gad67\+.*exceed"):
+        tested._check_region_counts_consistency(region_counts, hierarchy_info)
+
+    # The sum of the cell counts of the children regions B and C exceeds the count
+    # of the parent region A.
+    region_counts.loc["B", "gad67+_standard_deviation"] = 1.2  # restores valid value
+    region_counts.loc["A", "pv+_standard_deviation"] = 0.0
+    region_counts.loc["B", "pv+_standard_deviation"] = 0.0
+    region_counts.loc["C", "pv+_standard_deviation"] = 0.0
+    with pytest.raises(AtlasDensitiesError, match=r"sum of the counts.*pv\+.*exceeds.*region A"):
+        tested._check_region_counts_consistency(region_counts, hierarchy_info)
+
+
+def test_replace_inf_with_none():
+    bounds = np.array([[0.1, 1.0], [-1.0, np.inf]])
+    result = [(0.1, 1.0), (-1.0, None)]
+
+    assert repr(result) == repr(tested._replace_inf_with_none(bounds))
+
+
 def test_create_volumetric_densities():
     annotation = np.array([[[1, 1, 2]]], dtype=int)
     neuron_density = np.array([[[0.5, 0.5, 1.0]]])
@@ -342,13 +426,6 @@ def get_hierarchy_info():
                 "Lobule II, Purkinje layer",
                 "Lobule II, molecular layer",
             ],
-            "descendant_id_set": [
-                {920, 976, 10708, 10709, 10710},
-                {976, 10708, 10709, 10710},
-                {10708},
-                {10709},
-                {10710},
-            ],
         },
         index=[920, 976, 10708, 10709, 10710],
     )
@@ -363,7 +440,7 @@ def test_compute_region_cell_counts():
     cell_counts = pd.DataFrame(
         {
             "brain_region": hierarchy_info["brain_region"],
-            "cell_count": 2 * np.array([5.0, 4.0, 1.0, 1.0, 1.0]),
+            "cell_count": 2 * np.array([1.0, 1.0, 1.0, 1.0, 1.0]),
         },
         index=hierarchy_info.index,
     )

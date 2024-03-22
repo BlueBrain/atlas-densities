@@ -147,11 +147,11 @@ def fill_in_homogenous_regions(
     inhibitory_mask = homogenous_regions["cell_type"] == "inhibitory"
 
     for region_name in homogenous_regions[inhibitory_mask]["brain_region"]:
-        desc_id_set = hierarchy_info.at[region_name, "descendant_id_set"]
+        desc_id_set = hierarchy_info.at[region_name, "descendant_ids"]
         id_mask = [id_ in desc_id_set for id_ in hierarchy_info["id"]]
         for child_region_name in hierarchy_info[id_mask].index:
             region_mask = np.isin(
-                annotation, list(hierarchy_info.at[child_region_name, "descendant_id_set"])
+                annotation, list(hierarchy_info.at[child_region_name, "descendant_ids"])
             )
             density = np.mean(neuron_density[region_mask])
             densities.at[child_region_name, "inhibitory_neuron"] = density
@@ -165,7 +165,7 @@ def fill_in_homogenous_regions(
     excitatory_mask = homogenous_regions["cell_type"] == "excitatory"
 
     for region_name in homogenous_regions[excitatory_mask]["brain_region"]:
-        desc_id_set = hierarchy_info.at[region_name, "descendant_id_set"]
+        desc_id_set = hierarchy_info.at[region_name, "descendant_ids"]
         id_mask = [id_ in desc_id_set for id_ in hierarchy_info["id"]]
         for child_region_name in hierarchy_info[id_mask].index:
             densities.at[child_region_name, "inhibitory_neuron"] = 0.0
@@ -232,7 +232,7 @@ def compute_average_intensities(
                 }
             where each intensity array is of shape (W, H, D) and where the items of each slice
             list range in [0, W - 1].
-        hierarchy_info: data frame with colums "descendant_id_set" (set[int]) and "brain_region"
+        hierarchy_info: data frame with colums "descendant_ids" (set[int]) and "brain_region"
             (str) and whose index is a list of region ids.
             See :fun:`atlas_densities.densities.utils.get_hierarchy_info`.
 
@@ -260,7 +260,7 @@ def compute_average_intensities(
         region_count,
     )
     for region_name in tqdm(result.index):
-        region_mask = np.isin(annotation, list(hierarchy_info.at[region_name, "descendant_id_set"]))
+        region_mask = np.isin(annotation, list(hierarchy_info.at[region_name, "descendant_ids"]))
         for marker, intensity in gene_marker_volumes.items():
             result.at[region_name, marker.lower()] = compute_average_intensity(
                 intensity["intensity"], region_mask, intensity["slices"]

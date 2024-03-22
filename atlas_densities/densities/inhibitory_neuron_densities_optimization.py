@@ -36,10 +36,11 @@ and with NaN otherwise. If ``x_result.at[(id_, marker)]`` is set to NaN, then a 
 variable deltas used in this module corresponds to the decision variables ``delta_{r, m}`` of
 the pdf file.
 """
+from __future__ import annotations
 
 import logging
 import warnings
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Set, Tuple
 
 import numpy as np
 import pandas as pd
@@ -51,10 +52,7 @@ from voxcell import RegionMap
 from atlas_densities.densities import utils
 from atlas_densities.densities.inhibitory_neuron_densities_helper import (
     average_densities_to_cell_counts,
-    check_region_counts_consistency,
     get_cell_types,
-    replace_inf_with_none,
-    resize_average_densities,
 )
 from atlas_densities.exceptions import AtlasDensitiesError, AtlasDensitiesWarning
 
@@ -62,6 +60,114 @@ L = logging.getLogger(__name__)
 
 SKIP = np.inf  # Used to signify that a delta variable of the linear program should be removed
 KEEP = np.nan  # Used to signify that a delta variable should be added to the linear program
+MinMaxPair = Tuple[float, Optional[float]]
+
+
+def _resize_average_densities(
+    average_densities: pd.DataFrame, hierarchy_info: pd.DataFrame
+) -> pd.DataFrame:
+    """
+    Resize the `average_densities` data frame in such a way that the resized index coincides with
+    `hierarchy_info["brain_region"]`.
+
+    Missing entries are set to ``np.nan``.
+
+    average_densities: a data frame whose columns are described in
+            :func:`atlas_densities.densities.fitting.linear_fitting` containing the average
+            cell densities of brain regions and their associated standard deviations. Columns are
+            labelled by T and T_standard_deviation for various cell types T. The index of
+            `average_densities` is a list of region names.
+    hierarchy_info: data frame returned by
+        :func:`atlas_densities.densities.utils.get_hierarchy_info`.
+
+    Returns: a data frame containing all the entries of `average_densities` and whose index is
+        `hierarchy_info["brain_region"]`. New entries are set to ``np.nan``.
+
+    """
+    resized = pd.DataFrame(
+        np.nan, index=hierarchy_info["brain_region"], columns=average_densities.columns
+    )
+    resized.loc[average_densities.index] = average_densities
+
+    return resized
+
+
+def _check_region_counts_consistency(
+    region_counts: pd.DataFrame, hierarchy_info: pd.DataFrame, tolerance: float = 0.0
+) -> None:
+    """
+    Check that cell counts considered as certain are consistent across the brain regions hierarchy.
+
+    Args:
+        region_counts: data frame returned by
+            :fun:`densities.inhibitory_densities_helper.average_densities_to_cell_counts`.
+            A region is understood as a region of the brain hierarchy and includes all descendant
+            subregions.
+        hierarchy_info: data frame returned by
+            :func:`atlas_densities.densities.utils.get_hierarchy_info`.
+        tolerance: non-negative float number used as tolerance when comparing counts.
+            Defaults to 0.0.
+
+    Raises:
+        AtlasDensitiesError if the sum of the cell counts of some leaf regions, all given with
+        certainty, exceeds the cell count of an ancestor, also given with certainty.
+
+    """
+
+    def _check_descendants_consistency(region_name: str, id_set: Set[int], cell_type: str):
+        standard_deviation = f"{cell_type}_standard_deviation"
+
+        if region_counts.at[region_name, standard_deviation] != 0.0:
+            return
+
+        # count is certain, since standard_deviation is 0
+        count = region_counts.at[region_name, cell_type]
+        descendants_names = hierarchy_info.loc[list(id_set), "brain_region"]
+        zero_std_mask = region_counts.loc[descendants_names, standard_deviation] == 0.0
+        mask = zero_std_mask & (region_counts.loc[descendants_names, cell_type] > count + tolerance)
+        descendants_counts = region_counts.loc[descendants_names, cell_type][mask]
+        if not descendants_counts.empty:
+            raise AtlasDensitiesError(
+                f"Counts of {cell_type} cells in regions {list(descendants_names)} all exceed "
+                f"the count of its ancestor region {region_name} and each count is given "
+                f"for certain. The counts {descendants_counts} are all larger than "
+                f"{count}."
+            )
+
+        names_with_certainty = descendants_names[zero_std_mask.to_list()].to_list()
+        leaf_names = [
+            hierarchy_info.at[id_, "brain_region"]
+            for id_ in id_set
+            if len(hierarchy_info.at[id_, "descendant_ids"]) == 1
+            and hierarchy_info.at[id_, "brain_region"] in names_with_certainty
+        ]
+        leaves_count_sum = np.sum(region_counts.loc[leaf_names, cell_type])
+        if leaves_count_sum > count + tolerance:
+            raise AtlasDensitiesError(
+                f"The sum of the counts of {cell_type} cells in leaf regions",
+                " which are given with certainty, exceeds the count of the ancestor"
+                f" region {region_name}, also given with certainty: "
+                f"{leaves_count_sum} > {count}.",
+            )
+
+    for _, region_name, id_set in hierarchy_info[["brain_region", "descendant_ids"]].itertuples():
+        for cell_type in get_cell_types(region_counts):
+            _check_descendants_consistency(region_name, id_set, cell_type)
+
+
+def _replace_inf_with_none(bounds: FloatArray) -> List[MinMaxPair]:
+    """
+    Replace the upper bounds equal to ``np.inf`` by None so as to comply with
+    the `bounds` interface of scipy.optimize.linprog.
+
+    Args:
+        bounds: float array of shape (N, 2). Values in `bounds[..., 1]` can be
+            ``np.inf`` to indicate the absence of a constraining upper bound.
+
+    Return:
+        list of pairs (min, max) where min is a float and max either a float or None.
+    """
+    return [(float(min_), None if np.isinf(max_) else float(max_)) for min_, max_ in bounds]
 
 
 def _compute_region_cell_counts(
@@ -69,7 +175,6 @@ def _compute_region_cell_counts(
     density: FloatArray,
     voxel_volume: float,
     hierarchy_info: "pd.DataFrame",
-    with_descendants: bool = True,
 ) -> "pd.DataFrame":
     """
     Compute the cell count of every 3D region in `annotation` labeled by a unique
@@ -85,10 +190,6 @@ def _compute_region_cell_counts(
             This is (25 * 1e-6) ** 3 for an AIBS atlas nrrd file with 25um resolution.
         hierarchy_info: data frame returned by
             :func:`atlas_densities.densities.utils.get_hierarchy_info`.
-        with_descendants: if True, a computed cell count refers to the entire 3D region
-            designated by a region name, including all descendants subregions. Otherwise, the
-            computed cell count is the cell count of the 3D region labeled by the unique region
-            identifier. Defaults to True.
 
     Returns:
         DataFrame of the following form (values are fake):
@@ -107,13 +208,6 @@ def _compute_region_cell_counts(
         {"brain_region": hierarchy_info["brain_region"], "cell_count": id_counts},
         index=hierarchy_info.index,
     )
-
-    if with_descendants:
-        counts = []
-        for id_set in tqdm(hierarchy_info["descendant_id_set"]):
-            count = result.loc[list(id_set), "cell_count"].sum()
-            counts.append(count)
-        result["cell_count"] = counts
 
     return result
 
@@ -174,7 +268,7 @@ def set_known_values(
         Zeroes the count of `cell_type` cells in every descendant regions of `id_`,
         including `id_`.
         """
-        desc_ids = list(hierarchy_info.at[id_, "descendant_id_set"])
+        desc_ids = list(hierarchy_info.at[id_, "descendant_ids"])
         x_result.loc[desc_ids, cell_type] = 0.0
         desc_names = hierarchy_info.loc[desc_ids, "brain_region"]
         deltas.loc[desc_names, cell_type] = 0.0
@@ -369,9 +463,7 @@ def create_aub_and_bub(
     b_ub = []
     variable_count = len(x_map) + len(deltas_map)
     cell_types = get_cell_types(region_counts)
-    for id_, region_name, set_ in zip(
-        hierarchy_info.index, hierarchy_info["brain_region"], hierarchy_info["descendant_id_set"]
-    ):
+    for id_, region_name, set_ in hierarchy_info[["brain_region", "descendant_ids"]].itertuples():
         for cell_type in cell_types:
             if (region_name, cell_type) in deltas_map:
                 constraint = np.zeros((variable_count,), dtype=float)
@@ -490,9 +582,7 @@ def _compute_initial_cell_counts(
     L.info("Computing cell count estimates in every 3D region ...")
     region_counts = average_densities_to_cell_counts(average_densities, volumes)
 
-    # Detect cell counts inconsistency between a region and its descendants when
-    # estimates are deemed as certain.
-    check_region_counts_consistency(region_counts, hierarchy_info)
+    _check_region_counts_consistency(region_counts, hierarchy_info)
 
     L.info("Computing cell count estimates in atomic 3D region ...")
     volumes.drop("volume", axis=1, inplace=True)
@@ -535,7 +625,7 @@ def _check_variables_consistency(
     """
     cell_count_tolerance = 1e-2  # absolute tolerance to rule out round-off errors
     for region_name, id_, id_set in zip(
-        deltas.index, hierarchy_info.index, hierarchy_info["descendant_id_set"]
+        deltas.index, hierarchy_info.index, hierarchy_info["descendant_ids"]
     ):
         for cell_type in cell_types:
             if np.isfinite(deltas.loc[region_name, cell_type]):
@@ -662,7 +752,7 @@ def create_inhibitory_neuron_densities(  # pylint: disable=too-many-locals
     """
 
     hierarchy_info = utils.get_hierarchy_info(RegionMap.from_dict(hierarchy), root=region_name)
-    average_densities = resize_average_densities(average_densities, hierarchy_info)
+    average_densities = _resize_average_densities(average_densities, hierarchy_info)
 
     L.info("Initialization of the linear program: started")
     region_counts, id_counts = _compute_initial_cell_counts(
@@ -671,7 +761,7 @@ def create_inhibitory_neuron_densities(  # pylint: disable=too-many-locals
 
     L.info("Retrieving overall neuron counts in atomic 3D regions ...")
     neuron_counts = _compute_region_cell_counts(
-        annotation, neuron_density, voxel_volume, hierarchy_info, with_descendants=False
+        annotation, neuron_density, voxel_volume, hierarchy_info
     )
     assert np.all(neuron_counts["cell_count"] >= 0.0)
 
@@ -712,7 +802,7 @@ def create_inhibitory_neuron_densities(  # pylint: disable=too-many-locals
             c=c_row,
             A_ub=a_ub,
             b_ub=b_ub,
-            bounds=replace_inf_with_none(bounds),
+            bounds=_replace_inf_with_none(bounds),
             method="highs",
         )
         if not result.success:
