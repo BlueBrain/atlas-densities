@@ -87,54 +87,53 @@ def test_mtype_densities_from_profiles(tmp_path):
         assert "neuron density file" in str(result.exception)
 
 
-def get_result_from_probablity_map_(runner, td):
-    return runner.invoke(
-        tested.app,
-        [
-            # fmt: off
-            "--log-output-path", td,
-            "create-from-probability-map",
-            "--annotation-path", "annotation.nrrd",
-            "--hierarchy-path", "hierarchy.json",
-            "--probability-map", "probability_map01.csv",
-            "--probability-map", "probability_map02.csv",
-            "--marker", "pv", "pv.nrrd",
-            "--marker", "sst", "sst.nrrd",
-            "--marker", "vip", "vip.nrrd",
-            "--marker", "gad67", "gad67.nrrd",
-            "--marker", "approx_lamp5", "approx_lamp5.nrrd",
-            "--synapse-class", "EXC",
-            "--output-dir", "output_dir",
-            # fmt: on
-        ],
-    )
-
-
 def test_mtype_densities_from_probability_map(tmp_path):
     data = create_from_probability_map_data()
     runner = CliRunner()
     with runner.isolated_filesystem(temp_dir=tmp_path) as td:
-        data["annotation"].save_nrrd("annotation.nrrd")
-        write_json("hierarchy.json", data["hierarchy"])
+        td = Path(td)
+        data["annotation"].save_nrrd(td / "annotation.nrrd")
+        with open(td / "hierarchy.json", "w", encoding="utf-8") as file:
+            json.dump(data["hierarchy"], file)
 
-        data["probability_map01"].to_csv("probability_map01.csv", index=True)
-        data["probability_map02"].to_csv("probability_map02.csv", index=True)
+        data["probability_map01"].to_csv(td / "probability_map01.csv", index=True)
+        data["probability_map02"].to_csv(td / "probability_map02.csv", index=True)
 
-        for molecular_type, raw_data in data["molecular_type_densities"].items():
+        for molecular_type, raw in data["molecular_type_densities"].items():
             VoxelData(
-                raw_data,
+                raw,
                 voxel_dimensions=data["annotation"].voxel_dimensions,
-            ).save_nrrd(f"{molecular_type}.nrrd")
+            ).save_nrrd(td / f"{molecular_type}.nrrd")
 
-        result = get_result_from_probablity_map_(runner, td)
+        result = runner.invoke(
+            tested.app,
+            [
+                # fmt: off
+                    "--log-output-path", str(td),
+                    "create-from-probability-map",
+                    "--annotation-path", "annotation.nrrd",
+                    "--hierarchy-path", "hierarchy.json",
+                    "--probability-map", "probability_map01.csv",
+                    "--probability-map", "probability_map02.csv",
+                    "--marker", "pv", "pv.nrrd",
+                    "--marker", "sst", "sst.nrrd",
+                    "--marker", "vip", "vip.nrrd",
+                    "--marker", "gad67", "gad67.nrrd",
+                    "--marker", "approx_lamp5", "approx_lamp5.nrrd",
+                    "--synapse-class", "EXC",
+                    "--output-dir", "output_dir",
+                # fmt: on
+            ],
+        )
         assert result.exit_code == 0
 
-        BPbAC = VoxelData.load_nrrd(str(Path("output_dir") / "BP|bAC_EXC_densities.nrrd"))
+        BPbAC = VoxelData.load_nrrd(Path("output_dir") / "BP|bAC_EXC_densities.nrrd")
         assert BPbAC.raw.dtype == float
         npt.assert_array_equal(BPbAC.voxel_dimensions, data["annotation"].voxel_dimensions)
 
-        with open(str(Path("output_dir") / "metadata.json"), "r") as file:
+        with open(Path("output_dir") / "metadata.json", "r") as file:
             metadata = json.load(file)
+
         assert "BP" in metadata["density_files"]
         assert "bAC" in metadata["density_files"]["BP"]
         assert "EXC" == metadata["synapse_class"]
