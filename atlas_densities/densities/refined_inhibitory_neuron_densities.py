@@ -12,6 +12,7 @@ This code supersedes the inhibitory_neuron_densities module, which is maintained
 comparisons with the former approach of "A Cell Atlas for the Mouse Brain" by C. Eroe et
 al., 2018.
 """
+from __future__ import annotations
 
 import copy
 import logging
@@ -24,6 +25,7 @@ from voxcell import RegionMap
 
 from atlas_densities.densities.inhibitory_neuron_densities_helper import (
     average_densities_to_cell_counts,
+    get_cell_types,
 )
 from atlas_densities.densities.utils import compute_region_volumes, get_hierarchy_info
 
@@ -368,7 +370,7 @@ def create_inhibitory_neuron_densities(  # pylint: disable=too-many-locals
     annotation: AnnotationT,
     voxel_volume: float,
     neuron_density: FloatArray,
-    average_densities: "pd.DataFrame",
+    average_densities: pd.DataFrame,
     region_name: str = "root",
 ) -> Dict[str, FloatArray]:
     """
@@ -428,7 +430,7 @@ def create_inhibitory_neuron_densities(  # pylint: disable=too-many-locals
     # modify cell densities recursively starting from the leaves
     L.info("Computing region cell counts ...")
     region_counts = average_densities_to_cell_counts(average_densities, volumes)
-    cell_types = {column.replace("_standard_deviation", "") for column in region_counts.columns}
+    cell_types = get_cell_types(region_counts)
 
     density_helper = VolumetricDensityHelper(
         annotation,
@@ -436,7 +438,7 @@ def create_inhibitory_neuron_densities(  # pylint: disable=too-many-locals
         neuron_density,
         region_counts,
         "gad67+",
-        list(cell_types - {"gad67+"}),
+        list(set(cell_types) - {"gad67+"}),
     )
 
     L.info("Making leaf region cell counts consistent ...")
