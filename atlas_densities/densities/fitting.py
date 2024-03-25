@@ -18,9 +18,10 @@ obtained for T and the group R it belongs to.
 """
 from __future__ import annotations
 
+import itertools as it
 import logging
 import warnings
-from typing import TYPE_CHECKING, Dict, List, Optional, Set, Union
+from typing import TYPE_CHECKING, Dict, List, Optional, Union
 
 import numpy as np
 import pandas as pd
@@ -623,10 +624,7 @@ def _get_group_region_names(groups):
         A list of region names.
     """
 
-    group_regions_names: Set[str] = set()
-    for v in groups.values():
-        group_regions_names = group_regions_names.union(v)
-    return list(group_regions_names)
+    return list(set(it.chain.from_iterable(groups.values())))
 
 
 def linear_fitting(  # pylint: disable=too-many-arguments
