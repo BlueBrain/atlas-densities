@@ -14,7 +14,6 @@ from click.testing import CliRunner
 from voxcell import VoxelData  # type: ignore
 
 import atlas_densities.app.mtype_densities as tested
-from tests.utils import write_json
 from atlas_densities.exceptions import AtlasDensitiesError
 from tests.densities.test_mtype_densities_from_map import create_from_probability_map_data
 from tests.densities.test_mtype_densities_from_profiles import (
@@ -24,6 +23,7 @@ from tests.densities.test_mtype_densities_from_profiles import (
     create_inhibitory_neuron_density,
     create_slicer_data,
 )
+from tests.utils import write_json
 
 
 def get_result_from_profiles(runner, td):
@@ -209,8 +209,7 @@ class Test_mtype_densities_from_composition:
                 },
             ],
         }
-        with open(path, "w", encoding="utf-8") as jsonfile:
-            json.dump(hierarchy, jsonfile, indent=1, separators=(",", ": "))
+        write_json(path, hierarchy)
         return path
 
     @pytest.fixture(scope="session")
@@ -237,9 +236,7 @@ class Test_mtype_densities_from_composition:
                 "with_descendants": True,
             },
         }
-        with open(path, "w", encoding="utf-8") as jsonfile:
-            json.dump(metadata, jsonfile, indent=1)
-
+        write_json(path, metadata)
         return path
 
     @pytest.fixture(scope="session")

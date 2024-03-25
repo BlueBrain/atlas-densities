@@ -24,7 +24,6 @@ from tests.densities.test_excel_reader import (
     check_non_negative_values,
     get_invalid_region_names,
 )
-from tests.utils import write_json
 from tests.densities.test_fitting import get_fitting_input_data
 from tests.densities.test_glia_densities import get_glia_input_data
 from tests.densities.test_inhibitory_neuron_density import get_inhibitory_neuron_input_data
@@ -34,6 +33,7 @@ from tests.densities.test_measurement_to_density import (
 from tests.densities.test_measurement_to_density import (
     get_input_data as get_measurement_to_density_input_data,
 )
+from tests.utils import write_json
 
 TEST_PATH = Path(__file__).parent.parent
 DATA_PATH = TEST_PATH.parent / "atlas_densities" / "app" / "data"

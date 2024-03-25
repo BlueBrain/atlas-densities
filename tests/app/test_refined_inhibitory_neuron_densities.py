@@ -1,5 +1,4 @@
 """test cell_densities"""
-import json
 from pathlib import Path
 
 import numpy as np
@@ -14,6 +13,7 @@ from tests.densities.test_inhibitory_neuron_density_optimization import (
 from tests.densities.test_refined_inhibitory_neuron_density import (
     get_inhibitory_neuron_densities_data,
 )
+from tests.utils import write_json
 
 
 def _get_inhibitory_neuron_densities_result(runner, algorithm=None):
@@ -45,8 +45,7 @@ def _test(input_, algorithm=None):
         VoxelData(input_["neuron_density"], voxel_dimensions=voxel_dimensions).save_nrrd(
             "neuron_density.nrrd"
         )
-        with open("hierarchy.json", "w") as file_:
-            json.dump(input_["hierarchy"], file_, indent=1, separators=(",", ": "))
+        write_json("hierarchy.json", input_["hierarchy"])
         input_["average_densities"]["brain_region"] = input_["average_densities"].index
         input_["average_densities"].to_csv("average_densities.csv", index=False)
 
@@ -71,9 +70,8 @@ def _test(input_, algorithm=None):
         assert np.all(gad_data.raw >= subsum_density)
 
         # Test assertion in case of invalid hierarchy file
-        with open("hierarchy.json", "w", encoding="utf-8") as file_:
-            hierarchy = {"msg": [input_["hierarchy"], {}]}
-            json.dump(hierarchy, file_, indent=1, separators=(",", ": "))
+        hierarchy = {"msg": [input_["hierarchy"], {}]}
+        write_json("hierarchy.json", hierarchy)
 
         result = _get_inhibitory_neuron_densities_result(runner, algorithm)
         assert "Unexpected JSON layout" in str(result.exception)
