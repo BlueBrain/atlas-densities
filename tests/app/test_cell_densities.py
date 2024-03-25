@@ -24,6 +24,7 @@ from tests.densities.test_excel_reader import (
     check_non_negative_values,
     get_invalid_region_names,
 )
+from tests.utils import write_json
 from tests.densities.test_fitting import get_fitting_input_data
 from tests.densities.test_glia_densities import get_glia_input_data
 from tests.densities.test_inhibitory_neuron_density import get_inhibitory_neuron_input_data
@@ -84,10 +85,6 @@ def test_cell_density():
         assert "voxel_dimensions" in str(result.exception)
 
 
-def _get_glia_cell_densities_result(runner):
-    return
-
-
 def test_glia_cell_densities():
     args = [
         # fmt: off
@@ -119,8 +116,9 @@ def test_glia_cell_densities():
             VoxelData(unconstrained_density, voxel_dimensions=voxel_dimensions).save_nrrd(
                 glia_type + "_density.nrrd"
             )
-        with open("glia_proportions.json", "w", encoding="utf-8") as out:
-            json.dump(input_["glia_proportions"], out)
+
+        write_json("glia_proportions.json", input_["glia_proportions"])
+
         result = runner.invoke(tested.app, args)
         assert result.exit_code == 0
 
@@ -264,8 +262,7 @@ def test_measurements_to_average_densities():
         for name in ["annotation", "cell_density", "neuron_density"]:
             VoxelData(input_[name], voxel_dimensions=voxel_dimensions).save_nrrd(name + ".nrrd")
         input_["measurements"].to_csv("measurements.csv", index=False)
-        with open("hierarchy.json", "w", encoding="utf-8") as out:
-            json.dump(input_["hierarchy"], out, indent=1, separators=(",", ": "))
+        write_json("hierarchy.json", input_["hierarchy"])
 
         result = _get_measurements_to_average_densities_result(
             runner, hierarchy_path="hierarchy.json", measurements_path="measurements.csv"
@@ -313,14 +310,9 @@ def test_fit_average_densities():
         input_["homogenous_regions"].to_csv("homogenous_regions.csv", index=False)
         input_["average_densities"].to_csv("average_densities.csv", index=False)
 
-        with open("hierarchy.json", "w", encoding="utf-8") as out:
-            json.dump(input_["hierarchy"], out, indent=1, separators=(",", ": "))
-
-        with open("realigned_slices.json", "w", encoding="utf-8") as out:
-            json.dump(input_["realigned_slices"], out, indent=1, separators=(",", ": "))
-
-        with open("std_cells.json", "w", encoding="utf-8") as out:
-            json.dump(input_["cell_density_stddevs"], out, indent=1, separators=(",", ": "))
+        write_json("hierarchy.json", input_["hierarchy"])
+        write_json("realigned_slices.json", input_["realigned_slices"])
+        write_json("std_cells.json", input_["cell_density_stddevs"])
 
         with open("gene_config.yaml", "w", encoding="utf-8") as out:
             gene_config = {

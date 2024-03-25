@@ -14,6 +14,7 @@ from click.testing import CliRunner
 from voxcell import VoxelData  # type: ignore
 
 import atlas_densities.app.mtype_densities as tested
+from tests.utils import write_json
 from atlas_densities.exceptions import AtlasDensitiesError
 from tests.densities.test_mtype_densities_from_map import create_from_probability_map_data
 from tests.densities.test_mtype_densities_from_profiles import (
@@ -51,10 +52,8 @@ def test_mtype_densities_from_profiles(tmp_path):
         data = create_slicer_data()
         data["annotation"].save_nrrd("annotation.nrrd")
         data["annotation"].with_data(data["direction_vectors"]).save_nrrd("direction_vectors.nrrd")
-        with open("metadata.json", "w", encoding="utf-8") as file_:
-            json.dump(data["metadata"], file_)
-        with open("hierarchy.json", "w", encoding="utf-8") as file_:
-            json.dump(data["hierarchy"], file_)
+        write_json("metadata.json", data["metadata"])
+        write_json("hierarchy.json", data["hierarchy"])
         with open("config.yaml", "w", encoding="utf-8") as file_:
             config = {
                 "mtypeToProfileMapPath": str(DATA_PATH / "meta" / "mapping.tsv"),
@@ -117,8 +116,7 @@ class Test_mtype_densities_from_probability_map:
 
     def save_input_data_to_file(self):
         self.data["annotation"].save_nrrd("annotation.nrrd")
-        with open("hierarchy.json", "w", encoding="utf-8") as file:
-            json.dump(self.data["hierarchy"], file)
+        write_json("hierarchy.json", self.data["hierarchy"])
 
         self.data["probability_map01"].to_csv("probability_map01.csv", index=True)
         self.data["probability_map02"].to_csv("probability_map02.csv", index=True)
