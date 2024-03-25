@@ -110,39 +110,34 @@ def get_result_from_probablity_map_(runner, td):
     )
 
 
-class Test_mtype_densities_from_probability_map:
-    def setup_method(self, method):
-        self.data = create_from_probability_map_data()
+def test_mtype_densities_from_probability_map(tmp_path):
+    data = create_from_probability_map_data()
+    runner = CliRunner()
+    with runner.isolated_filesystem(temp_dir=tmp_path) as td:
+        data["annotation"].save_nrrd("annotation.nrrd")
+        write_json("hierarchy.json", data["hierarchy"])
 
-    def save_input_data_to_file(self):
-        self.data["annotation"].save_nrrd("annotation.nrrd")
-        write_json("hierarchy.json", self.data["hierarchy"])
+        data["probability_map01"].to_csv("probability_map01.csv", index=True)
+        data["probability_map02"].to_csv("probability_map02.csv", index=True)
 
-        self.data["probability_map01"].to_csv("probability_map01.csv", index=True)
-        self.data["probability_map02"].to_csv("probability_map02.csv", index=True)
-
-        for molecular_type, data in self.data["molecular_type_densities"].items():
+        for molecular_type, raw_data in data["molecular_type_densities"].items():
             VoxelData(
-                data,
-                voxel_dimensions=self.data["annotation"].voxel_dimensions,
+                raw_data,
+                voxel_dimensions=data["annotation"].voxel_dimensions,
             ).save_nrrd(f"{molecular_type}.nrrd")
 
-    def test_output(self, tmp_path):
-        runner = CliRunner()
-        with runner.isolated_filesystem(temp_dir=tmp_path) as td:
-            self.save_input_data_to_file()
-            result = get_result_from_probablity_map_(runner, td)
-            assert result.exit_code == 0
+        result = get_result_from_probablity_map_(runner, td)
+        assert result.exit_code == 0
 
-            BPbAC = VoxelData.load_nrrd(str(Path("output_dir") / "BP|bAC_EXC_densities.nrrd"))
-            assert BPbAC.raw.dtype == float
-            npt.assert_array_equal(BPbAC.voxel_dimensions, self.data["annotation"].voxel_dimensions)
+        BPbAC = VoxelData.load_nrrd(str(Path("output_dir") / "BP|bAC_EXC_densities.nrrd"))
+        assert BPbAC.raw.dtype == float
+        npt.assert_array_equal(BPbAC.voxel_dimensions, data["annotation"].voxel_dimensions)
 
-            with open(str(Path("output_dir") / "metadata.json"), "r") as file:
-                metadata = json.load(file)
-            assert "BP" in metadata["density_files"]
-            assert "bAC" in metadata["density_files"]["BP"]
-            assert "EXC" == metadata["synapse_class"]
+        with open(str(Path("output_dir") / "metadata.json"), "r") as file:
+            metadata = json.load(file)
+        assert "BP" in metadata["density_files"]
+        assert "bAC" in metadata["density_files"]["BP"]
+        assert "EXC" == metadata["synapse_class"]
 
 
 class Test_mtype_densities_from_composition:
