@@ -283,21 +283,6 @@ def test_create_inhibitory_neuron_densities_3():
         npt.assert_array_almost_equal(density, expected[cell_type])
 
 
-def test_error_on_sigmas_inconsistencies():
-    # Test that an error is raised when our simplifying assumption between the x's and the deltas
-    # is violated
-    data = get_initialization_data_3()
-    data["average_densities"].at["root", "pv+_standard_deviation"] = 0.0
-    with pytest.raises(AtlasDensitiesError, match="not certain"):
-        tested.create_inhibitory_neuron_densities(
-            data["hierarchy"],
-            data["annotation"],
-            data["voxel_volume"],
-            data["neuron_density"],
-            data["average_densities"],
-        )
-
-
 def get_initialization_data_4():
     hierarchy = {
         "id": 8,

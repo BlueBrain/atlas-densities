@@ -16,8 +16,8 @@ between output cell counts and input estimates while enforcing the consistency o
 across the brain region hierarchy.
 
 The file ``doc/source/bbpp82_628_linear_program.pdf`` serves as a documentation of the linear
-program, see Section 2 in particular. The initalization of the linear program relies on average
-density estimates, obtained obtained for instance via the ``fitting`` module. We refer to these
+program, see Section 2 in particular. The initialization of the linear program relies on average
+density estimates, obtained for instance via the ``fitting`` module. We refer to these
 estimates as the initial estimates.
 
 The output are volumetric density nrrd files, one for each of the aforementioned inhibitory
@@ -286,7 +286,7 @@ def set_known_values(
     L.info("Setting known values ...")
     # Set delta_{r, m} with `SKIP` if the corresponding cell count estimate is missing.
     # This means that the region r won't impose any constraint wrt to the marker m in the linear
-    # program, i. e., the delta_{r, m} variable is omitted for such r and m.
+    # program, i.e., the delta_{r, m} variable is omitted for such r and m.
     for id_, region_name in zip(hierarchy_info.index, region_counts.index):
         for cell_type in cell_types:
             # A region without cell count estimate for `cell_type` adds no constraint
@@ -353,7 +353,7 @@ def create_bounds(
             bound.
         - `x_map` is a dict mapping pairs (id_, cell_type) to indices of `bounds`.
             The keys of this dict corresponds to cell count variables in the linear program.
-        - `deltas_map` is a dict mapping pairs (region_name, cell_type) to to indices of `bounds`.
+        - `deltas_map` is a dict mapping pairs (region_name, cell_type) to indices of `bounds`.
             The keys of this dict corresponds to the slack "delta" variables which represent
             distances of cell count variables to initial estimates.
     """
@@ -434,7 +434,7 @@ def create_aub_and_bub(
         constraint: FloatArray, b_value: float, region_name: str, id_: int
     ) -> bool:
         """
-        Check if `contraint` is a valid inequality constraint of type (3e).
+        Check if `constraint` is a valid inequality constraint of type (3e).
 
         Returns:
             True if the constraint is not void.
@@ -571,7 +571,7 @@ def _compute_initial_cell_counts(
             :fun:`densities.inhibitory_densities_helper.average_densities_to_cell_counts`.
             It holds region cell counts as well as associated standard deviations.
         - `id_counts` has the return value format of
-            :fun:`densities.inhbitory_densities_helper.average_densities_to_cell_counts` except
+            :fun:`densities.inhibitory_densities_helper.average_densities_to_cell_counts` except
             that its index is a list of unique integer region identifiers.
             It holds the cell counts of the 3D regions labeled by a unique identifier, as well as
             associated standard deviations (descendant subregions are excluded).
@@ -595,22 +595,16 @@ def _compute_initial_cell_counts(
 
 def _check_variables_consistency(
     x_result: pd.DataFrame,
-    deltas: pd.DataFrame,
     cell_types: List[str],
     neuron_counts: pd.DataFrame,
     hierarchy_info: pd.DataFrame,
 ) -> None:
     """
-    Raises an error if a delta variable indexed by (region_name, cell_type) is set with a non-NaN
-    value whereas an x_result variable indexed by (desc_id, cell_type) is set with a NaN value for
-    some descendant id of region_name.
-
     Raises also an error if a cell count value marked as final in `x_result` exceeds its
     prescribed upper bound from `neuron_counts`.
 
     Args:
         x_result: see return value of :fun:`set_known_values`.
-        deltas: idem
         cell_types: list of cell type names, e.g., ["pv+", "sst+", "vip+", "gad67+"].
         hierarchy_info: data frame returned by
             :func:`atlas_densities.densities.utils.get_hierarchy_info`.
@@ -618,24 +612,12 @@ def _check_variables_consistency(
             region labeled by an integer identifier in `neuron_count.index`.
 
     Raises:
-        AtlasDensitiesError if on the the following assumptions is violated:
-        - if cell count estimate of a region is known with certainty for a given cell type,
-        then the cell count of every descendant region is also known with certainty.
-        - a cell count estimate which is given for certain does not
+        AtlasDensitiesError if a cell count estimate which is given for certain exceeds the neuron
+        count constraint.
     """
     cell_count_tolerance = 1e-2  # absolute tolerance to rule out round-off errors
-    for region_name, id_, id_set in zip(
-        deltas.index, hierarchy_info.index, hierarchy_info["descendant_ids"]
-    ):
+    for id_ in hierarchy_info.index:
         for cell_type in cell_types:
-            if np.isfinite(deltas.loc[region_name, cell_type]):
-                for desc_id in id_set:
-                    if np.isnan(x_result.loc[desc_id, cell_type]):
-                        raise AtlasDensitiesError(
-                            f"Cell count estimate of region named '{region_name}' for cell type "
-                            f"{cell_type} was given for certain whereas the cell count of "
-                            f"descendant id {desc_id} is not certain."
-                        )
             neuron_count = neuron_counts.loc[id_, "cell_count"]
             if (
                 not np.isnan(x_result.loc[id_, cell_type])
@@ -770,7 +752,7 @@ def create_inhibitory_neuron_densities(  # pylint: disable=too-many-locals
     # We assume that if the cell count of `cell_type` in `region_name` is known with certainty
     # then the same holds in every descendant subregion.
     _check_variables_consistency(
-        x_result, deltas, get_cell_types(region_counts), neuron_counts, hierarchy_info
+        x_result, get_cell_types(region_counts), neuron_counts, hierarchy_info
     )
 
     L.info("Setting variable bounds and further inequality constraints ...")

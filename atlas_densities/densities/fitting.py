@@ -18,6 +18,7 @@ obtained for T and the group R it belongs to.
 """
 from __future__ import annotations
 
+import itertools as it
 import logging
 import warnings
 from typing import TYPE_CHECKING, Dict, List, Optional, Union
@@ -135,6 +136,9 @@ def fill_in_homogenous_regions(
             in number of neurons per mm^3.
         densities: the data frame returned by
             :fun:`atlas_densities.densities.fitting.create_dataframe_from_known_densities`.
+        hierarchy_info: data frame with columns "descendant_id_set" (set[int]) and "brain_region"
+            (str) and whose index is a list of region ids.
+            See :fun:`atlas_densities.densities.utils.get_hierarchy_info`.
         cell_density_stddevs: (Optional) dict whose keys are brain regions names and whose values
             are standard deviations of average cell densities of the corresponding regions.
             Defaults to None, in which case the output standard deviation is set with the density
@@ -418,24 +422,32 @@ def compute_fitting_coefficients(
             len(cell_types),
         )
         for region_name in tqdm(groups[group_name]):
-            for cell_type in cell_types:
-                intensity = average_intensities.at[region_name, cell_type[:-1]]
-                density = densities.at[region_name, cell_type]
-                if not (
-                    np.isnan(density) or np.isnan(intensity) or intensity == 0.0 or density == 0.0
-                ):
-                    assert_msg = f"in region {region_name} for cell type {cell_type}"
-                    assert intensity >= 0.0, "Negative average intensity " + assert_msg
-                    assert density >= 0.0, "Negative density " + assert_msg
-                    standard_deviation = densities.at[
-                        region_name, cell_type + "_standard_deviation"
-                    ]
-                    assert not np.isnan(standard_deviation), "NaN standard deviation " + assert_msg
-                    assert standard_deviation >= 0.0, "Negative standard deviation " + assert_msg
+            if region_name in average_intensities.index:
+                for cell_type in cell_types:
+                    intensity = average_intensities.at[region_name, cell_type[:-1]]
+                    density = densities.at[region_name, cell_type]
+                    if not (
+                        np.isnan(density)
+                        or np.isnan(intensity)
+                        or intensity == 0.0
+                        or density == 0.0
+                    ):
+                        assert_msg = f"in region {region_name} for cell type {cell_type}"
+                        assert intensity >= 0.0, "Negative average intensity " + assert_msg
+                        assert density >= 0.0, "Negative density " + assert_msg
+                        standard_deviation = densities.at[
+                            region_name, cell_type + "_standard_deviation"
+                        ]
+                        assert not np.isnan(standard_deviation), (
+                            "NaN standard deviation " + assert_msg
+                        )
+                        assert standard_deviation >= 0.0, (
+                            "Negative standard deviation " + assert_msg
+                        )
 
-                    clouds[group_name][cell_type]["xdata"].append(intensity)
-                    clouds[group_name][cell_type]["ydata"].append(density)
-                    clouds[group_name][cell_type]["sigma"].append(standard_deviation)
+                        clouds[group_name][cell_type]["xdata"].append(intensity)
+                        clouds[group_name][cell_type]["ydata"].append(density)
+                        clouds[group_name][cell_type]["sigma"].append(standard_deviation)
 
         L.info("Computing regression coefficients for %d cell types ...", len(cell_types))
         for cell_type in tqdm(cell_types):
@@ -479,23 +491,51 @@ def fit_unknown_densities(
     for group_name, region_names in groups.items():
         for region_name in region_names:
             for marker in average_intensities.columns:
-                intensity = average_intensities.at[region_name, marker]
-                cell_type = marker + "+"
-                if np.isnan(densities.at[region_name, cell_type]) and not np.isnan(intensity):
-                    fitting = fitting_coefficients[group_name][cell_type]
-                    if np.isnan(fitting["coefficient"]):
-                        warnings.warn(
-                            f"Interpolating density of region {region_name} for cell type "
-                            f"{cell_type} using NaN fitting coefficient of region group "
-                            f"{group_name}.",
-                            AtlasDensitiesWarning,
-                        )
-                    fitted_value = fitting["coefficient"] * intensity
-                    standard_deviation = fitted_value * fitting["standard_deviation"]
-                    densities.at[region_name, cell_type] = fitted_value
-                    densities.at[
-                        region_name, cell_type + "_standard_deviation"
-                    ] = standard_deviation
+                if region_name in average_intensities.index:
+                    _apply_fitting(
+                        region_name,
+                        marker,
+                        group_name,
+                        average_intensities,
+                        densities,
+                        fitting_coefficients,
+                    )
+
+
+def _apply_fitting(
+    region_name, marker, group_name, average_intensities, densities, fitting_coefficients
+):
+    """
+    Apply the fitting function to a given region and marker based on the corresponding marker
+    intensity.
+
+    Args:
+        region_name: region name
+        marker: ISH marker name
+        group_name: fitting group name
+        average_intensities: pandas data frame returned by
+          :fun:`atlas_densities.densities.fitting.compute_average_intensities`.
+        densities: data frame returned by
+          :fun:`atlas_densities.densities.fitting.create_dataframe_from_known_densities`.
+        fitting_coefficients: dict returned by
+          :fun:`atlas_densities.densities.fitting.compute_fitting_coefficients`.
+    """
+
+    intensity = average_intensities.at[region_name, marker]
+    cell_type = marker + "+"
+    if np.isnan(densities.at[region_name, cell_type]) and not np.isnan(intensity):
+        fitting = fitting_coefficients[group_name][cell_type]
+        if np.isnan(fitting["coefficient"]):
+            warnings.warn(
+                f"Interpolating density of region {region_name} for cell type "
+                f"{cell_type} using NaN fitting coefficient of region group "
+                f"{group_name}.",
+                AtlasDensitiesWarning,
+            )
+        fitted_value = fitting["coefficient"] * intensity
+        standard_deviation = fitted_value * fitting["standard_deviation"]
+        densities.at[region_name, cell_type] = fitted_value
+        densities.at[region_name, cell_type + "_standard_deviation"] = standard_deviation
 
 
 def _check_homogenous_regions_sanity(homogenous_regions: pd.DataFrame) -> None:
@@ -556,7 +596,7 @@ def _get_group_names(region_map: "RegionMap", group_ids_config: dict) -> dict[st
 
     group_ids = utils.get_group_ids(region_map, group_ids_config)
 
-    # Make the Rest group stable under taking descendants
+    # Make the Rest group stable undertaking descendants
     # The name of any ascendant region of the Cerebellum and
     #    Isocortex groups are removed from the names of the Rest group. This makes sure that
     #    the set of names of the Rest group is closed under taking descendants.
@@ -571,6 +611,20 @@ def _get_group_names(region_map: "RegionMap", group_ids_config: dict) -> dict[st
         group_name: {region_map.get(id_, attr="name") for id_ in group_ids[group_name]}
         for group_name in ["Cerebellum group", "Isocortex group", "Rest"]
     }
+
+
+def _get_group_region_names(groups):
+    """
+    Create a set of the union of AIBS region names that belong to the given groups.
+
+    Args:
+        groups: dictionary from group name to list of region name.
+
+    Returns:
+        A list of region names.
+    """
+
+    return list(set(it.chain.from_iterable(groups.values())))
 
 
 def linear_fitting(  # pylint: disable=too-many-arguments
@@ -601,6 +655,9 @@ def linear_fitting(  # pylint: disable=too-many-arguments
             define the regions whose cell densities will be computed.
         annotation: int array of shape (W, H, D) holding the annotation of the whole
             brain model. (The integers W, H and D are the dimensions of the array).
+        neuron_density: non-negative float array of shape (W, H, D) where W, H and D are integer
+            dimensions. This array holds the volumetric neuron density of the brain model expressed
+            in number of neurons per mm^3.
         gene_marker_volumes: dict of the form {
                   "gad67": {"intensity": <array>, "slices": <list>},
                   "pv": {"intensity": <array>, "slices": <list>},
@@ -616,7 +673,7 @@ def linear_fitting(  # pylint: disable=too-many-arguments
         homogenous_regions: data frame with two columns, brain_region and cell_type.
             The brain_region column holds region names and the values of the cell_type column are
             "inhibitory" or "excitatory" depending on whether every neuron of the region is
-            inhibitory or excitatory. Note that the "inhibitory" cell type will superseded by
+            inhibitory or excitatory. Note that the "inhibitory" cell type will supersede by
             its synonym "gad67+" in the output data frame.
         cell_density_stddevs: dict whose keys are brain regions names and whose values are
             standard deviations of average cell densities of the corresponding regions.
@@ -667,16 +724,23 @@ def linear_fitting(  # pylint: disable=too-many-arguments
     )
 
     L.info("Computing average intensities ...")
+    groups = _get_group_names(region_map, group_ids_config)
+    # Limit the fitting to the regions groups.
+    indexes = np.isin(
+        hierarchy_info["brain_region"].to_numpy(),
+        _get_group_region_names(groups),
+        invert=True,
+    )
     average_intensities = compute_average_intensities(
-        annotation, gene_marker_volumes, hierarchy_info
+        annotation,
+        gene_marker_volumes,
+        hierarchy_info.drop(hierarchy_info.index[indexes]),
     )
 
-    L.info("Getting group names ...")
-    # We want group region names to be stable under taking descendants
-    groups = _get_group_names(region_map, group_ids_config)
-
     L.info("Computing fitting coefficients ...")
-    fitting_coefficients = compute_fitting_coefficients(groups, average_intensities, densities)
+    fitting_coefficients = compute_fitting_coefficients(
+        groups, average_intensities, densities.drop(densities.index[indexes])
+    )
     L.info("Fitting unknown average densities ...")
     fit_unknown_densities(groups, average_intensities, densities, fitting_coefficients)
 
