@@ -92,7 +92,9 @@ def create_dataframe_from_known_densities(
     for region_name in result.index:
         density_mask = average_densities["brain_region"] == region_name
         for cell_type in cell_types:
-            cell_type_mask = density_mask & (average_densities["cell_type"] == cell_type)
+            cell_type_mask = density_mask & (
+                average_densities["cell_type"] == cell_type
+            )
             cell_type = cell_type.lower().replace(" ", "_")
             result.at[region_name, cell_type] = np.mean(
                 average_densities[cell_type_mask]["measurement"]
@@ -158,7 +160,9 @@ def fill_in_homogenous_regions(
             density = np.mean(neuron_density[region_mask])
             densities.at[child_region_name, "inhibitory_neuron"] = density
             if cell_density_stddevs is None:
-                densities.at[child_region_name, "inhibitory_neuron_standard_deviation"] = density
+                densities.at[
+                    child_region_name, "inhibitory_neuron_standard_deviation"
+                ] = density
             else:
                 densities.at[
                     child_region_name, "inhibitory_neuron_standard_deviation"
@@ -171,7 +175,9 @@ def fill_in_homogenous_regions(
         id_mask = [id_ in desc_id_set for id_ in hierarchy_info["id"]]
         for child_region_name in hierarchy_info[id_mask].index:
             densities.at[child_region_name, "inhibitory_neuron"] = 0.0
-            densities.at[child_region_name, "inhibitory_neuron_standard_deviation"] = 0.0
+            densities.at[
+                child_region_name, "inhibitory_neuron_standard_deviation"
+            ] = 0.0
 
 
 def compute_average_intensity(
@@ -220,7 +226,9 @@ def _add_depths(region_map_df):
     ]
     depth = 1
     while parent_ids:
-        children_ids = region_map_df[np.isin(region_map_df["parent_id"], list(parent_ids))].index
+        children_ids = region_map_df[
+            np.isin(region_map_df["parent_id"], list(parent_ids))
+        ].index
         region_map_df.loc[children_ids, "depth"] = depth
         parent_ids = set(children_ids)
         depth += 1
@@ -249,7 +257,9 @@ def _fill_densities(region_map, region_map_df, df):
         count = voxel_count.sum()
         if count:
             df.loc[id_, "voxel_count"] = count
-            df.loc[id_, "density"] = np.average(df.loc[children, "density"], weights=voxel_count)
+            df.loc[id_, "density"] = np.average(
+                df.loc[children, "density"], weights=voxel_count
+            )
 
 
 def _apply_density_slices(gene_marker_volumes):
@@ -270,23 +280,89 @@ def _apply_density_slices(gene_marker_volumes):
     return ret
 
 
-def _compute_average_intensities_helper(annotation, gene_marker_volumes, id_):
+def _compute_average_intensities_helper(index, gene_marker_volumes, id_):
     """Compute the average intensity for `id_`, for all makers in `gene_marker_volumes`"""
-    mask = annotation == id_
+    voxel_ids = index.value_to_1d_indices(id_)
+
     res = []
     for marker, intensity in gene_marker_volumes.items():
-        restricted_mask = np.logical_and(intensity["mask"], mask)
-        count = restricted_mask.sum()
+        mask_voxels = index.ravel(intensity["mask"])[voxel_ids]
+
+        # restricted_mask = np.logical_and(intensity["mask"], mask)
+        count = mask_voxels.sum()
 
         if count <= 0:
             continue
 
-        mean_density = np.mean(intensity["intensity"][restricted_mask])
+        mean_density = (
+            index.ravel(intensity["intensity"])[voxel_ids][mask_voxels].sum() / count
+        )
+
         if mean_density == 0.0:
             L.warning("Mean density for id=%s and marker=%s", id_, marker)
         res.append((marker.lower(), id_, count, mean_density))
 
     return res
+
+
+class ValueToIndexVoxels:
+    """Efficient access to indices of unique values of the values array.
+
+    Useful for when one has an "annotations volume" or "brain region volume" that has
+    regions indicated by unique values, and these are used to create masks.  Often,
+    it's faster to avoid mask creation, and use indices directly
+
+    Example:
+        vtiv = ValueToIndexVoxels(br.raw)
+        values, funcs = zip(*((i, np.sum if i % 2 else np.mean) for i in vtiv.values[:10]))
+        list(vtiv.apply(values, funcs, density.raw))
+    """
+
+    def __init__(self, values):
+        """Initialize.
+
+        Args:
+            values(np.array): volume with each voxel marked with a value; usually to group regions
+        """
+        self._order = "C" if values.flags["C_CONTIGUOUS"] else "F"
+
+        values = values.ravel(order=self._order)
+        uniques, codes, counts = np.unique(
+            values, return_inverse=True, return_counts=True
+        )
+
+        offsets = np.empty(len(counts) + 1, dtype=np.uint64)
+        offsets[0] = 0
+        offsets[1:] = np.cumsum(counts)
+
+        self._codes = codes
+        self._offsets = offsets
+        self._indices = np.argsort(values, kind="stable")
+        self._mapping = {v: i for i, v in enumerate(uniques)}
+        self.index_dtype = values.dtype
+
+    def ravel(self, voxel_data):
+        """Ensures `voxel_data` matches the layout that the 1D indices can be used."""
+        return voxel_data.ravel(order=self._order)
+
+    @property
+    def values(self):
+        """Unique values that are found in the original volume."""
+        return np.fromiter(self._mapping, dtype=self.index_dtype)
+
+    def value_to_1d_indices(self, value):
+        """Return the indices array indices corresponding to the 'value'.
+
+        Note: These are 1D indices, so the assumption is they are applied to a volume
+        who has been ValueToIndexVoxels::ravel(volume)
+        """
+        if value not in self._mapping:
+            return np.array([], dtype=np.uint64)
+
+        group_index = self._mapping[value]
+        return self._indices[
+            self._offsets[group_index] : self._offsets[group_index + 1]
+        ]
 
 
 def compute_average_intensities(
@@ -327,16 +403,22 @@ def compute_average_intensities(
     """
     gene_marker_volumes = _apply_density_slices(gene_marker_volumes)
 
-    _helper = delayed(_compute_average_intensities_helper)
+    index = ValueToIndexVoxels(annotation)
+
+    # _helper = delayed(_compute_average_intensities_helper)
+    _helper = _compute_average_intensities_helper
     work = []
-    for id_ in np.unique(annotation):
+    for id_ in index.values:
         if id_ == 0:
             continue
-        work.append(_helper(annotation, gene_marker_volumes, id_))
+        work.append(_helper(index, gene_marker_volumes, id_))
 
-    res = Parallel()(work)
+    # res = Parallel()(work)
+    res = work
     densities = (
-        pd.DataFrame(list(it.chain(*res)), columns=["marker", "id", "voxel_count", "density"])
+        pd.DataFrame(
+            list(it.chain(*res)), columns=["marker", "id", "voxel_count", "density"]
+        )
         .set_index("id")
         .pivot(columns="marker")
         .swaplevel(axis=1)
@@ -353,7 +435,9 @@ def compute_average_intensities(
     result["brain_region"] = region_map_df.loc[result.index].name
 
     for marker in gene_marker_volumes:
-        df = pd.DataFrame(data=0.0, index=result.index, columns=["voxel_count", "density"])
+        df = pd.DataFrame(
+            data=0.0, index=result.index, columns=["voxel_count", "density"]
+        )
         df.update(densities[marker.lower()])
         _fill_densities(region_map, region_map_df, df)
         result[marker.lower()] = df["density"]
@@ -417,7 +501,10 @@ def linear_fitting_xy(
         absolute_sigma=True,
     )
     ss_reg = np.sum((_optimize_func(xdata, parameters[0][0]) - np.mean(ydata)) ** 2)
-    ss_tot = np.sum((np.array(ydata) - _optimize_func(xdata, parameters[0][0])) ** 2) + ss_reg
+    ss_tot = (
+        np.sum((np.array(ydata) - _optimize_func(xdata, parameters[0][0])) ** 2)
+        + ss_reg
+    )
     # if total sum of square is null, no variance can be explained by the fitting
     return {
         "coefficient": parameters[0][0],
@@ -430,7 +517,9 @@ FittingData = Dict[str, Dict[str, Dict[str, float]]]
 
 
 def compute_fitting_coefficients(
-    groups: dict[str, set[str]], average_intensities: pd.DataFrame, densities: pd.DataFrame
+    groups: dict[str, set[str]],
+    average_intensities: pd.DataFrame,
+    densities: pd.DataFrame,
 ) -> FittingData:
     """
     Compute the linear fitting coefficient of the cloud of 2D points (average marker intensity,
@@ -492,14 +581,21 @@ def compute_fitting_coefficients(
 
     result = {
         group_name: {
-            cell_type: {"coefficient": np.nan, "standard_deviation": np.nan, "r_square": np.nan}
+            cell_type: {
+                "coefficient": np.nan,
+                "standard_deviation": np.nan,
+                "r_square": np.nan,
+            }
             for cell_type in cell_types
         }
         for group_name in groups
     }
 
     clouds: dict[str, dict[str, dict[str, list[float]]]] = {
-        group_name: {cell_type: {"xdata": [], "ydata": [], "sigma": []} for cell_type in cell_types}
+        group_name: {
+            cell_type: {"xdata": [], "ydata": [], "sigma": []}
+            for cell_type in cell_types
+        }
         for group_name in groups
     }
     L.info("Computing fitting coefficients in %d groups ...", len(groups))
@@ -515,7 +611,10 @@ def compute_fitting_coefficients(
                 intensity = average_intensities.at[region_name, cell_type[:-1]]
                 density = densities.at[region_name, cell_type]
                 if not (
-                    np.isnan(density) or np.isnan(intensity) or intensity == 0.0 or density == 0.0
+                    np.isnan(density)
+                    or np.isnan(intensity)
+                    or intensity == 0.0
+                    or density == 0.0
                 ):
                     assert_msg = f"in region {region_name} for cell type {cell_type}"
                     assert intensity >= 0.0, "Negative average intensity " + assert_msg
@@ -523,14 +622,20 @@ def compute_fitting_coefficients(
                     standard_deviation = densities.at[
                         region_name, cell_type + "_standard_deviation"
                     ]
-                    assert not np.isnan(standard_deviation), "NaN standard deviation " + assert_msg
-                    assert standard_deviation >= 0.0, "Negative standard deviation " + assert_msg
+                    assert not np.isnan(standard_deviation), (
+                        "NaN standard deviation " + assert_msg
+                    )
+                    assert standard_deviation >= 0.0, (
+                        "Negative standard deviation " + assert_msg
+                    )
 
                     clouds[group_name][cell_type]["xdata"].append(intensity)
                     clouds[group_name][cell_type]["ydata"].append(density)
                     clouds[group_name][cell_type]["sigma"].append(standard_deviation)
 
-        L.info("Computing regression coefficients for %d cell types ...", len(cell_types))
+        L.info(
+            "Computing regression coefficients for %d cell types ...", len(cell_types)
+        )
         for cell_type in tqdm(cell_types):
             cloud = clouds[group_name][cell_type]
             result[group_name][cell_type] = linear_fitting_xy(
@@ -574,7 +679,9 @@ def fit_unknown_densities(
             for marker in average_intensities.columns:
                 intensity = average_intensities.at[region_name, marker]
                 cell_type = marker + "+"
-                if np.isnan(densities.at[region_name, cell_type]) and not np.isnan(intensity):
+                if np.isnan(densities.at[region_name, cell_type]) and not np.isnan(
+                    intensity
+                ):
                     fitting = fitting_coefficients[group_name][cell_type]
                     if np.isnan(fitting["coefficient"]):
                         warnings.warn(
@@ -600,7 +707,9 @@ def _check_homogenous_regions_sanity(homogenous_regions: pd.DataFrame) -> None:
     supported_cell_types = {"inhibitory", "excitatory"}
     diff = actual_cell_types - supported_cell_types
     if len(diff) > 0:
-        raise AtlasDensitiesError(f"`homogenous_regions` has unexpected cell types: {diff}")
+        raise AtlasDensitiesError(
+            f"`homogenous_regions` has unexpected cell types: {diff}"
+        )
 
 
 def _check_average_densities_sanity(average_densities: pd.DataFrame) -> None:
@@ -610,10 +719,13 @@ def _check_average_densities_sanity(average_densities: pd.DataFrame) -> None:
     actual_measurement_types = set(average_densities["measurement_type"])
     diff = actual_measurement_types - {"cell density"}
     if len(diff) > 0:
-        raise AtlasDensitiesError(f"`average_densities` has unexpected measurement types: {diff}")
+        raise AtlasDensitiesError(
+            f"`average_densities` has unexpected measurement types: {diff}"
+        )
 
     nan_mask = (
-        average_densities["measurement"].isna() | average_densities["standard_deviation"].isna()
+        average_densities["measurement"].isna()
+        | average_densities["standard_deviation"].isna()
     )
 
     if np.any(nan_mask):
@@ -633,7 +745,9 @@ def _check_average_densities_sanity(average_densities: pd.DataFrame) -> None:
         )
 
 
-def _get_group_names(region_map: "RegionMap", group_ids_config: dict) -> dict[str, set[str]]:
+def _get_group_names(
+    region_map: "RegionMap", group_ids_config: dict
+) -> dict[str, set[str]]:
     """
     Get AIBS names for regions in several region groups of interest.
 
@@ -655,9 +769,9 @@ def _get_group_names(region_map: "RegionMap", group_ids_config: dict) -> dict[st
     #    the set of names of the Rest group is closed under taking descendants.
     isocortex_id = region_map.find("Isocortex", attr="name").pop()
     cerebellum_id = region_map.find("Cerebellum", attr="name").pop()
-    ascendant_ids = set(region_map.get(isocortex_id, attr="id", with_ascendants=True)) | set(
-        region_map.get(cerebellum_id, attr="id", with_ascendants=True)
-    )
+    ascendant_ids = set(
+        region_map.get(isocortex_id, attr="id", with_ascendants=True)
+    ) | set(region_map.get(cerebellum_id, attr="id", with_ascendants=True))
     group_ids["Rest"] -= ascendant_ids
 
     return {
@@ -769,7 +883,9 @@ def linear_fitting(  # pylint: disable=too-many-arguments
     groups = _get_group_names(region_map, group_ids_config)
 
     L.info("Computing fitting coefficients ...")
-    fitting_coefficients = compute_fitting_coefficients(groups, average_intensities, densities)
+    fitting_coefficients = compute_fitting_coefficients(
+        groups, average_intensities, densities
+    )
     L.info("Fitting unknown average densities ...")
     fit_unknown_densities(groups, average_intensities, densities, fitting_coefficients)
 
