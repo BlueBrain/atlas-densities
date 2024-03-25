@@ -18,19 +18,15 @@ from tests.densities.test_refined_inhibitory_neuron_density import (
 
 def _get_inhibitory_neuron_densities_result(runner, algorithm=None):
     args = [
+        # fmt: off
         "inhibitory-neuron-densities",
-        "--hierarchy-path",
-        "hierarchy.json",
-        "--annotation-path",
-        "annotation.nrrd",
-        "--neuron-density-path",
-        "neuron_density.nrrd",
-        "--average-densities-path",
-        "average_densities.csv",
-        "--algorithm",
-        "keep-proportions",
-        "--output-dir",
-        "output_dir",
+        "--hierarchy-path", "hierarchy.json",
+        "--annotation-path", "annotation.nrrd",
+        "--neuron-density-path", "neuron_density.nrrd",
+        "--average-densities-path", "average_densities.csv",
+        "--algorithm", "keep-proportions",
+        "--output-dir", "output_dir",
+        # fmt: on
     ]
 
     if algorithm is not None:
