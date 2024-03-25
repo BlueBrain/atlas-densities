@@ -26,7 +26,6 @@ from typing import TYPE_CHECKING, Dict, List, Optional, Union
 import numpy as np
 import pandas as pd
 from atlas_commons.typing import AnnotationT, BoolArray, FloatArray
-from joblib import Parallel, delayed
 from scipy.optimize import curve_fit
 from tqdm import tqdm
 
@@ -283,9 +282,7 @@ def _compute_average_intensities_helper(index, gene_marker_volumes, id_):
         if count <= 0:
             continue
 
-        mean_density = (
-            index.ravel(intensity["intensity"])[voxel_ids][mask_voxels].sum() / count
-        )
+        mean_density = index.ravel(intensity["intensity"])[voxel_ids][mask_voxels].sum() / count
 
         if mean_density == 0.0:
             L.warning("Mean density for id=%s and marker=%s", id_, marker)
@@ -316,9 +313,7 @@ class ValueToIndexVoxels:
         self._order = "C" if values.flags["C_CONTIGUOUS"] else "F"
 
         values = values.ravel(order=self._order)
-        uniques, codes, counts = np.unique(
-            values, return_inverse=True, return_counts=True
-        )
+        uniques, codes, counts = np.unique(values, return_inverse=True, return_counts=True)
 
         offsets = np.empty(len(counts) + 1, dtype=np.uint64)
         offsets[0] = 0
@@ -349,9 +344,7 @@ class ValueToIndexVoxels:
             return np.array([], dtype=np.uint64)
 
         group_index = self._mapping[value]
-        return self._indices[
-            self._offsets[group_index] : self._offsets[group_index + 1]
-        ]
+        return self._indices[self._offsets[group_index] : self._offsets[group_index + 1]]
 
 
 def compute_average_intensities(
