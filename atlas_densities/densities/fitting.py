@@ -26,7 +26,6 @@ from typing import TYPE_CHECKING, Dict, List, Optional, Union
 import numpy as np
 import pandas as pd
 from atlas_commons.typing import AnnotationT, BoolArray, FloatArray
-from joblib import Parallel, delayed
 from scipy.optimize import curve_fit
 from tqdm import tqdm
 
@@ -273,23 +272,82 @@ def _apply_density_slices(gene_marker_volumes):
     return ret
 
 
-def _compute_average_intensities_helper(annotation, gene_marker_volumes, id_):
+def _compute_average_intensities_helper(index, gene_marker_volumes, id_):
     """Compute the average intensity for `id_`, for all makers in `gene_marker_volumes`"""
-    mask = annotation == id_
+    voxel_ids = index.value_to_1d_indices(id_)
+
     res = []
     for marker, intensity in gene_marker_volumes.items():
-        restricted_mask = np.logical_and(intensity["mask"], mask)
-        count = restricted_mask.sum()
+        mask_voxels = index.ravel(intensity["mask"])[voxel_ids]
+
+        count = mask_voxels.sum()
 
         if count <= 0:
             continue
 
-        mean_density = np.mean(intensity["intensity"][restricted_mask])
+        mean_density = index.ravel(intensity["intensity"])[voxel_ids][mask_voxels].sum() / count
+
         if mean_density == 0.0:
             L.warning("Mean density for id=%s and marker=%s", id_, marker)
         res.append((marker.lower(), id_, count, mean_density))
 
     return res
+
+
+class ValueToIndexVoxels:
+    """Efficient access to indices of unique values of the values array.
+
+    Useful for when one has an "annotations volume" or "brain region volume" that has
+    regions indicated by unique values, and these are used to create masks.  Often,
+    it's faster to avoid mask creation, and use indices directly
+
+    Example:
+        vtiv = ValueToIndexVoxels(br.raw)
+        values, funcs = zip(*((i, np.sum if i % 2 else np.mean) for i in vtiv.values[:10]))
+        list(vtiv.apply(values, funcs, density.raw))
+    """
+
+    def __init__(self, values):
+        """Initialize.
+
+        Args:
+            values(np.array): volume with each voxel marked with a value; usually to group regions
+        """
+        self._order = "C" if values.flags["C_CONTIGUOUS"] else "F"
+
+        values = values.ravel(order=self._order)
+        uniques, codes, counts = np.unique(values, return_inverse=True, return_counts=True)
+
+        offsets = np.empty(len(counts) + 1, dtype=np.uint64)
+        offsets[0] = 0
+        offsets[1:] = np.cumsum(counts)
+
+        self._codes = codes
+        self._offsets = offsets
+        self._indices = np.argsort(values, kind="stable")
+        self._mapping = {v: i for i, v in enumerate(uniques)}
+        self.index_dtype = values.dtype
+
+    def ravel(self, voxel_data):
+        """Ensures `voxel_data` matches the layout that the 1D indices can be used."""
+        return voxel_data.ravel(order=self._order)
+
+    @property
+    def values(self):
+        """Unique values that are found in the original volume."""
+        return np.fromiter(self._mapping, dtype=self.index_dtype)
+
+    def value_to_1d_indices(self, value):
+        """Return the indices array indices corresponding to the 'value'.
+
+        Note: These are 1D indices, so the assumption is they are applied to a volume
+        who has been ValueToIndexVoxels::ravel(volume)
+        """
+        if value not in self._mapping:
+            return np.array([], dtype=np.uint64)
+
+        group_index = self._mapping[value]
+        return self._indices[self._offsets[group_index] : self._offsets[group_index + 1]]
 
 
 def compute_average_intensities(
@@ -330,14 +388,16 @@ def compute_average_intensities(
     """
     gene_marker_volumes = _apply_density_slices(gene_marker_volumes)
 
-    _helper = delayed(_compute_average_intensities_helper)
+    index = ValueToIndexVoxels(annotation)
+
+    _helper = _compute_average_intensities_helper
     work = []
-    for id_ in np.unique(annotation):
+    for id_ in index.values:
         if id_ == 0:
             continue
-        work.append(_helper(annotation, gene_marker_volumes, id_))
+        work.append(_helper(index, gene_marker_volumes, id_))
 
-    res = Parallel()(work)
+    res = work
     densities = (
         pd.DataFrame(list(it.chain(*res)), columns=["marker", "id", "voxel_count", "density"])
         .set_index("id")
