@@ -200,15 +200,13 @@ def _compute_region_cell_counts(
         The index is the sorted list of all region identifiers.
     """
     vtiv = voxel_data.ValueToIndexVoxels(annotation)
-    density_copy = vtiv.ravel(density.copy())
+    density = vtiv.ravel(density)
 
     id_counts = []
     for id_ in hierarchy_info.index:
         indices = vtiv.value_to_1d_indices(id_)
-        if len(indices):
-            id_counts.append(np.sum(density_copy[indices]) * voxel_volume)
-        else:
-            id_counts.append(0)
+        id_counts.append(np.sum(density[indices]) * voxel_volume)
+
     result = pd.DataFrame(
         {"brain_region": hierarchy_info["brain_region"], "cell_count": id_counts},
         index=hierarchy_info.index,
