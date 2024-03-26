@@ -28,7 +28,7 @@ setup(
         # from the HiGHS library. We use the "highs" method in the densities module.
         "scipy>=1.6.0",
         "tqdm>=4.44.1",
-        "voxcell>=3.0.0",
+        "voxcell>=3.1.7",
     ],
     extras_require={
         "tests": [

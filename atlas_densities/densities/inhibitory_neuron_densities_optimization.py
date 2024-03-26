@@ -47,7 +47,7 @@ import pandas as pd
 from atlas_commons.typing import AnnotationT, FloatArray
 from scipy.optimize import linprog
 from tqdm import tqdm
-from voxcell import RegionMap
+from voxcell import RegionMap, voxel_data
 
 from atlas_densities.densities import utils
 from atlas_densities.densities.inhibitory_neuron_densities_helper import (
@@ -199,16 +199,18 @@ def _compute_region_cell_counts(
              ...                             ...
         The index is the sorted list of all region identifiers.
     """
+    vtiv = voxel_data.ValueToIndexVoxels(annotation)
+    density = vtiv.ravel(density)
+
     id_counts = []
-    for id_ in tqdm(hierarchy_info.index):
-        mask = annotation == id_
-        id_counts.append(np.sum(density[mask]) * voxel_volume)
+    for id_ in hierarchy_info.index:
+        indices = vtiv.value_to_1d_indices(id_)
+        id_counts.append(np.sum(density[indices]) * voxel_volume)
 
     result = pd.DataFrame(
         {"brain_region": hierarchy_info["brain_region"], "cell_count": id_counts},
         index=hierarchy_info.index,
     )
-
     return result
 
 
@@ -736,16 +738,16 @@ def create_inhibitory_neuron_densities(  # pylint: disable=too-many-locals
     hierarchy_info = utils.get_hierarchy_info(RegionMap.from_dict(hierarchy), root=region_name)
     average_densities = _resize_average_densities(average_densities, hierarchy_info)
 
-    L.info("Initialization of the linear program: started")
-    region_counts, id_counts = _compute_initial_cell_counts(
-        annotation, voxel_volume, average_densities, hierarchy_info
-    )
-
     L.info("Retrieving overall neuron counts in atomic 3D regions ...")
     neuron_counts = _compute_region_cell_counts(
         annotation, neuron_density, voxel_volume, hierarchy_info
     )
     assert np.all(neuron_counts["cell_count"] >= 0.0)
+
+    L.info("Initialization of the linear program: started")
+    region_counts, id_counts = _compute_initial_cell_counts(
+        annotation, voxel_volume, average_densities, hierarchy_info
+    )
 
     L.info("Setting the known values ...")
     x_result, deltas = set_known_values(region_counts, id_counts, hierarchy_info)
