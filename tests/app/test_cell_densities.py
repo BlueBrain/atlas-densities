@@ -76,6 +76,7 @@ def test_cell_density():
         result = runner.invoke(tested.app, args)
 
         assert result.exit_code == 0
+
         voxel_data = VoxelData.load_nrrd("overall_cell_density.nrrd")
         assert voxel_data.raw.dtype == float
 
@@ -124,12 +125,12 @@ def test_glia_cell_densities():
 
         neuron_density = VoxelData.load_nrrd("densities/neuron_density.nrrd")
         assert neuron_density.raw.dtype == np.float64
-        npt.assert_array_equal(neuron_density.shape, input_["annotation"].shape)
+        assert neuron_density.shape == input_["annotation"].shape
         assert np.all(neuron_density.raw >= 0.0)
 
         oligodendrocyte_density = VoxelData.load_nrrd("densities/oligodendrocyte_density.nrrd")
         assert oligodendrocyte_density.raw.dtype == np.float64
-        npt.assert_array_equal(neuron_density.shape, input_["annotation"].shape)
+        assert neuron_density.shape == input_["annotation"].shape
 
         # Check that an exception is thrown if voxel dimensions aren't consistent
         VoxelData(input_["cell_density"], voxel_dimensions=(10, 10, 10)).save_nrrd(
@@ -174,12 +175,12 @@ def test_inhibitory_and_excitatory_neuron_densities():
 
         inh_neuron_density = VoxelData.load_nrrd("densities/inhibitory_neuron_density.nrrd")
         assert inh_neuron_density.raw.dtype == np.float64
-        npt.assert_array_equal(inh_neuron_density.shape, input_["annotation"].shape)
+        assert inh_neuron_density.shape == input_["annotation"].shape
         assert np.all(inh_neuron_density.raw >= 0.0)
 
         exc_neuron_density = VoxelData.load_nrrd("densities/excitatory_neuron_density.nrrd")
         assert exc_neuron_density.raw.dtype == np.float64
-        npt.assert_array_equal(exc_neuron_density.shape, input_["annotation"].shape)
+        assert exc_neuron_density.shape == input_["annotation"].shape
         assert np.all(exc_neuron_density.raw >= 0.0)
 
         # Check that an exception is thrown if voxel dimensions aren't consistent
