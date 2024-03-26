@@ -28,7 +28,7 @@ import pandas as pd
 from atlas_commons.typing import AnnotationT, BoolArray, FloatArray
 from scipy.optimize import curve_fit
 from tqdm import tqdm
-from voxcell import voxel_data, RegionMap
+from voxcell import RegionMap, voxel_data
 
 from atlas_densities.densities import utils
 from atlas_densities.densities.measurement_to_density import remove_unknown_regions
@@ -270,25 +270,39 @@ def _apply_density_slices(gene_marker_volumes):
     return ret
 
 
-def _compute_average_intensities_helper(index, gene_marker_volumes, id_):
+def _compute_per_marker_intensity(annotation, gene_marker_volumes):
     """Compute the average intensity for `id_`, for all makers in `gene_marker_volumes`"""
-    voxel_ids = index.value_to_1d_indices(id_)
+    vtiv = voxel_data.ValueToIndexVoxels(annotation)
 
-    res = []
-    for marker, intensity in gene_marker_volumes.items():
-        mask_voxels = index.ravel(intensity["mask"])[voxel_ids]
-
-        count = mask_voxels.sum()
-
-        if count <= 0:
+    count_and_density = []
+    for id_ in vtiv.values:
+        if id_ == 0:
             continue
 
-        mean_density = index.ravel(intensity["intensity"])[voxel_ids][mask_voxels].sum() / count
+        voxel_ids = vtiv.value_to_1d_indices(id_)
 
-        if mean_density == 0.0:
-            L.warning("Mean density for id=%s and marker=%s", id_, marker)
-        res.append((marker.lower(), id_, count, mean_density))
+        res = []
+        for marker, intensity in gene_marker_volumes.items():
+            mask_voxels = vtiv.ravel(intensity["mask"])[voxel_ids]
 
+            count = mask_voxels.sum()
+
+            if count <= 0:
+                continue
+
+            mean_density = vtiv.ravel(intensity["intensity"])[voxel_ids][mask_voxels].sum() / count
+
+            if mean_density == 0.0:
+                L.warning("Mean density for id=%s and marker=%s", id_, marker)
+
+            count_and_density.append((marker.lower(), id_, count, mean_density))
+
+    res = (
+        pd.DataFrame(count_and_density, columns=["marker", "id", "voxel_count", "density"])
+        .set_index("id")
+        .pivot(columns="marker")
+        .swaplevel(axis=1)
+    )
     return res
 
 
@@ -330,22 +344,7 @@ def compute_average_intensities(
     """
     gene_marker_volumes = _apply_density_slices(gene_marker_volumes)
 
-    index = voxel_data.ValueToIndexVoxels(annotation)
-
-    _helper = _compute_average_intensities_helper
-    work = []
-    for id_ in index.values:
-        if id_ == 0:
-            continue
-        work.append(_helper(index, gene_marker_volumes, id_))
-
-    res = work
-    densities = (
-        pd.DataFrame(list(it.chain(*res)), columns=["marker", "id", "voxel_count", "density"])
-        .set_index("id")
-        .pivot(columns="marker")
-        .swaplevel(axis=1)
-    )
+    intensity = _compute_per_marker_intensity(annotation, gene_marker_volumes)
 
     region_map_df = region_map.as_dataframe()
     _add_depths(region_map_df)
@@ -359,7 +358,7 @@ def compute_average_intensities(
 
     for marker in gene_marker_volumes:
         df = pd.DataFrame(data=0.0, index=result.index, columns=["voxel_count", "density"])
-        df.update(densities[marker.lower()])
+        df.update(intensity[marker.lower()])
         _fill_densities(region_map, region_map_df, df)
         result[marker.lower()] = df["density"]
 
@@ -826,7 +825,10 @@ def linear_fitting(  # pylint: disable=too-many-arguments
         invert=True,
     )
     average_intensities = compute_average_intensities(
-        annotation, gene_marker_volumes, hierarchy_info, region_map
+        annotation,
+        gene_marker_volumes,
+        hierarchy_info.drop(hierarchy_info.index[indexes]),
+        region_map,
     )
 
     L.info("Computing fitting coefficients ...")

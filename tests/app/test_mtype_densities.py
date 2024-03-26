@@ -92,10 +92,9 @@ def test_mtype_densities_from_probability_map(tmp_path):
     runner = CliRunner()
     with runner.isolated_filesystem(temp_dir=tmp_path) as td:
         td = Path(td)
-        data["annotation"].save_nrrd(td / "annotation.nrrd")
-        with open(td / "hierarchy.json", "w", encoding="utf-8") as file:
-            json.dump(data["hierarchy"], file)
 
+        data["annotation"].save_nrrd(td / "annotation.nrrd")
+        write_json("hierarchy.json", data["hierarchy"])
         data["probability_map01"].to_csv(td / "probability_map01.csv", index=True)
         data["probability_map02"].to_csv(td / "probability_map02.csv", index=True)
 
