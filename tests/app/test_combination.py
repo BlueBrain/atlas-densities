@@ -104,15 +104,13 @@ def test_combine_markers(tmp_path):
         result = runner.invoke(
             tested.app,
             [
-                "--log-output-path",
-                str(td),
+                # fmt: off
+                "--log-output-path", td,
                 "combine-markers",
-                "--annotation-path",
-                "annotation.nrrd",
-                "--hierarchy-path",
-                str(TEST_PATH / "1.json"),
-                "--config",
-                str(TEST_PATH / "markers_config.yaml"),
+                "--annotation-path", "annotation.nrrd",
+                "--hierarchy-path", TEST_PATH / "1.json",
+                "--config", TEST_PATH / "markers_config.yaml",
+                # fmt: on
             ],
             catch_exceptions=False,
         )
@@ -145,22 +143,17 @@ def test_manipulate(tmp_path):
     result = runner.invoke(
         tested.app,
         [
+            # fmt: off
             "manipulate",
             "--clip",
-            "--base-nrrd",
-            nrrd,
-            "--add",
-            nrrd,
-            "--subtract",
-            nrrd,
-            "--add",
-            nrrd,
-            "--subtract",
-            nrrd,
-            "--subtract",
-            nrrd,
-            "--output-path",
-            tmp_path / "manipulate.nrrd",
+            "--base-nrrd", nrrd,
+            "--add", nrrd,
+            "--subtract", nrrd,
+            "--add", nrrd,
+            "--subtract", nrrd,
+            "--subtract", nrrd,
+            "--output-path", tmp_path / "manipulate.nrrd",
+            # fmt: on
         ],
         catch_exceptions=False,
     )
@@ -184,16 +177,14 @@ def test_manipulate_clip(tmp_path):
     result = runner.invoke(
         tested.app,
         [
+            # fmt: off
             "manipulate",
             "--clip",
-            "--base-nrrd",
-            nrrd,
-            "--subtract",
-            nrrd,
-            "--subtract",
-            nrrd,
-            "--output-path",
-            tmp_path / "manipulate.nrrd",
+            "--base-nrrd", nrrd,
+            "--subtract", nrrd,
+            "--subtract", nrrd,
+            "--output-path", tmp_path / "manipulate.nrrd",
+            # fmt: on
         ],
         catch_exceptions=False,
     )
@@ -205,15 +196,13 @@ def test_manipulate_clip(tmp_path):
     result = runner.invoke(
         tested.app,
         [
+            # fmt: off
             "manipulate",
-            "--base-nrrd",
-            nrrd,
-            "--subtract",
-            nrrd,
-            "--subtract",
-            nrrd,
-            "--output-path",
-            tmp_path / "manipulate.nrrd",
+            "--base-nrrd", nrrd,
+            "--subtract", nrrd,
+            "--subtract", nrrd,
+            "--output-path", tmp_path / "manipulate.nrrd",
+            # fmt: on
         ],
         catch_exceptions=False,
     )

@@ -34,26 +34,11 @@ from tests.densities.test_measurement_to_density import (
 from tests.densities.test_measurement_to_density import (
     get_input_data as get_measurement_to_density_input_data,
 )
+from tests.utils import write_json
 
 TEST_PATH = Path(__file__).parent.parent
 DATA_PATH = TEST_PATH.parent / "atlas_densities" / "app" / "data"
 MEASUREMENTS_PATH = DATA_PATH / "measurements"
-
-
-def _get_cell_density_result(runner):
-    args = [
-        "cell-density",
-        "--hierarchy-path",
-        str(Path(TEST_PATH, "1.json")),
-        "--annotation-path",
-        "annotation.nrrd",
-        "--nissl-path",
-        "nissl.nrrd",
-        "--output-path",
-        "overall_cell_density.nrrd",
-    ]
-
-    return runner.invoke(tested.app, args)
 
 
 def test_cell_density():
@@ -78,45 +63,46 @@ def test_cell_density():
     with runner.isolated_filesystem():
         for name, array in input_.items():
             VoxelData(array, voxel_dimensions=voxel_dimensions).save_nrrd(f"{name}.nrrd")
-        result = _get_cell_density_result(runner)
+
+        args = [
+            # fmt: off
+            "cell-density",
+            "--hierarchy-path", TEST_PATH / "1.json",
+            "--annotation-path", "annotation.nrrd",
+            "--nissl-path", "nissl.nrrd",
+            "--output-path", "overall_cell_density.nrrd",
+            # fmt: on
+        ]
+
+        result = runner.invoke(tested.app, args)
 
         assert result.exit_code == 0
+
         voxel_data = VoxelData.load_nrrd("overall_cell_density.nrrd")
         assert voxel_data.raw.dtype == float
 
         # An error should be raised if annotation and nissl don't use the same voxel dimensions
         VoxelData(np.ones((3, 1, 3)), voxel_dimensions=[10] * 3).save_nrrd("nissl.nrrd")
-        result = _get_cell_density_result(runner)
+        result = runner.invoke(tested.app, args)
         assert "voxel_dimensions" in str(result.exception)
 
 
-def _get_glia_cell_densities_result(runner):
+def test_glia_cell_densities():
     args = [
+        # fmt: off
         "glia-cell-densities",
-        "--annotation-path",
-        "annotation.nrrd",
-        "--hierarchy-path",
-        str(Path(TEST_PATH, "1.json")),
-        "--cell-density-path",
-        "cell_density.nrrd",
-        "--glia-density-path",
-        "glia_density.nrrd",
-        "--astrocyte-density-path",
-        "astrocyte_density.nrrd",
-        "--oligodendrocyte-density-path",
-        "oligodendrocyte_density.nrrd",
-        "--microglia-density-path",
-        "microglia_density.nrrd",
-        "--glia-proportions-path",
-        "glia_proportions.json",
-        "--output-dir",
-        "densities",
+        "--annotation-path", "annotation.nrrd",
+        "--hierarchy-path", TEST_PATH / "1.json",
+        "--cell-density-path", "cell_density.nrrd",
+        "--glia-density-path", "glia_density.nrrd",
+        "--astrocyte-density-path", "astrocyte_density.nrrd",
+        "--oligodendrocyte-density-path", "oligodendrocyte_density.nrrd",
+        "--microglia-density-path", "microglia_density.nrrd",
+        "--glia-proportions-path", "glia_proportions.json",
+        "--output-dir", "densities",
+        # fmt: on
     ]
 
-    return runner.invoke(tested.app, args)
-
-
-def test_glia_cell_densities():
     glia_cell_count = sum(glia_cell_counts().values())
     input_ = get_glia_input_data(glia_cell_count)
     runner = CliRunner()
@@ -132,25 +118,26 @@ def test_glia_cell_densities():
             VoxelData(unconstrained_density, voxel_dimensions=voxel_dimensions).save_nrrd(
                 glia_type + "_density.nrrd"
             )
-        with open("glia_proportions.json", "w", encoding="utf-8") as out:
-            json.dump(input_["glia_proportions"], out)
-        result = _get_glia_cell_densities_result(runner)
+
+        write_json("glia_proportions.json", input_["glia_proportions"])
+
+        result = runner.invoke(tested.app, args)
         assert result.exit_code == 0
 
         neuron_density = VoxelData.load_nrrd("densities/neuron_density.nrrd")
         assert neuron_density.raw.dtype == np.float64
-        npt.assert_array_equal(neuron_density.shape, input_["annotation"].shape)
+        assert neuron_density.shape == input_["annotation"].shape
         assert np.all(neuron_density.raw >= 0.0)
 
         oligodendrocyte_density = VoxelData.load_nrrd("densities/oligodendrocyte_density.nrrd")
         assert oligodendrocyte_density.raw.dtype == np.float64
-        npt.assert_array_equal(neuron_density.shape, input_["annotation"].shape)
+        assert neuron_density.shape == input_["annotation"].shape
 
         # Check that an exception is thrown if voxel dimensions aren't consistent
         VoxelData(input_["cell_density"], voxel_dimensions=(10, 10, 10)).save_nrrd(
             "cell_density.nrrd"
         )
-        result = _get_glia_cell_densities_result(runner)
+        result = runner.invoke(tested.app, args)
         assert "voxel_dimensions" in str(result.exception)
 
         # Check that an exception is thrown if the input cell density has negative values
@@ -158,31 +145,23 @@ def test_glia_cell_densities():
         VoxelData(input_["cell_density"], voxel_dimensions=(10, 10, 10)).save_nrrd(
             "cell_density.nrrd"
         )
-        result = _get_glia_cell_densities_result(runner)
+        result = runner.invoke(tested.app, args)
         assert "Negative density value" in str(result.exception)
 
 
-def _get_inh_and_exc_neuron_densities_result(runner):
+def test_inhibitory_and_excitatory_neuron_densities():
     args = [
+        # fmt: off
         "inhibitory-and-excitatory-neuron-densities",
-        "--annotation-path",
-        "annotation.nrrd",
-        "--hierarchy-path",
-        str(Path(TEST_PATH, "1.json")),
-        "--gad1-path",
-        "gad1.nrrd",
-        "--nrn1-path",
-        "nrn1.nrrd",
-        "--neuron-density-path",
-        "neuron_density.nrrd",
-        "--output-dir",
-        "densities",
+        "--annotation-path", "annotation.nrrd",
+        "--hierarchy-path", TEST_PATH / "1.json",
+        "--gad1-path", "gad1.nrrd",
+        "--nrn1-path", "nrn1.nrrd",
+        "--neuron-density-path", "neuron_density.nrrd",
+        "--output-dir", "densities",
+        # fmt: on
     ]
 
-    return runner.invoke(tested.app, args)
-
-
-def test_inhibitory_and_excitatory_neuron_densities():
     inhibitory_df = extract_inhibitory_neurons_dataframe(Path(MEASUREMENTS_PATH, "mmc1.xlsx"))
     neuron_count = inhibitory_data(inhibitory_df)["neuron_count"]
     input_ = get_inhibitory_neuron_input_data(neuron_count)
@@ -192,24 +171,24 @@ def test_inhibitory_and_excitatory_neuron_densities():
         for name in ["annotation", "neuron_density", "gad1", "nrn1"]:
             VoxelData(input_[name], voxel_dimensions=voxel_dimensions).save_nrrd(name + ".nrrd")
 
-        result = _get_inh_and_exc_neuron_densities_result(runner)
+        result = runner.invoke(tested.app, args)
         assert result.exit_code == 0
 
         inh_neuron_density = VoxelData.load_nrrd("densities/inhibitory_neuron_density.nrrd")
         assert inh_neuron_density.raw.dtype == np.float64
-        npt.assert_array_equal(inh_neuron_density.shape, input_["annotation"].shape)
+        assert inh_neuron_density.shape == input_["annotation"].shape
         assert np.all(inh_neuron_density.raw >= 0.0)
 
         exc_neuron_density = VoxelData.load_nrrd("densities/excitatory_neuron_density.nrrd")
         assert exc_neuron_density.raw.dtype == np.float64
-        npt.assert_array_equal(exc_neuron_density.shape, input_["annotation"].shape)
+        assert exc_neuron_density.shape == input_["annotation"].shape
         assert np.all(exc_neuron_density.raw >= 0.0)
 
         # Check that an exception is thrown if voxel dimensions aren't consistent
         VoxelData(input_["neuron_density"], voxel_dimensions=(10, 10, 10)).save_nrrd(
             "neuron_density.nrrd"
         )
-        result = _get_inh_and_exc_neuron_densities_result(runner)
+        result = runner.invoke(tested.app, args)
         assert "voxel_dimensions" in str(result.exception)
 
         # Check that an exception is thrown if the input neuron density has negative values
@@ -217,27 +196,22 @@ def test_inhibitory_and_excitatory_neuron_densities():
         VoxelData(input_["neuron_density"], voxel_dimensions=(25, 25, 25)).save_nrrd(
             "neuron_density.nrrd"
         )
-        result = _get_inh_and_exc_neuron_densities_result(runner)
+        result = runner.invoke(tested.app, args)
         assert "Negative density value" in str(result.exception)
-
-
-def _get_compile_measurements_result(runner):
-    args = [
-        "compile-measurements",
-        "--measurements-output-path",
-        "measurements.csv",
-        "--homogenous-regions-output-path",
-        "homogenous_regions.csv",
-    ]
-
-    return runner.invoke(tested.app, args)
 
 
 @pytest.mark.filterwarnings("ignore::atlas_densities.exceptions.AtlasDensitiesWarning")
 def test_compile_measurements():
+    args = [
+        # fmt: off
+        "compile-measurements",
+        "--measurements-output-path", "measurements.csv",
+        "--homogenous-regions-output-path", "homogenous_regions.csv",
+        # fmt: on
+    ]
     runner = CliRunner()
     with runner.isolated_filesystem():
-        result = _get_compile_measurements_result(runner)
+        result = runner.invoke(tested.app, args)
         assert result.exit_code == 0
 
         dataframe = pd.read_csv("measurements.csv")
@@ -267,21 +241,16 @@ def test_compile_measurements():
 
 def _get_measurements_to_average_densities_result(runner, hierarchy_path, measurements_path):
     args = [
+        # fmt: off
         "measurements-to-average-densities",
-        "--hierarchy-path",
-        hierarchy_path,
-        "--annotation-path",
-        "annotation.nrrd",
-        "--region-name",
-        "Basic cell groups and regions",
-        "--cell-density-path",
-        "cell_density.nrrd",
-        "--neuron-density-path",
-        "neuron_density.nrrd",
-        "--measurements-path",
-        measurements_path,
-        "--output-path",
-        "average_densities.csv",
+        "--hierarchy-path", hierarchy_path,
+        "--annotation-path", "annotation.nrrd",
+        "--region-name", "Basic cell groups and regions",
+        "--cell-density-path", "cell_density.nrrd",
+        "--neuron-density-path", "neuron_density.nrrd",
+        "--measurements-path", measurements_path,
+        "--output-path", "average_densities.csv",
+        # fmt: on
     ]
 
     return runner.invoke(tested.app, args)
@@ -295,8 +264,7 @@ def test_measurements_to_average_densities():
         for name in ["annotation", "cell_density", "neuron_density"]:
             VoxelData(input_[name], voxel_dimensions=voxel_dimensions).save_nrrd(name + ".nrrd")
         input_["measurements"].to_csv("measurements.csv", index=False)
-        with open("hierarchy.json", "w", encoding="utf-8") as out:
-            json.dump(input_["hierarchy"], out, indent=1, separators=(",", ": "))
+        write_json("hierarchy.json", input_["hierarchy"])
 
         result = _get_measurements_to_average_densities_result(
             runner, hierarchy_path="hierarchy.json", measurements_path="measurements.csv"
@@ -320,32 +288,21 @@ def test_measurements_to_average_densities():
         assert np.all(actual["measurement_unit"] == "number of cells per mm^3")
 
 
-def _get_fitting_result(runner):
-    args = [
-        "fit-average-densities",
-        "--hierarchy-path",
-        "hierarchy.json",
-        "--annotation-path",
-        "annotation.nrrd",
-        "--neuron-density-path",
-        "neuron_density.nrrd",
-        "--gene-config-path",
-        "gene_config.yaml",
-        "--average-densities-path",
-        "average_densities.csv",
-        "--homogenous-regions-path",
-        "homogenous_regions.csv",
-        "--fitted-densities-output-path",
-        "fitted_densities.csv",
-        "--fitting-maps-output-path",
-        "fitting_maps.json",
-    ]
-
-    return runner.invoke(tested.app, args)
-
-
 @pytest.mark.filterwarnings("ignore::atlas_densities.exceptions.AtlasDensitiesWarning")
 def test_fit_average_densities():
+    args = [
+        # fmt: off
+        "fit-average-densities",
+        "--hierarchy-path", "hierarchy.json",
+        "--annotation-path", "annotation.nrrd",
+        "--neuron-density-path", "neuron_density.nrrd",
+        "--gene-config-path", "gene_config.yaml",
+        "--average-densities-path", "average_densities.csv",
+        "--homogenous-regions-path", "homogenous_regions.csv",
+        "--fitted-densities-output-path", "fitted_densities.csv",
+        "--fitting-maps-output-path", "fitting_maps.json",
+        # fmt: on
+    ]
     runner = CliRunner()
     with runner.isolated_filesystem():
         input_ = get_fitting_input_data()
@@ -359,14 +316,9 @@ def test_fit_average_densities():
         input_["homogenous_regions"].to_csv("homogenous_regions.csv", index=False)
         input_["average_densities"].to_csv("average_densities.csv", index=False)
 
-        with open("hierarchy.json", "w", encoding="utf-8") as out:
-            json.dump(input_["hierarchy"], out, indent=1, separators=(",", ": "))
-
-        with open("realigned_slices.json", "w", encoding="utf-8") as out:
-            json.dump(input_["realigned_slices"], out, indent=1, separators=(",", ": "))
-
-        with open("std_cells.json", "w", encoding="utf-8") as out:
-            json.dump(input_["cell_density_stddevs"], out, indent=1, separators=(",", ": "))
+        write_json("hierarchy.json", input_["hierarchy"])
+        write_json("realigned_slices.json", input_["realigned_slices"])
+        write_json("std_cells.json", input_["cell_density_stddevs"])
 
         with open("gene_config.yaml", "w", encoding="utf-8") as out:
             gene_config = {
@@ -386,7 +338,7 @@ def test_fit_average_densities():
 
             yaml.dump(gene_config, out)
 
-        result = _get_fitting_result(runner)
+        result = runner.invoke(tested.app, args)
         assert result.exit_code == 0
 
         densities = pd.read_csv("fitted_densities.csv")
@@ -411,7 +363,7 @@ def test_fit_average_densities():
         VoxelData(input_["neuron_density"], voxel_dimensions=(10, 10, 10)).save_nrrd(
             "neuron_density.nrrd"
         )
-        result = _get_fitting_result(runner)
+        result = runner.invoke(tested.app, args)
         assert "Negative density value" in str(result.exception)
 
 

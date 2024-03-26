@@ -23,27 +23,23 @@ from tests.densities.test_mtype_densities_from_profiles import (
     create_inhibitory_neuron_density,
     create_slicer_data,
 )
+from tests.utils import write_json
 
 
 def get_result_from_profiles(runner, td):
     return runner.invoke(
         tested.app,
         [
-            "--log-output-path",
-            str(td),
+            # fmt: off
+            "--log-output-path", td,
             "create-from-profile",
-            "--annotation-path",
-            "annotation.nrrd",
-            "--hierarchy-path",
-            "hierarchy.json",
-            "--metadata-path",
-            "metadata.json",
-            "--direction-vectors-path",
-            "direction_vectors.nrrd",
-            "--mtypes-config-path",
-            "config.yaml",
-            "--output-dir",
-            "output_dir",
+            "--annotation-path", "annotation.nrrd",
+            "--hierarchy-path", "hierarchy.json",
+            "--metadata-path", "metadata.json",
+            "--direction-vectors-path", "direction_vectors.nrrd",
+            "--mtypes-config-path", "config.yaml",
+            "--output-dir", "output_dir",
+            # fmt: on
         ],
     )
 
@@ -56,10 +52,8 @@ def test_mtype_densities_from_profiles(tmp_path):
         data = create_slicer_data()
         data["annotation"].save_nrrd("annotation.nrrd")
         data["annotation"].with_data(data["direction_vectors"]).save_nrrd("direction_vectors.nrrd")
-        with open("metadata.json", "w", encoding="utf-8") as file_:
-            json.dump(data["metadata"], file_)
-        with open("hierarchy.json", "w", encoding="utf-8") as file_:
-            json.dump(data["hierarchy"], file_)
+        write_json("metadata.json", data["metadata"])
+        write_json("hierarchy.json", data["hierarchy"])
         with open("config.yaml", "w", encoding="utf-8") as file_:
             config = {
                 "mtypeToProfileMapPath": str(DATA_PATH / "meta" / "mapping.tsv"),
@@ -97,74 +91,53 @@ def get_result_from_probablity_map_(runner, td):
     return runner.invoke(
         tested.app,
         [
-            "--log-output-path",
-            str(td),
+            # fmt: off
+            "--log-output-path", td,
             "create-from-probability-map",
-            "--annotation-path",
-            "annotation.nrrd",
-            "--hierarchy-path",
-            "hierarchy.json",
-            "--probability-map",
-            "probability_map01.csv",
-            "--probability-map",
-            "probability_map02.csv",
-            "--marker",
-            "pv",
-            "pv.nrrd",
-            "--marker",
-            "sst",
-            "sst.nrrd",
-            "--marker",
-            "vip",
-            "vip.nrrd",
-            "--marker",
-            "gad67",
-            "gad67.nrrd",
-            "--marker",
-            "approx_lamp5",
-            "approx_lamp5.nrrd",
-            "--synapse-class",
-            "EXC",
-            "--output-dir",
-            "output_dir",
+            "--annotation-path", "annotation.nrrd",
+            "--hierarchy-path", "hierarchy.json",
+            "--probability-map", "probability_map01.csv",
+            "--probability-map", "probability_map02.csv",
+            "--marker", "pv", "pv.nrrd",
+            "--marker", "sst", "sst.nrrd",
+            "--marker", "vip", "vip.nrrd",
+            "--marker", "gad67", "gad67.nrrd",
+            "--marker", "approx_lamp5", "approx_lamp5.nrrd",
+            "--synapse-class", "EXC",
+            "--output-dir", "output_dir",
+            # fmt: on
         ],
     )
 
 
-class Test_mtype_densities_from_probability_map:
-    def setup_method(self, method):
-        self.data = create_from_probability_map_data()
+def test_mtype_densities_from_probability_map(tmp_path):
+    data = create_from_probability_map_data()
+    runner = CliRunner()
+    with runner.isolated_filesystem(temp_dir=tmp_path) as td:
+        data["annotation"].save_nrrd("annotation.nrrd")
+        write_json("hierarchy.json", data["hierarchy"])
 
-    def save_input_data_to_file(self):
-        self.data["annotation"].save_nrrd("annotation.nrrd")
-        with open("hierarchy.json", "w", encoding="utf-8") as file:
-            json.dump(self.data["hierarchy"], file)
+        data["probability_map01"].to_csv("probability_map01.csv", index=True)
+        data["probability_map02"].to_csv("probability_map02.csv", index=True)
 
-        self.data["probability_map01"].to_csv("probability_map01.csv", index=True)
-        self.data["probability_map02"].to_csv("probability_map02.csv", index=True)
-
-        for molecular_type, data in self.data["molecular_type_densities"].items():
+        for molecular_type, raw_data in data["molecular_type_densities"].items():
             VoxelData(
-                data,
-                voxel_dimensions=self.data["annotation"].voxel_dimensions,
+                raw_data,
+                voxel_dimensions=data["annotation"].voxel_dimensions,
             ).save_nrrd(f"{molecular_type}.nrrd")
 
-    def test_output(self, tmp_path):
-        runner = CliRunner()
-        with runner.isolated_filesystem(temp_dir=tmp_path) as td:
-            self.save_input_data_to_file()
-            result = get_result_from_probablity_map_(runner, td)
-            assert result.exit_code == 0
+        result = get_result_from_probablity_map_(runner, td)
+        assert result.exit_code == 0
 
-            BPbAC = VoxelData.load_nrrd(str(Path("output_dir") / "BP|bAC_EXC_densities.nrrd"))
-            assert BPbAC.raw.dtype == float
-            npt.assert_array_equal(BPbAC.voxel_dimensions, self.data["annotation"].voxel_dimensions)
+        BPbAC = VoxelData.load_nrrd(str(Path("output_dir") / "BP|bAC_EXC_densities.nrrd"))
+        assert BPbAC.raw.dtype == float
+        npt.assert_array_equal(BPbAC.voxel_dimensions, data["annotation"].voxel_dimensions)
 
-            with open(str(Path("output_dir") / "metadata.json"), "r") as file:
-                metadata = json.load(file)
-            assert "BP" in metadata["density_files"]
-            assert "bAC" in metadata["density_files"]["BP"]
-            assert "EXC" == metadata["synapse_class"]
+        with open(str(Path("output_dir") / "metadata.json"), "r") as file:
+            metadata = json.load(file)
+        assert "BP" in metadata["density_files"]
+        assert "bAC" in metadata["density_files"]["BP"]
+        assert "EXC" == metadata["synapse_class"]
 
 
 class Test_mtype_densities_from_composition:
@@ -236,8 +209,7 @@ class Test_mtype_densities_from_composition:
                 },
             ],
         }
-        with open(path, "w", encoding="utf-8") as jsonfile:
-            json.dump(hierarchy, jsonfile, indent=1, separators=(",", ": "))
+        write_json(path, hierarchy)
         return path
 
     @pytest.fixture(scope="session")
@@ -264,9 +236,7 @@ class Test_mtype_densities_from_composition:
                 "with_descendants": True,
             },
         }
-        with open(path, "w", encoding="utf-8") as jsonfile:
-            json.dump(metadata, jsonfile, indent=1)
-
+        write_json(path, metadata)
         return path
 
     @pytest.fixture(scope="session")
@@ -403,20 +373,15 @@ class Test_mtype_densities_from_composition:
             result = runner.invoke(
                 tested.create_from_composition,
                 [
-                    "--annotation-path",
-                    annotation_path,
-                    "--hierarchy-path",
-                    hierarchy_path,
-                    "--metadata-path",
-                    metadata_path,
-                    "--excitatory-neuron-density-path",
-                    density_path,
-                    "--taxonomy-path",
-                    taxonomy_path,
-                    "--composition-path",
-                    composition_path,
-                    "--output-dir",
-                    output_dir,
+                    # fmt: off
+                    "--annotation-path", annotation_path,
+                    "--hierarchy-path", hierarchy_path,
+                    "--metadata-path", metadata_path,
+                    "--excitatory-neuron-density-path", density_path,
+                    "--taxonomy-path", taxonomy_path,
+                    "--composition-path", composition_path,
+                    "--output-dir", output_dir,
+                    # fmt: on
                 ],
             )
 
