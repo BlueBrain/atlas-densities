@@ -18,6 +18,7 @@ import numpy as np
 from atlas_commons.typing import FloatArray
 from joblib import Parallel, delayed
 from tqdm import tqdm
+from voxcell.voxel_data import ValueToIndexVoxels
 
 from atlas_densities.densities.mtype_densities_from_map.utils import (
     _check_probability_map_consistency,
@@ -95,34 +96,33 @@ def create_from_probability_map(  # pylint: disable=too-many-arguments
         .set_index("acronym")
         .loc[probability_map.index.get_level_values("region")]
         .reset_index()[["region", "id"]]
+        .drop_duplicates(subset="region")
+        .reset_index(drop=True)
     )
-    region_acronyms = set(region_info.region)
-
-    region_masks = {
-        region_acronym: annotation.raw == region_id
-        for _, region_acronym, region_id in region_info.itertuples()
-    }
+    region_index = ValueToIndexVoxels(annotation.raw)
 
     # ensure output directory exists
     Path(output_dirpath).mkdir(exist_ok=True, parents=True)
 
     def _create_densities_for_metype(metype: str) -> Optional[Tuple[str, str]]:
         coefficients: Dict[str, Dict[str, Any]] = {}
-        for region_acronym in region_acronyms:
+        for region_acronym in region_info.region:
             coefficients[region_acronym] = {
                 molecular_type: probability_map.at[(region_acronym, molecular_type), metype]
                 for molecular_type in list(molecular_type_densities.keys())
                 if (region_acronym, molecular_type) in probability_map.index
             }
 
-        metype_density = np.zeros(annotation.shape, dtype=float)
-        for region_acronym in region_acronyms:
-            region_mask = region_masks[region_acronym]
+        metype_density = region_index.ravel(np.zeros(annotation.shape, dtype=float))
+        for region_acronym, region_id in region_info.itertuples(index=False):
+
+            region_indices = region_index.value_to_1d_indices(region_id)
             for molecular_type, coefficient in coefficients[region_acronym].items():
                 if coefficient <= 0.0:
                     continue
-                density = molecular_type_densities[molecular_type]
-                metype_density[region_mask] += density[region_mask] * coefficient
+                density = region_index.ravel(molecular_type_densities[molecular_type])
+                metype_density[region_indices] += density[region_indices] * coefficient
+        metype_density = np.reshape(metype_density, annotation.shape, order=region_index._order)
 
         if np.any(metype_density):
             # save density file
@@ -137,7 +137,7 @@ def create_from_probability_map(  # pylint: disable=too-many-arguments
     returns = Parallel(n_jobs=n_jobs, return_as="generator")(
         delayed(_create_densities_for_metype)(metype) for metype in probability_map.columns
     )
-
+    #returns = [_create_densities_for_metype(metype) for metype in probability_map.columns[0:10]]
     # construct metadata
     output_legend: Dict[str, Dict[str, str]] = defaultdict(dict)
     for return_value in tqdm(returns, total=len(probability_map.columns)):
