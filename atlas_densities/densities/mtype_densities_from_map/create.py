@@ -125,7 +125,7 @@ def create_from_probability_map(  # pylint: disable=too-many-arguments
                 density = annotation_index.ravel(molecular_type_densities[molecular_type])
                 metype_density[region_indices] += density[region_indices] * coefficient
 
-        # reshape the 1d metype_density array  ack to the annotation's shape
+        # reshape the 1d metype_density array back to the annotation's shape
         metype_density = annotation_index.unravel(metype_density)
 
         if np.any(metype_density):
