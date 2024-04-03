@@ -141,6 +141,7 @@ def create_from_probability_map(  # pylint: disable=too-many-arguments
     returns = Parallel(n_jobs=n_jobs, return_as="generator")(
         delayed(_create_densities_for_metype)(metype) for metype in probability_map.columns
     )
+
     # construct metadata
     output_legend: Dict[str, Dict[str, str]] = defaultdict(dict)
     for return_value in tqdm(returns, total=len(probability_map.columns)):
