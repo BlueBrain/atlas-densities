@@ -99,7 +99,7 @@ def create_from_probability_map(  # pylint: disable=too-many-arguments
         .drop_duplicates(subset="region")
         .reset_index(drop=True)
     )
-    region_index = ValueToIndexVoxels(annotation.raw)
+    annotation_index = ValueToIndexVoxels(annotation.raw)
 
     # ensure output directory exists
     Path(output_dirpath).mkdir(exist_ok=True, parents=True)
@@ -113,16 +113,20 @@ def create_from_probability_map(  # pylint: disable=too-many-arguments
                 if (region_acronym, molecular_type) in probability_map.index
             }
 
-        metype_density = region_index.ravel(np.zeros(annotation.shape, dtype=float))
+        # perform the manipulation in the 1d flat array
+        metype_density = np.zeros(np.prod(annotation.shape), dtype=float)
+
         for region_acronym, region_id in region_info.itertuples(index=False):
 
-            region_indices = region_index.value_to_1d_indices(region_id)
+            region_indices = annotation_index.value_to_1d_indices(region_id)
             for molecular_type, coefficient in coefficients[region_acronym].items():
                 if coefficient <= 0.0:
                     continue
-                density = region_index.ravel(molecular_type_densities[molecular_type])
+                density = annotation_index.ravel(molecular_type_densities[molecular_type])
                 metype_density[region_indices] += density[region_indices] * coefficient
-        metype_density = np.reshape(metype_density, annotation.shape, order=region_index._order)
+
+        # reshape the 1d metype_density array  ack to the annotation's shape
+        metype_density = annotation_index.unravel(metype_density)
 
         if np.any(metype_density):
             # save density file
