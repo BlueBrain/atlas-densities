@@ -28,7 +28,7 @@ setup(
         # from the HiGHS library. We use the "highs" method in the densities module.
         "scipy>=1.6.0",
         "tqdm>=4.44.1",
-        "voxcell>=3.1.7",
+        "voxcell>=3.1.8",  # ValueToIndexVoxels ravel/unravel
     ],
     extras_require={
         "tests": [
