@@ -33,6 +33,7 @@ from voxcell import RegionMap, voxel_data
 from atlas_densities.densities import utils
 from atlas_densities.densities.measurement_to_density import remove_unknown_regions
 from atlas_densities.exceptions import AtlasDensitiesError, AtlasDensitiesWarning
+import json
 
 L = logging.getLogger(__name__)
 
@@ -367,7 +368,8 @@ def compute_average_intensities(
 
 
 def linear_fitting_xy(
-    xdata: list[float], ydata: list[float], sigma: Union[list[float], FloatArray]
+    xdata: list[float], ydata: list[float], sigma: Union[list[float], FloatArray],
+    min_data_points: int = 5
 ) -> dict[str, float]:
     """
     Compute the coefficient of the linear least-squares regression of the point cloud
@@ -380,6 +382,10 @@ def linear_fitting_xy(
             These are the standard deviations of the values in `ydata`.
             Zero values are replaced by the least positive value if it exists,
             otherwise by 1.0.
+        min_data_points: minimum number of datapoints required for running
+            the linear regression. If the number of datapoints is less than
+            min_data_points then no fitting is done, and np.nan values are
+            returned.
 
     Returns:
         a dict of the form {"coefficient": <float>,
@@ -390,8 +396,8 @@ def linear_fitting_xy(
        AtlasDensitiesError if some of the `sigma`values are negative.
     """
 
-    if len(xdata) == 0:
-        return {"coefficient": np.nan, "standard_deviation": np.nan}
+    if len(xdata) < min_data_points:
+        return {"coefficient": np.nan, "standard_deviation": np.nan, "r_square": np.nan}
 
     sigma = np.array(sigma)
     if np.any(sigma < 0.0):
@@ -422,6 +428,7 @@ def linear_fitting_xy(
     )
     ss_reg = np.sum((_optimize_func(xdata, parameters[0][0]) - np.mean(ydata)) ** 2)
     ss_tot = np.sum((np.array(ydata) - _optimize_func(xdata, parameters[0][0])) ** 2) + ss_reg
+    L.debug(f"Length of xdata = {xdata}.The ss_reg is {ss_reg} and ss_tot is {ss_tot}\n")
     # if total sum of square is null, no variance can be explained by the fitting
     return {
         "coefficient": parameters[0][0],
@@ -545,6 +552,8 @@ def compute_fitting_coefficients(
         L.info("Computing regression coefficients for %d cell types ...", len(cell_types))
         for cell_type in tqdm(cell_types):
             cloud = clouds[group_name][cell_type]
+            L.debug(
+                f"The length of training data for {group_name} and {cell_type} is {cloud['xdata']}")
             result[group_name][cell_type] = linear_fitting_xy(
                 cloud["xdata"], cloud["ydata"], cloud["sigma"]
             )
