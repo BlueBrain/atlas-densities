@@ -372,28 +372,20 @@ def test_get_hierarchy(region_map):
     )
 
 
-@pytest.fixture
-def annotation():
-    return np.array([[[920, 10710, 10710], [10709, 10708, 976], [10708, 10710, 10709]]])
-
-
-@pytest.fixture
-def volumes(voxel_volume=2):
+def test_compute_region_volumes():
+    voxel_volume = 2.0
+    annotation = np.array([[[920, 10710, 10710], [10709, 10708, 976], [10708, 10710, 10709]]])
     hierarchy_info = get_hierarchy_info()
-    return pd.DataFrame(
+    hierarchy_info.loc[42] = ("VolumeLess", set())
+    expected = pd.DataFrame(
         {
             "brain_region": hierarchy_info["brain_region"],
-            "id_volume": voxel_volume * np.array([1.0, 1.0, 2.0, 2.0, 3.0], dtype=float),
-            "volume": voxel_volume * np.array([9.0, 8.0, 2.0, 2.0, 3.0], dtype=float),
+            "id_volume": voxel_volume * np.array([1.0, 1.0, 2.0, 2.0, 3.0, 0.0], dtype=float),
+            "volume": voxel_volume * np.array([9.0, 8.0, 2.0, 2.0, 3.0, 0.0], dtype=float),
         },
         index=hierarchy_info.index,
     )
-
-
-def test_compute_region_volumes(volumes, annotation):
-    pdt.assert_frame_equal(
-        volumes,  # expected
-        tested.compute_region_volumes(
-            annotation, voxel_volume=2.0, hierarchy_info=get_hierarchy_info()
-        ),
+    res = tested.compute_region_volumes(
+        annotation, voxel_volume=voxel_volume, hierarchy_info=hierarchy_info
     )
+    pdt.assert_frame_equal(expected, res)
