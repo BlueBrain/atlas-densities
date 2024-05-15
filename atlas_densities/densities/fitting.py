@@ -33,7 +33,6 @@ from voxcell import RegionMap, voxel_data
 from atlas_densities.densities import utils
 from atlas_densities.densities.measurement_to_density import remove_unknown_regions
 from atlas_densities.exceptions import AtlasDensitiesError, AtlasDensitiesWarning
-import json
 
 L = logging.getLogger(__name__)
 
@@ -368,8 +367,10 @@ def compute_average_intensities(
 
 
 def linear_fitting_xy(
-    xdata: list[float], ydata: list[float], sigma: Union[list[float], FloatArray],
-    min_data_points: int = 5
+    xdata: list[float],
+    ydata: list[float],
+    sigma: Union[list[float], FloatArray],
+    min_data_points: int,
 ) -> dict[str, float]:
     """
     Compute the coefficient of the linear least-squares regression of the point cloud
@@ -441,7 +442,10 @@ FittingData = Dict[str, Dict[str, Dict[str, float]]]
 
 
 def compute_fitting_coefficients(
-    groups: dict[str, set[str]], average_intensities: pd.DataFrame, densities: pd.DataFrame
+    groups: dict[str, set[str]],
+    average_intensities: pd.DataFrame,
+    densities: pd.DataFrame,
+    min_data_points: int,
 ) -> FittingData:
     """
     Compute the linear fitting coefficient of the cloud of 2D points (average marker intensity,
@@ -553,9 +557,10 @@ def compute_fitting_coefficients(
         for cell_type in tqdm(cell_types):
             cloud = clouds[group_name][cell_type]
             L.debug(
-                f"The length of training data for {group_name} and {cell_type} is {cloud['xdata']}")
+                f"The length of training data for {group_name} and {cell_type} is {cloud['xdata']}"
+            )
             result[group_name][cell_type] = linear_fitting_xy(
-                cloud["xdata"], cloud["ydata"], cloud["sigma"]
+                cloud["xdata"], cloud["ydata"], cloud["sigma"], min_data_points
             )
             if np.isnan(result[group_name][cell_type]["coefficient"]):
                 warnings.warn(
@@ -739,6 +744,7 @@ def linear_fitting(  # pylint: disable=too-many-arguments
     cell_density_stddevs: Optional[dict[str, float]] = None,
     region_name: str = "root",
     group_ids_config: dict | None = None,
+    min_data_points: int = 5,
 ) -> pd.DataFrame:
     """
     Estimate the average densities of every region in `region_map` using a linear fitting
@@ -781,6 +787,10 @@ def linear_fitting(  # pylint: disable=too-many-arguments
             standard deviations of average cell densities of the corresponding regions.
         region_name: (str) name of the root region of interest
         group_ids_config: mapping of regions to their constituent ids
+        min_data_points: minimum number of datapoints required for running
+            the linear regression. If the number of datapoints is less than
+            min_data_points then no fitting is done, and np.nan values are
+            returned.
 
     Returns:
         tuple (densities, fitting_coefficients)
@@ -842,8 +852,8 @@ def linear_fitting(  # pylint: disable=too-many-arguments
 
     L.info("Computing fitting coefficients ...")
     fitting_coefficients = compute_fitting_coefficients(
-        groups, average_intensities, densities.drop(densities.index[indexes])
-    )
+        groups, average_intensities, densities.drop(densities.index[indexes]),
+    min_data_points=min_data_points)
     L.info("Fitting unknown average densities ...")
     fit_unknown_densities(groups, average_intensities, densities, fitting_coefficients)
 

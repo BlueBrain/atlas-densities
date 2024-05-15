@@ -808,6 +808,13 @@ def measurements_to_average_densities(
     help="Path to density groups ids config",
     show_default=True,
 )
+@click.option(
+    "--min-data-points",
+    type=int,
+    default=5,
+    help="minimum number of datapoints required for running the linear regression.",
+    show_default=True,
+)
 @log_args(L)
 def fit_average_densities(
     hierarchy_path,
@@ -820,6 +827,7 @@ def fit_average_densities(
     fitted_densities_output_path,
     fitting_maps_output_path,
     group_ids_config_path,
+    min_data_points,
 ):  # pylint: disable=too-many-arguments, too-many-locals
     """
     Estimate average cell densities of brain regions in `hierarchy_path` for the cell types
@@ -935,6 +943,7 @@ def fit_average_densities(
         cell_density_stddev,
         region_name=region_name,
         group_ids_config=group_ids_config,
+        min_data_points=min_data_points,
     )
 
     # Turn index into column to ease off the save and load operations on csv files
