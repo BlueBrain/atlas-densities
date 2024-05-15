@@ -811,7 +811,7 @@ def measurements_to_average_densities(
 @click.option(
     "--min-data-points",
     type=int,
-    default=5,
+    default=1,
     help="minimum number of datapoints required for running the linear regression.",
     show_default=True,
 )

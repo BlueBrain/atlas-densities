@@ -429,7 +429,7 @@ def linear_fitting_xy(
     )
     ss_reg = np.sum((_optimize_func(xdata, parameters[0][0]) - np.mean(ydata)) ** 2)
     ss_tot = np.sum((np.array(ydata) - _optimize_func(xdata, parameters[0][0])) ** 2) + ss_reg
-    L.debug(f"Length of xdata = {xdata}.The ss_reg is {ss_reg} and ss_tot is {ss_tot}\n")
+    L.debug("Length of xdata = %s.  The ss_reg is %s and ss_tot is %s", xdata, ss_reg, ss_tot)
     # if total sum of square is null, no variance can be explained by the fitting
     return {
         "coefficient": parameters[0][0],
@@ -488,7 +488,7 @@ def compute_fitting_coefficients(
         The "standard_deviation" value is the standard deviation of the coefficient value.
         The "r_square" value is the coefficient of determination of the coefficient value.
     """
-
+    # pylint: disable=too-many-locals
     if len(densities.index) != len(average_intensities.index) or np.any(
         densities.index != average_intensities.index
     ):
@@ -557,7 +557,10 @@ def compute_fitting_coefficients(
         for cell_type in tqdm(cell_types):
             cloud = clouds[group_name][cell_type]
             L.debug(
-                f"The length of training data for {group_name} and {cell_type} is {cloud['xdata']}"
+                "The length of training data for %s and %s is %s",
+                group_name,
+                cell_type,
+                cloud["xdata"],
             )
             result[group_name][cell_type] = linear_fitting_xy(
                 cloud["xdata"], cloud["ydata"], cloud["sigma"], min_data_points
@@ -801,6 +804,7 @@ def linear_fitting(  # pylint: disable=too-many-arguments
             fitting_coefficients: dict returned by
                 :fun:`atlas_densities.densities.fitting.compute_fitting_coefficients`.
     """
+    # pylint: disable=too-many-locals
     assert group_ids_config is not None
     L.info("Checking input data frames sanity ...")
     _check_average_densities_sanity(average_densities)
@@ -852,8 +856,11 @@ def linear_fitting(  # pylint: disable=too-many-arguments
 
     L.info("Computing fitting coefficients ...")
     fitting_coefficients = compute_fitting_coefficients(
-        groups, average_intensities, densities.drop(densities.index[indexes]),
-    min_data_points=min_data_points)
+        groups,
+        average_intensities,
+        densities.drop(densities.index[indexes]),
+        min_data_points=min_data_points,
+    )
     L.info("Fitting unknown average densities ...")
     fit_unknown_densities(groups, average_intensities, densities, fitting_coefficients)
 
