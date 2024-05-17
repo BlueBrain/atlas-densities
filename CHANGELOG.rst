@@ -1,11 +1,41 @@
 Changelog
 =========
 
+Version 0.2.6
+-------------
+* Updating regression requirements, teach 
+  `atlas-densities cell-densities fit-average-densities` to have `--min-data-points` (#81)
+
+Version 0.2.5
+-------------
+
+* Fix nans in compute_region_volumes (#80)
+
+Version 0.2.4
+-------------
+
+* Add r_square values to the results of the fitting. (#68)
+* Add check to the region filter in case the input dataset is all equal to 0 for the region of interest. (#74)
+* Fix fitting and optimization steps (#75)
+* Faster _compute_region_cell_counts (#72)
+* Cleanup app tests (#78)
+* Faster compute average intensities (#73)
+* Speedup mtype density creation from probability maps using voxcell's ValueToIndexVoxels (#79)
+ 
+Version 0.2.3
+-------------
+
+* remove pkg_resources, use importlib (#62)
+* Drop literature values from regions that are not in hierarchy or not in the annotation volume (#61)
+
 Version 0.2.2
+-------------
+
 * add ``atlas-densities combination manipulate``
 
 Version 0.2.1
 -------------
+
 * The following *cell-density* sub-commands can now optionally take a ``--group-ids-config-path``:
    *cell-density*, *glia-cell-densities*, *inhibitory-and-excitatory-neuron-densities*, *fit-average-densities*
 

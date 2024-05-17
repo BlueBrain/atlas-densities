@@ -396,7 +396,6 @@ def linear_fitting_xy(
     Raises:
        AtlasDensitiesError if some of the `sigma`values are negative.
     """
-
     if len(xdata) < min_data_points:
         return {"coefficient": np.nan, "standard_deviation": np.nan, "r_square": np.nan}
 
