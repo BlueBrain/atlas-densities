@@ -164,7 +164,7 @@ def compute_kim_et_al_neuron_densities(
         engine="openpyxl",
     ).set_index("ROI")
     for acronym in kim_et_al_mmc3.index:
-        full_name = kim_et_al_mmc3.loc[acronym][0]
+        full_name = kim_et_al_mmc3.loc[acronym, "full_name"]
         if not isinstance(full_name, str) or not full_name:
             warn(
                 f"Region with acronym {acronym} has no valid full name. "
@@ -524,7 +524,7 @@ def read_homogenous_neuron_type_regions(measurements_path: str | "Path") -> pd.D
     )
     excitatory_mask = homogenous_regions_worksheet["comment"] == "Purely excitatory region"
     homogenous_regions_worksheet["cell_type"] = "inhibitory"
-    homogenous_regions_worksheet["cell_type"][excitatory_mask] = "excitatory"
+    homogenous_regions_worksheet.loc[excitatory_mask, "cell_type"] = "excitatory"
     homogenous_regions_worksheet.drop(columns=["comment"], inplace=True)
 
     return homogenous_regions_worksheet

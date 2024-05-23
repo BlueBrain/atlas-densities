@@ -26,11 +26,13 @@ def test_slice_layer():
 
 
 def create_density_profile_collection(mapping_path="mapping.tsv"):
-    return tested.DensityProfileCollection.load(
-        DATA_PATH / "meta" / mapping_path,
-        DATA_PATH / "meta" / "layers.tsv",
-        DATA_PATH / "mtypes",
-    )
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        return tested.DensityProfileCollection.load(
+            DATA_PATH / "meta" / mapping_path,
+            DATA_PATH / "meta" / "layers.tsv",
+            DATA_PATH / "mtypes",
+        )
 
 
 def create_slicer_data():
@@ -150,9 +152,12 @@ def expected_profile_data():
 
 
 def test_density_profile_collection_loading(expected_profile_data):
-    density_profile_collection = None
     with warnings.catch_warnings(record=True) as w:
-        density_profile_collection = create_density_profile_collection()
+        density_profile_collection = tested.DensityProfileCollection.load(
+            DATA_PATH / "meta" / "mapping.tsv",
+            DATA_PATH / "meta" / "layers.tsv",
+            DATA_PATH / "mtypes",
+        )
         msg = str(w[0].message)
         assert "No inhibitory cells assigned to slice 0 of layer_3" in msg
 
@@ -165,10 +170,11 @@ def test_density_profile_collection_loading(expected_profile_data):
 
 
 def test_density_profile_collection_loading_exc_only(expected_profile_data):
-    density_profile_collection = None
     with warnings.catch_warnings(record=True) as w:
-        density_profile_collection = create_density_profile_collection(
-            mapping_path="mapping_exc_only.tsv"
+        density_profile_collection = tested.DensityProfileCollection.load(
+            DATA_PATH / "meta" / "mapping_exc_only.tsv",
+            DATA_PATH / "meta" / "layers.tsv",
+            DATA_PATH / "mtypes",
         )
         assert not w
 

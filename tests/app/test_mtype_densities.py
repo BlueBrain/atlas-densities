@@ -1,6 +1,7 @@
 """test app/mtype_densities"""
 import json
 import os
+import warnings
 from copy import deepcopy
 from pathlib import Path
 
@@ -27,21 +28,23 @@ from tests.utils import write_json
 
 
 def get_result_from_profiles(runner, td):
-    return runner.invoke(
-        tested.app,
-        [
-            # fmt: off
-            "--log-output-path", td,
-            "create-from-profile",
-            "--annotation-path", "annotation.nrrd",
-            "--hierarchy-path", "hierarchy.json",
-            "--metadata-path", "metadata.json",
-            "--direction-vectors-path", "direction_vectors.nrrd",
-            "--mtypes-config-path", "config.yaml",
-            "--output-dir", "output_dir",
-            # fmt: on
-        ],
-    )
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        return runner.invoke(
+            tested.app,
+            [
+                # fmt: off
+                "--log-output-path", td,
+                "create-from-profile",
+                "--annotation-path", "annotation.nrrd",
+                "--hierarchy-path", "hierarchy.json",
+                "--metadata-path", "metadata.json",
+                "--direction-vectors-path", "direction_vectors.nrrd",
+                "--mtypes-config-path", "config.yaml",
+                "--output-dir", "output_dir",
+                # fmt: on
+            ],
+        )
 
 
 def test_mtype_densities_from_profiles(tmp_path):

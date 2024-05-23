@@ -530,7 +530,7 @@ def compute_region_volumes(
     )
 
     ids, counts = np.unique(annotation, return_counts=True)
-    result["id_volume"].update(pd.Series(counts * voxel_volume, index=ids))
+    result.update({"id_volume": pd.Series(counts * voxel_volume, index=ids)})
 
     volumes = []
     for id_ in hierarchy_info.index:

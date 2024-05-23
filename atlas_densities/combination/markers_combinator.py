@@ -127,14 +127,21 @@ def combine(
     # 'A Cell Atlas for the Mouse Brain' in that we use the weights 1.0 / E_marker normalized by
     # their sums instead of the coefficients C_marker = 1.0 / (E_marker * N_marker).
     combination_data.sort_index(inplace=True)
-    intensities = combination_data.groupby("cellType").apply(
-        lambda x: np.average(
+
+    def func(x):
+        return np.average(
             np.array(list(x.volume)),
-            weights=1.0 / np.array(list(x["averageExpressionIntensity"])),
+            weights=1.0 / x["averageExpressionIntensity"].to_numpy(),
             axis=0,
         )
+
+    kwargs = {}
+    if tuple(pd.__version__.split(".")) > ("2", "2", "0"):
+        kwargs["include_groups"] = False
+
+    intensities = (
+        combination_data.groupby("cellType").apply(func, **kwargs).rename("intensity").to_frame()
     )
-    intensities = pd.DataFrame(intensities, columns=["intensity"])
     intensities["proportion"] = proportions
 
     # Average overall glia intensity

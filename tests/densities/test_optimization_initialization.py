@@ -10,7 +10,7 @@ import pandas.testing as pdt
 import pytest
 
 import atlas_densities.densities.inhibitory_neuron_densities_optimization as tested
-from atlas_densities.exceptions import AtlasDensitiesError
+from atlas_densities.exceptions import AtlasDensitiesError, AtlasDensitiesWarning
 
 
 @pytest.fixture
@@ -961,13 +961,14 @@ def expected_aub_bub():
 
 
 def test_create_aub_and_bub(aub_and_bub_data):
-    A_ub, b_ub = tested.create_aub_and_bub(
-        aub_and_bub_data["x_result"],
-        aub_and_bub_data["region_counts"],
-        aub_and_bub_data["x_map"],
-        aub_and_bub_data["deltas_map"],
-        aub_and_bub_data["hierarchy_info"],
-    )
+    with pytest.warns(AtlasDensitiesWarning):
+        A_ub, b_ub = tested.create_aub_and_bub(
+            aub_and_bub_data["x_result"],
+            aub_and_bub_data["region_counts"],
+            aub_and_bub_data["x_map"],
+            aub_and_bub_data["deltas_map"],
+            aub_and_bub_data["hierarchy_info"],
+        )
 
     expected_A_ub, expected_b_ub = expected_aub_bub()
 
