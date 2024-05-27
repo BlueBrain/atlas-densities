@@ -1,0 +1,9 @@
+[tool.pytest.ini_options]
+addopts = [
+    "--import-mode=importlib",
+]
+filterwarnings = [
+    "ignore::DeprecationWarning:nptyping",
+    "ignore::UserWarning:openpyxl",
+]
+

@@ -178,10 +178,11 @@ def check_non_negative_values(dataframe):
 
 
 def test_read_kim_et_al_neuron_densities():
-    warnings.simplefilter("ignore")
-    dataframe = tested.read_kim_et_al_neuron_densities(
-        REGION_MAP, Path(MEASUREMENTS_PATH, "mmc3.xlsx")
-    )
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        dataframe = tested.read_kim_et_al_neuron_densities(
+            REGION_MAP, Path(MEASUREMENTS_PATH, "mmc3.xlsx")
+        )
 
     check_column_names(dataframe)
     check_column_types(dataframe)
@@ -331,13 +332,14 @@ def test_read_non_density_measurements():
 
 
 def test_read_measurements():
-    warnings.simplefilter("ignore")
-    dataframe = tested.read_measurements(
-        REGION_MAP,
-        Path(MEASUREMENTS_PATH, "mmc3.xlsx"),
-        Path(MEASUREMENTS_PATH, "gaba_papers.xlsx"),
-        Path(MEASUREMENTS_PATH, "non_density_measurements.csv"),
-    )
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        dataframe = tested.read_measurements(
+            REGION_MAP,
+            Path(MEASUREMENTS_PATH, "mmc3.xlsx"),
+            Path(MEASUREMENTS_PATH, "gaba_papers.xlsx"),
+            Path(MEASUREMENTS_PATH, "non_density_measurements.csv"),
+        )
     check_column_names(dataframe)
     check_non_negative_values(dataframe)
     check_columns_na(dataframe)
@@ -357,3 +359,10 @@ def test_read_measurements():
     # TODO: one duplicate title because of a trailing endline character
     assert len(set(dataframe["source_title"])) == 48
     assert len(set(dataframe["comment"])) >= 48
+
+
+def test_read_homogenous_neuron_type_regions():
+    res = tested.read_homogenous_neuron_type_regions(MEASUREMENTS_PATH / "gaba_papers.xlsx")
+    assert len(res) == 60
+    assert np.count_nonzero(res.cell_type == "excitatory") == 3
+    assert np.count_nonzero(res.cell_type == "inhibitory") == 57

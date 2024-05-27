@@ -10,6 +10,7 @@ import pytest
 from voxcell import RegionMap  # type: ignore
 
 import atlas_densities.densities.measurement_to_density as tested
+from atlas_densities.exceptions import AtlasDensitiesWarning
 from tests.densities.test_utils import get_hierarchy, get_hierarchy_info
 
 TESTS_PATH = Path(__file__).parent.parent
@@ -75,7 +76,9 @@ def test_remove_unknown_regions(region_map, annotations):
             "source_title": ["Article 1", "Article 2", "Article 1"],
         }
     )
-    tested.remove_unknown_regions(measurements, region_map, annotations, get_hierarchy_info())
+    with pytest.warns(AtlasDensitiesWarning):
+        tested.remove_unknown_regions(measurements, region_map, annotations, get_hierarchy_info())
+
     expected = pd.DataFrame(
         {
             "brain_region": [
@@ -363,15 +366,17 @@ def get_expected_output():
 def test_measurement_to_average_density():
     data = get_input_data()
     expected = get_expected_output()
-    actual = tested.measurement_to_average_density(
-        data["region_map"],
-        data["annotation"],
-        data["voxel_dimensions"],
-        data["voxel_volume"],
-        data["cell_density"],
-        data["neuron_density"],
-        data["measurements"],
-    )
+
+    with pytest.warns(AtlasDensitiesWarning):
+        actual = tested.measurement_to_average_density(
+            data["region_map"],
+            data["annotation"],
+            data["voxel_dimensions"],
+            data["voxel_volume"],
+            data["cell_density"],
+            data["neuron_density"],
+            data["measurements"],
+        )
     pdt.assert_frame_equal(actual, expected)
 
 

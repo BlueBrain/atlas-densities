@@ -130,12 +130,9 @@ def metadata():
     }
 
 
-@pytest.fixture
-def density(annotation):
-    return np.full_like(annotation.raw, fill_value=0.3, dtype=np.float32)
+def test_create_from_composition(annotation, region_map, metadata, taxonomy, composition):
+    density = np.full_like(annotation.raw, fill_value=0.3, dtype=np.float32)
 
-
-def test_create_from_composition(annotation, region_map, metadata, density, taxonomy, composition):
     per_mtype_density = {
         mtype: mtype_density
         for mtype, mtype_density in tested.create_from_composition(
@@ -162,7 +159,7 @@ def test_create_from_composition(annotation, region_map, metadata, density, taxo
 
         expected_density = np.zeros_like(density)
         expected_density[0, 0, pos_layer] = (mtype_average_density / layer_sum) * density[
-            ..., pos_layer
+            0, 0, pos_layer
         ]
 
         mtype_density = per_mtype_density[mtype]

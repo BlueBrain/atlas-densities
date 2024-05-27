@@ -1,6 +1,7 @@
 """test cell_densities"""
 
 import json
+import warnings
 from pathlib import Path
 
 import numpy as np
@@ -253,7 +254,9 @@ def _get_measurements_to_average_densities_result(runner, hierarchy_path, measur
         # fmt: on
     ]
 
-    return runner.invoke(tested.app, args)
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        return runner.invoke(tested.app, args)
 
 
 def test_measurements_to_average_densities():
