@@ -213,6 +213,13 @@ def combine_markers(annotation_path, hierarchy_path, config):
         ],
         columns=["gene", "volume"],
     )
+    for gene, volume in volumes[["gene", "volume"]].values:
+        if len(volume.shape) > 3:
+            raise ValueError(
+                f"volume of gene {gene} has shape {volume.shape} "
+                "has too many values per voxel Did you remeber to sum"
+                " the color channels in the interpolated genes?"
+            )
     combination_data = combination_data.merge(volumes, how="inner", on="gene")
 
     glia_intensities = markers_combinator.combine(
