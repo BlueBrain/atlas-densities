@@ -273,17 +273,24 @@ def test_compute_average_intensities(region_map, hierarchy_info):
 
 
 def test_linear_fitting_xy():
-    actual = tested.linear_fitting_xy([0.0, 1.0, 2.0], [0.0, 2.0, 4.0], [1.0, 1.0, 1.0])
+    min_data_points = 1
+    actual = tested.linear_fitting_xy(
+        [0.0, 1.0, 2.0], [0.0, 2.0, 4.0], [1.0, 1.0, 1.0], min_data_points=min_data_points
+    )
     assert np.allclose(actual["coefficient"], 2.0)
     assert np.allclose(actual["r_square"], 1.0)
     assert not np.isinf(actual["standard_deviation"])
 
-    actual = tested.linear_fitting_xy([0.0, 1.0, 2.0], [0.0, 1.0, 4.0], [1.0, 1.0, 1e-5])
+    actual = tested.linear_fitting_xy(
+        [0.0, 1.0, 2.0], [0.0, 1.0, 4.0], [1.0, 1.0, 1e-5], min_data_points=min_data_points
+    )
     assert np.allclose(actual["coefficient"], 2.0)
     assert not np.isinf(actual["standard_deviation"])
     assert np.allclose(actual["r_square"], 0.89286)
 
-    actual = tested.linear_fitting_xy([0.0, 1.0, 2.0], [0.0, 2.0, 4.0], [1.0, 0.0, 1.0])
+    actual = tested.linear_fitting_xy(
+        [0.0, 1.0, 2.0], [0.0, 2.0, 4.0], [1.0, 0.0, 1.0], min_data_points=min_data_points
+    )
     assert np.allclose(actual["coefficient"], 2.0)
     assert not np.isinf(actual["standard_deviation"])
     assert np.allclose(actual["r_square"], 1.0)
@@ -319,7 +326,10 @@ def test_compute_fitting_coefficients(hierarchy_info):
     data = get_fitting_input_data_(hierarchy_info)
 
     actual = tested.compute_fitting_coefficients(
-        data["groups"], data["intensities"], data["densities"]
+        data["groups"],
+        data["intensities"],
+        data["densities"],
+        min_data_points=1,
     )
 
     for group_name in ["Whole", "Central lobule"]:
@@ -340,18 +350,33 @@ def test_compute_fitting_coefficients_exceptions(hierarchy_info):
     data["densities"].drop(index=["Central lobule"], inplace=True)
 
     with pytest.raises(AtlasDensitiesError):
-        tested.compute_fitting_coefficients(data["groups"], data["intensities"], data["densities"])
+        tested.compute_fitting_coefficients(
+            data["groups"],
+            data["intensities"],
+            data["densities"],
+            min_data_points=1,
+        )
 
     data = get_fitting_input_data_(hierarchy_info)
     data["densities"].drop(columns=["pv+"], inplace=True)
 
     with pytest.raises(AtlasDensitiesError):
-        tested.compute_fitting_coefficients(data["groups"], data["intensities"], data["densities"])
+        tested.compute_fitting_coefficients(
+            data["groups"],
+            data["intensities"],
+            data["densities"],
+            min_data_points=1,
+        )
 
     data = get_fitting_input_data_(hierarchy_info)
     data["densities"].at["Lobule II", "pv+_standard_deviation"] = np.nan
     with pytest.raises(AssertionError):
-        tested.compute_fitting_coefficients(data["groups"], data["intensities"], data["densities"])
+        tested.compute_fitting_coefficients(
+            data["groups"],
+            data["intensities"],
+            data["densities"],
+            min_data_points=1,
+        )
 
 
 @pytest.fixture
@@ -525,6 +550,7 @@ def test_linear_fitting(group_ids_config):
             data["average_densities"],
             data["homogenous_regions"],
             group_ids_config=group_ids_config,
+            min_data_points=1,
         )
         warnings_ = [w for w in warnings_ if isinstance(w.message, AtlasDensitiesWarning)]
         # Three warnings for recording NaN coefficients, three warnings for using them

@@ -286,6 +286,7 @@ respective standard deviation and `coefficient of determination`_ (`r_square`).
         --fitted-densities-output-path=data/ccfv2/first_estimates/first_estimates.csv               \
         --fitting-maps-output-path=data/ccfv2/first_estimates/fitting.json
 
+Note: One can use the ``--min-data-points`` to require a minimum of points for the linear regression; the default is 1.
 
 Compute inhibitory/excitatory neuron densities
 ----------------------------------------------

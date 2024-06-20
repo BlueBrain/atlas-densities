@@ -367,7 +367,10 @@ def compute_average_intensities(
 
 
 def linear_fitting_xy(
-    xdata: list[float], ydata: list[float], sigma: Union[list[float], FloatArray]
+    xdata: list[float],
+    ydata: list[float],
+    sigma: Union[list[float], FloatArray],
+    min_data_points: int,
 ) -> dict[str, float]:
     """
     Compute the coefficient of the linear least-squares regression of the point cloud
@@ -380,6 +383,10 @@ def linear_fitting_xy(
             These are the standard deviations of the values in `ydata`.
             Zero values are replaced by the least positive value if it exists,
             otherwise by 1.0.
+        min_data_points: minimum number of datapoints required for running
+            the linear regression. If the number of datapoints is less than
+            min_data_points then no fitting is done, and np.nan values are
+            returned.
 
     Returns:
         a dict of the form {"coefficient": <float>,
@@ -389,9 +396,8 @@ def linear_fitting_xy(
     Raises:
        AtlasDensitiesError if some of the `sigma`values are negative.
     """
-
-    if len(xdata) == 0:
-        return {"coefficient": np.nan, "standard_deviation": np.nan}
+    if len(xdata) < min_data_points:
+        return {"coefficient": np.nan, "standard_deviation": np.nan, "r_square": np.nan}
 
     sigma = np.array(sigma)
     if np.any(sigma < 0.0):
@@ -422,6 +428,7 @@ def linear_fitting_xy(
     )
     ss_reg = np.sum((_optimize_func(xdata, parameters[0][0]) - np.mean(ydata)) ** 2)
     ss_tot = np.sum((np.array(ydata) - _optimize_func(xdata, parameters[0][0])) ** 2) + ss_reg
+    L.debug("Length of xdata = %s.  The ss_reg is %s and ss_tot is %s", xdata, ss_reg, ss_tot)
     # if total sum of square is null, no variance can be explained by the fitting
     return {
         "coefficient": parameters[0][0],
@@ -434,7 +441,10 @@ FittingData = Dict[str, Dict[str, Dict[str, float]]]
 
 
 def compute_fitting_coefficients(
-    groups: dict[str, set[str]], average_intensities: pd.DataFrame, densities: pd.DataFrame
+    groups: dict[str, set[str]],
+    average_intensities: pd.DataFrame,
+    densities: pd.DataFrame,
+    min_data_points: int,
 ) -> FittingData:
     """
     Compute the linear fitting coefficient of the cloud of 2D points (average marker intensity,
@@ -477,7 +487,7 @@ def compute_fitting_coefficients(
         The "standard_deviation" value is the standard deviation of the coefficient value.
         The "r_square" value is the coefficient of determination of the coefficient value.
     """
-
+    # pylint: disable=too-many-locals
     if len(densities.index) != len(average_intensities.index) or np.any(
         densities.index != average_intensities.index
     ):
@@ -545,8 +555,14 @@ def compute_fitting_coefficients(
         L.info("Computing regression coefficients for %d cell types ...", len(cell_types))
         for cell_type in tqdm(cell_types):
             cloud = clouds[group_name][cell_type]
+            L.debug(
+                "The length of training data for %s and %s is %s",
+                group_name,
+                cell_type,
+                cloud["xdata"],
+            )
             result[group_name][cell_type] = linear_fitting_xy(
-                cloud["xdata"], cloud["ydata"], cloud["sigma"]
+                cloud["xdata"], cloud["ydata"], cloud["sigma"], min_data_points
             )
             if np.isnan(result[group_name][cell_type]["coefficient"]):
                 warnings.warn(
@@ -730,6 +746,7 @@ def linear_fitting(  # pylint: disable=too-many-arguments
     cell_density_stddevs: Optional[dict[str, float]] = None,
     region_name: str = "root",
     group_ids_config: dict | None = None,
+    min_data_points: int = 5,
 ) -> pd.DataFrame:
     """
     Estimate the average densities of every region in `region_map` using a linear fitting
@@ -772,6 +789,10 @@ def linear_fitting(  # pylint: disable=too-many-arguments
             standard deviations of average cell densities of the corresponding regions.
         region_name: (str) name of the root region of interest
         group_ids_config: mapping of regions to their constituent ids
+        min_data_points: minimum number of datapoints required for running
+            the linear regression. If the number of datapoints is less than
+            min_data_points then no fitting is done, and np.nan values are
+            returned.
 
     Returns:
         tuple (densities, fitting_coefficients)
@@ -782,6 +803,7 @@ def linear_fitting(  # pylint: disable=too-many-arguments
             fitting_coefficients: dict returned by
                 :fun:`atlas_densities.densities.fitting.compute_fitting_coefficients`.
     """
+    # pylint: disable=too-many-locals
     assert group_ids_config is not None
     L.info("Checking input data frames sanity ...")
     _check_average_densities_sanity(average_densities)
@@ -833,7 +855,10 @@ def linear_fitting(  # pylint: disable=too-many-arguments
 
     L.info("Computing fitting coefficients ...")
     fitting_coefficients = compute_fitting_coefficients(
-        groups, average_intensities, densities.drop(densities.index[indexes])
+        groups,
+        average_intensities,
+        densities.drop(densities.index[indexes]),
+        min_data_points=min_data_points,
     )
     L.info("Fitting unknown average densities ...")
     fit_unknown_densities(groups, average_intensities, densities, fitting_coefficients)

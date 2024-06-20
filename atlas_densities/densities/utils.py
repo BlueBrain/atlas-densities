@@ -538,5 +538,4 @@ def compute_region_volumes(
         volume = result.loc[list(id_set), "id_volume"].sum()
         volumes.append(volume)
     result["volume"] = volumes
-
     return result
