@@ -277,7 +277,6 @@ def remove_unknown_regions(
         hierarchy_info: data frame returned by
             :func:`atlas_densities.densities.utils.get_hierarchy_info`.
     """
-    pd.set_option("display.max_colwidth", None)
     indices_ids = measurements.index[
         ~measurements["brain_region"].isin(hierarchy_info["brain_region"])
     ]

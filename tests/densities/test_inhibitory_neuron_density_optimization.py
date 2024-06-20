@@ -10,7 +10,7 @@ import pandas.testing as pdt
 import pytest
 
 import atlas_densities.densities.inhibitory_neuron_densities_optimization as tested
-from atlas_densities.exceptions import AtlasDensitiesError
+from atlas_densities.exceptions import AtlasDensitiesError, AtlasDensitiesWarning
 
 
 def test_resize_average_densities():
@@ -322,13 +322,15 @@ def get_initialization_data_4():
 
 def test_create_inhibitory_neuron_densities_4():
     data = get_initialization_data_4()
-    densities = tested.create_inhibitory_neuron_densities(
-        data["hierarchy"],
-        data["annotation"],
-        data["voxel_volume"],
-        data["neuron_density"],
-        data["average_densities"],
-    )
+
+    with pytest.warns(AtlasDensitiesWarning):
+        densities = tested.create_inhibitory_neuron_densities(
+            data["hierarchy"],
+            data["annotation"],
+            data["voxel_volume"],
+            data["neuron_density"],
+            data["average_densities"],
+        )
 
     expected = {
         "gad67+": np.array([[[0.5, 0.5, 1.0, 1.0, 1.5, 1.5]]]),

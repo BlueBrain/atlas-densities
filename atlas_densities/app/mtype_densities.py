@@ -408,7 +408,7 @@ def create_from_composition(
 
 def _load_neuronal_mtype_taxonomy(filename: str) -> pd.DataFrame:
     """Loads the taxonomy tsv file into a dataframe"""
-    return pd.read_csv(filename, header=0, delim_whitespace=True)
+    return pd.read_csv(filename, header=0, sep=r"\s+")
 
 
 def _validate_mtype_taxonomy(taxonomy: pd.DataFrame) -> None:
