@@ -531,18 +531,21 @@ def create_volumetric_densities(
         `annotation.shape` (which is assumed to coincide with `neuron_density.shape`). The value
         of a voxel in each array represents a cell density expressed in number of cells per mm^3.
     """
+    index = voxel_data.ValueToIndexVoxels(annotation)
 
-    densities = {cell_type: neuron_density.copy() for cell_type in cell_types}
-    for id_ in tqdm(neuron_counts.index):
-        mask = annotation == id_
+    raveled_densities = {cell_type: index.ravel(neuron_density.copy()) for cell_type in cell_types}
+    for id_ in neuron_counts.index:
+
+        idx = index.value_to_1d_indices(id_)
         neuron_count = neuron_counts.at[id_, "cell_count"]
+
         for cell_type in cell_types:
             if np.isclose(neuron_count, 0.0):
-                densities[cell_type][mask] = 0.0
+                raveled_densities[cell_type][idx] = 0.0
             else:
-                densities[cell_type][mask] *= x_result.at[id_, cell_type] / neuron_count
+                raveled_densities[cell_type][idx] *= x_result.at[id_, cell_type] / neuron_count
 
-    return densities
+    return {key: index.unravel(value) for key, value in raveled_densities.items()}
 
 
 def _compute_initial_cell_counts(
@@ -734,7 +737,6 @@ def create_inhibitory_neuron_densities(  # pylint: disable=too-many-locals
         AtlasDensitiesError if some inconsistency in the input data has been detected or if the
         linear program cannot be solved.
     """
-
     hierarchy_info = utils.get_hierarchy_info(RegionMap.from_dict(hierarchy), root=region_name)
     average_densities = _resize_average_densities(average_densities, hierarchy_info)
 
