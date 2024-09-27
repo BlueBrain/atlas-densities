@@ -46,7 +46,6 @@ import numpy as np
 import pandas as pd
 from atlas_commons.typing import AnnotationT, FloatArray
 from scipy.optimize import linprog
-from tqdm import tqdm
 from voxcell import RegionMap, voxel_data
 
 from atlas_densities.densities import utils
