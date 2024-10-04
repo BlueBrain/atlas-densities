@@ -1,5 +1,5 @@
 [MESSAGES CONTROL]
-disable=invalid-name,fixme
+disable=invalid-name,fixme,too-many-positional-arguments
 
 [SIMILARITIES]
 # Minimum lines number of a similarity.
