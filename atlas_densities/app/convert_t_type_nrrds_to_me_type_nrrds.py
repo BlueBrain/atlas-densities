@@ -26,21 +26,21 @@ extended_p_me_t.columns = [
 ]
 # print("p(me|t)", extended_p_me_t)
 
-# # Initialize an empty list to collect DataFrames for each t-type
-# df_col = []
+# Initialize an empty list to collect DataFrames for each t-type
+df_col = []
 
-# for t in extended_p_me_t.index:
-#     # Select the t-type column and rename each me-type to include the t-type
-#     df_renamed = extended_p_me_t.loc[t].rename(lambda x: f"{x}|{t}")
+for t in extended_p_me_t.index:
+    # Select the t-type column and rename each me-type to include the t-type
+    df_renamed = extended_p_me_t.loc[t].rename(lambda x: f"{x}|{t}")
     
-#     # Convert the renamed Series to a DataFrame and append to the list
-#     df_col.append(df_renamed.to_frame().T)
+    # Convert the renamed Series to a DataFrame and append to the list
+    df_col.append(df_renamed.to_frame().T)
 
-# # Concatenate all renamed DataFrames along the columns to create p_map
-# p_map = pd.concat(df_col, axis=1)
+# Concatenate all renamed DataFrames along the columns to create p_map
+p_map = pd.concat(df_col, axis=1)
 # print("p(met|t)", p_map)
 
-p_map = extended_p_me_t
+# p_map = extended_p_me_t
 
 # List of all me_types and t_type files
 me_type_list = p_map.columns
