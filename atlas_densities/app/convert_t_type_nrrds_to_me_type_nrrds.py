@@ -12,18 +12,6 @@ OUTPUT_PATH = "./met_nrrd_output"
 # Load p_map with t-types as rows and me-types as columns
 extended_p_me_t = pd.read_csv(PATH_TO_P_MAP, index_col=0)
 
-# Filter common_t_types to exclude "IMN" and "NN" types
-common_t_types = extended_p_me_t.index
-msk_t_types = np.asarray([("IMN" not in x) & ("NN" not in x) for x in common_t_types])
-common_t_types = common_t_types[msk_t_types]
-
-# Reindex and normalize p_map
-extended_p_me_t = extended_p_me_t.reindex(common_t_types, axis=0)
-extended_p_me_t = extended_p_me_t.div(np.sum(extended_p_me_t, axis=1), axis=0)
-extended_p_me_t.columns = [
-    "|".join([m_type_part.upper(), e_type_part])
-    for m_type_part, e_type_part in (col.split("|") for col in extended_p_me_t.columns)
-]
 
 # Initialize an empty list to collect DataFrames for each t-type
 df_col = []
