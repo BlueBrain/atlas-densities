@@ -33,25 +33,33 @@ t_type_list = [x.replace(".nrrd", "") for x in t_type_list]
 t_type_list = p_map.index.intersection(t_type_list)
 init_nrrd, header = nrrd.read(os.path.join(PATH_TO_T_TYPES_NRRDS, f"{t_type_list[0]}.nrrd"))
 
-# Preload all t-type .nrrd files into memory
-t_type_data = {}
-for t_type in tqdm(t_type_list, desc="Preloading t-types"):
-    t_type_data[t_type], _ = nrrd.read(os.path.join(PATH_TO_T_TYPES_NRRDS, f"{t_type}.nrrd"))
+# Process me-type chunks with limited preloading of t-types
+def process_me_type_chunk(me_type_chunk, t_type_list, p_map, t_type_batch_size=200):
+    me_type_sums = {me_type: np.zeros_like(init_nrrd) for me_type in me_type_chunk}
 
-def process_me_type_chunk(me_type_chunk, t_type_data, p_map):
-    chunk_result = np.zeros((len(me_type_chunk), *init_nrrd.shape), dtype=np.float32)
+    # Process t-types in batches to limit memory usage
+    for i in range(0, len(t_type_list), t_type_batch_size):
+        t_type_batch = t_type_list[i : i + t_type_batch_size]
+        t_type_data = {}
 
-    with tqdm(total=len(t_type_data), desc="Processing t-types", position=1, leave=False) as t_progress:
-        for t_type, t_type_nrrd in t_type_data.items():
-            weights = np.array([p_map.loc[t_type, me_type] for me_type in me_type_chunk])
-            chunk_result += np.einsum('i,ijk->ijk', weights, t_type_nrrd)  # Vectorized computation
-            t_progress.update(1)
+        # Load the current batch of t-types into memory
+        for t_type in t_type_batch:
+            t_type_data[t_type], _ = nrrd.read(os.path.join(PATH_TO_T_TYPES_NRRDS, f"{t_type}.nrrd"))
 
+        # Process each t-type in the current batch
+        with tqdm(total=len(t_type_batch), desc=f"Processing t-types {i}-{i + len(t_type_batch)}", position=1, leave=False) as t_progress:
+            for t_type, t_type_nrrd in t_type_data.items():
+                for me_type in me_type_chunk:
+                    weight = p_map.loc[t_type, me_type]
+                    me_type_sums[me_type] += t_type_nrrd * weight
+                t_progress.update(1)
+
+    # Save results for each me-type in the chunk
     if not os.path.exists(OUTPUT_PATH):
         os.makedirs(OUTPUT_PATH)
-    for i, me_type in enumerate(me_type_chunk):
+    for me_type, me_density in me_type_sums.items():
         output_file = os.path.join(OUTPUT_PATH, f"{me_type}.nrrd")
-        nrrd.write(output_file, chunk_result[i], header)
+        nrrd.write(output_file, me_density, header)
         print(f"Saved {output_file}")
 
 # Determine number of workers
