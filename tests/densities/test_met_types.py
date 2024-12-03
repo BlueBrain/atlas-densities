@@ -16,9 +16,9 @@ def test_process_t_type():
     header_sizes = (10, 10, 10)
 
     # Mock load_t_type_data to return synthetic data
-    with patch("your_module.load_t_type_data", return_value=t_type_data):
+    with patch("atlas_densities.densities.convert_t_type_nrrds_to_me_type_nrrds.load_t_type_data", return_value=t_type_data):
         # Mock save_me_type_results to verify the output
-        with patch("your_module.save_me_type_results") as mock_save:
+        with patch("atlas_densities.densities.convert_t_type_nrrds_to_me_type_nrrds.save_me_type_results") as mock_save:
             process_t_type(t_type, "path/to/t_type", p_map_subset, header_sizes)
             
             # Verify save_me_type_results was called twice (once for each ME-type)
@@ -39,7 +39,7 @@ def test_batch_processing():
     batch_size = 5
 
     batches = []
-    with patch("your_module.process_t_types_in_parallel") as mock_parallel:
+    with patch("atlas_densities.densities.convert_t_type_nrrds_to_me_type_nrrds.process_t_types_in_parallel") as mock_parallel:
         process_t_types_in_parallel_with_batches(
             t_type_list, {}, {}, "output/path", {"sizes": (10, 10, 10)}, num_workers=2, t_type_batch_size=batch_size
         )
@@ -72,7 +72,7 @@ def test_end_to_end(tmp_path):
     )
 
     # Mock load_t_type_data to return synthetic data
-    with patch("your_module.load_t_type_data", return_value=np.ones((5, 5, 5))):
+    with patch("atlas_densities.densities.convert_t_type_nrrds_to_me_type_nrrds.load_t_type_data", return_value=np.ones((5, 5, 5))):
         process_t_types_in_parallel_with_batches(
             t_type_list, t_type_paths, p_map, output_path, {"sizes": (5, 5, 5)}, num_workers=2, t_type_batch_size=1
         )
