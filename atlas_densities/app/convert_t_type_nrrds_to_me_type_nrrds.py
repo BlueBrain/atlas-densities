@@ -14,6 +14,16 @@ OUTPUT_PATH = "./met_nrrd_output"
 def load_p_map(path_to_p_map, max_me_types=None):
     p_map = pd.read_csv(path_to_p_map, index_col=0)
     p_map = p_map.div(p_map.sum(axis=1), axis=0)  # Normalize rows
+
+    # Initialize an empty list to collect DataFrames for each t-type
+    df_col = []
+
+    for t in p_map.index:
+        df_renamed = p_map.loc[t].rename(lambda x: f"{x}|{t}")
+        df_col.append(df_renamed.to_frame().T)
+
+    p_map = pd.concat(df_col, axis=1)
+
     return p_map.iloc[:, :max_me_types] if max_me_types else p_map
 
 # Initialize output directory
