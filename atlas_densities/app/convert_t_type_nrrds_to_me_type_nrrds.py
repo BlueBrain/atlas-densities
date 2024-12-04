@@ -10,21 +10,35 @@ PATH_TO_T_TYPES_NRRDS = "./t_type_nrrd_example/"
 PATH_TO_P_MAP = "./data/mtypes/probability_map/extended_p_me_t.csv"
 OUTPUT_PATH = "./met_nrrd_output"
 
-# Load and prepare p_map
 def load_p_map(path_to_p_map, max_me_types=None):
+    """
+    Load the P-map and format it with MET_TYPE keys (ME_TYPE|T_TYPE).
+
+    Args:
+        path_to_p_map (str): Path to the P-map CSV file.
+        max_me_types (int, optional): Limit the number of ME-types.
+
+    Returns:
+        pd.DataFrame: P-map reformatted with MET_TYPE keys as columns.
+    """
+    # Load the P-map as a DataFrame
     p_map = pd.read_csv(path_to_p_map, index_col=0)
-    p_map = p_map.div(p_map.sum(axis=1), axis=0)  # Normalize rows
+    
+    # Normalize rows to ensure probabilities sum to 1
+    p_map = p_map.div(p_map.sum(axis=1), axis=0)
 
-    # Initialize an empty list to collect DataFrames for each t-type
-    df_col = []
+    # Create a new DataFrame with MET_TYPE keys (ME_TYPE|T_TYPE)
+    met_types_df = pd.DataFrame()
 
-    for t in p_map.index:
-        df_renamed = p_map.loc[t].rename(lambda x: f"{x}|{t}")
-        df_col.append(df_renamed.to_frame().T)
+    for t_type in p_map.index:  # Iterate over T-types (rows)
+        renamed_row = p_map.loc[t_type].rename(lambda me_type: f"{me_type}|{t_type}")  # Create MET_TYPE keys
+        met_types_df = pd.concat([met_types_df, renamed_row.to_frame().T], axis=1)  # Append renamed row
 
-    p_map = pd.concat(df_col, axis=1)
+    # Limit the number of ME-types if specified
+    if max_me_types is not None:
+        met_types_df = met_types_df.iloc[:, :max_me_types]
 
-    return p_map.iloc[:, :max_me_types] if max_me_types else p_map
+    return met_types_df
 
 # Initialize output directory
 def setup_output_path(output_path):
