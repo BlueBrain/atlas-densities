@@ -392,6 +392,18 @@ The command outputs the density files in the output-dir and a metadata json file
         // ...
     }
 
+Compute MET-types densities update
+-------------------------------------------------
+
+An update to the probabilistic map allows to estimate Morphological and Electrical type densities of inhibitory 
+and excitatory neurons in the whole brain using `Verasztó et al. (202X)`_'s pipeline. 
+This pipeline produces transcriptomic types (t-types) densities and a mapping from T-types to canonical neuronal 
+ME-types as defined in the paper.
+
+.. code-block:: bash
+
+    sbatch atlas_densities/app/process_t_types_job.sh         
+
 Subdivide excitatory files into pyramidal subtypes
 --------------------------------------------------
 

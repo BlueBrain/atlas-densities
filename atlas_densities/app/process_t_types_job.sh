@@ -30,11 +30,17 @@ fi
 
 # Calculate start and end indices for this job
 START=$((SLURM_ARRAY_TASK_ID * BATCH_SIZE))
-END=$((START + BATCH_SIZE))
-if [ $END -gt $TOTAL_T_TYPES ]; then
-  END=$TOTAL_T_TYPES
+END=$((START + BATCH_SIZE - 1))
+if [ $END -ge $TOTAL_T_TYPES ]; then
+  END=$((TOTAL_T_TYPES - 1))  # Adjust for the last batch
+fi
+
+# Ensure there is at least one T-type to process
+if [ $START -gt $END ]; then
+  echo "No T-types to process for task ID $SLURM_ARRAY_TASK_ID."
+  exit 0
 fi
 
 # Run the Python script
 echo "Processing T-types from index $START to $END..."
-python convert_t_type_nrrds_to_me_type_nrrds.py --start $START --end $END
+python convert_t_type_nrrds_to_me_type_nrrds.py --start $START --end $END --workers 4
